@@ -1,0 +1,11 @@
+{
+  "_leeme": "Crédito de cada foto de media/ (por nombre, sin .jpg). Las de la web municipal solo valen para la maqueta que se le enseña al Ayuntamiento: su aviso legal prohíbe reproducirlas sin autorización.",
+  "calle-torre": { "titulo": "Avenida con torre (portada)", "autor": "web del Ayuntamiento", "nota": "Solo para la propuesta: hace falta su autorización para publicarla" },
+  "iglesia-torres": { "titulo": "Las dos torres de la iglesia", "autor": "cartel de DEMA y la Junta de Extremadura (2014), web del Ayuntamiento", "nota": "Solo para la propuesta: hace falta su autorización para publicarla" },
+  "casa-cultura": { "titulo": "Casa de la Cultura", "autor": "web del Ayuntamiento", "nota": "Solo para la propuesta: hace falta su autorización para publicarla" },
+  "dulces": { "titulo": "Dulces típicos", "autor": "web del Ayuntamiento", "nota": "Solo para la propuesta: hace falta su autorización para publicarla" },
+  "monumento-melendez": { "titulo": "Monumento a Meléndez Valdés", "autor": "F. Enrique Suárez", "licencia": "CC BY-SA 3.0", "url": "https://commons.wikimedia.org/wiki/File:Casaamarilla.jpg" },
+  "oppidum": { "titulo": "Oppidum de Hornachuelos", "autor": "Ángel M. Felicísimo", "licencia": "CC BY 2.0", "url": "https://commons.wikimedia.org/wiki/File:Oppidum_de_Hornachuelos_(33993657456).jpg" },
+  "pozo-tinajona": { "titulo": "Pozo de «La Tinajona»", "autor": "Diegui57", "licencia": "CC BY 4.0", "url": "https://commons.wikimedia.org/wiki/File:Pozo_Rural_de_%22La_Tinajona%22_05.jpg" },
+  "lavadero": { "titulo": "Ruinas del lavadero de lanas", "autor": "Diegui57", "licencia": "CC BY-SA 4.0", "url": "https://commons.wikimedia.org/wiki/File:Ruinas_antiguo_lavadero_de_lanas_05.jpg" }
+}

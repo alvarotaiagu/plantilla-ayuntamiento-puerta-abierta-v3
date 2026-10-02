@@ -1,0 +1,99 @@
+{{> documento_arriba}}
+{{#pueblo.lugares.length}}<section class="seccion seccion--primera" aria-labelledby="t-lugares">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-lugares">Qué ver</h2>
+    <div class="carril" data-desborda role="group" aria-labelledby="t-lugares">
+      <ul class="carril__lista">
+        {{#pueblo.lugares}}<li class="lugar">
+          {{#foto}}<figure class="lugar__foto arco-opcional"><img src="media/{{foto}}-800.jpg" width="{{ancho}}" height="{{alto}}" alt="{{alt}}" loading="lazy" decoding="async"></figure>{{/foto}}
+          {{^foto}}<div class="lugar__foto lugar__foto--vacia arco-opcional"><img src="marca/escudo-160.png" width="{{escudo.ancho160}}" height="160" alt=""></div>{{/foto}}
+          <h3 class="lugar__nombre">{{nombre}}</h3>
+          <p class="lugar__texto">{{texto}}</p>
+          {{#credito}}<p class="credito">{{credito}}</p>{{/credito}}
+        </li>
+        {{/pueblo.lugares}}
+      </ul>
+    </div>
+  </div>
+</section>{{/pueblo.lugares.length}}
+
+{{#pueblo.placa}}<section class="seccion seccion--placa" aria-labelledby="t-placa">
+  <div class="contenedor placa-rejilla">
+    <h2 class="seccion__titulo" id="t-placa">{{pueblo.placa.titulo}}</h2>
+    <figure class="placa">
+      <blockquote class="placa__texto"><p>{{#pueblo.placa.lineas}}<span>{{.}}</span> {{/pueblo.placa.lineas}}</p></blockquote>
+      <figcaption class="placa__pie">{{pueblo.placa.pie}}</figcaption>
+    </figure>
+    {{#pueblo.placa.texto}}<p class="placa__nota">{{pueblo.placa.texto}}</p>{{/pueblo.placa.texto}}
+  </div>
+</section>{{/pueblo.placa}}
+
+{{#pueblo.historia.length}}<section class="seccion" aria-labelledby="t-historia">
+  <div class="contenedor texto-largo">
+    <h2 class="seccion__titulo" id="t-historia">Historia</h2>
+    {{#pueblo.historia}}<p>{{.}}</p>
+    {{/pueblo.historia}}
+  </div>
+</section>{{/pueblo.historia.length}}
+
+{{#pueblo.patrimonio.length}}<section class="seccion" aria-labelledby="t-patrimonio">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-patrimonio">Patrimonio</h2>
+    <ul class="patrimonio">
+      {{#pueblo.patrimonio}}<li><b>{{nombre}}</b>{{#detalle}}<span>{{detalle}}</span>{{/detalle}}</li>
+      {{/pueblo.patrimonio}}
+    </ul>
+  </div>
+</section>{{/pueblo.patrimonio.length}}
+
+{{#fiestas.length}}<section class="seccion" aria-labelledby="t-anio">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-anio">Fiestas</h2>
+    <ol class="anio" data-vivo="anio">{{{vivo.anio}}}</ol>
+  </div>
+</section>{{/fiestas.length}}
+
+{{#pueblo.gastronomia}}<section class="seccion" aria-labelledby="t-gastronomia">
+  <div class="contenedor gastronomia">
+    <div>
+      <h2 class="seccion__titulo" id="t-gastronomia">Gastronomía</h2>
+      <div class="gastronomia__listas">
+        {{#pueblo.gastronomia.platos.length}}<div><h3 class="gastronomia__titulo">Platos</h3><ul class="lista-coma">{{#pueblo.gastronomia.platos}}<li>{{.}}</li>{{/pueblo.gastronomia.platos}}</ul></div>{{/pueblo.gastronomia.platos.length}}
+        {{#pueblo.gastronomia.dulces.length}}<div><h3 class="gastronomia__titulo">Dulces</h3><ul class="lista-coma">{{#pueblo.gastronomia.dulces}}<li>{{.}}</li>{{/pueblo.gastronomia.dulces}}</ul></div>{{/pueblo.gastronomia.dulces.length}}
+        {{#pueblo.gastronomia.bebidas.length}}<div><h3 class="gastronomia__titulo">Para beber</h3><ul class="lista-coma">{{#pueblo.gastronomia.bebidas}}<li>{{.}}</li>{{/pueblo.gastronomia.bebidas}}</ul></div>{{/pueblo.gastronomia.bebidas.length}}
+      </div>
+    </div>
+    {{#pueblo.gastronomia.foto_datos}}<figure class="gastronomia__foto"><img src="media/{{archivo}}-800.jpg" width="{{ancho}}" height="{{alto}}" alt="{{alt}}" loading="lazy" decoding="async">{{#credito}}<figcaption class="credito">{{credito}}</figcaption>{{/credito}}</figure>{{/pueblo.gastronomia.foto_datos}}
+  </div>
+</section>{{/pueblo.gastronomia}}
+
+{{#pueblo.personajes.length}}<section class="seccion" aria-labelledby="t-personajes">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-personajes">Personajes</h2>
+    <ul class="fichas">
+      {{#pueblo.personajes}}<li class="ficha"><h3 class="ficha__titulo">{{nombre}}</h3><p class="ficha__fechas">{{fechas}}</p><p>{{texto}}</p></li>
+      {{/pueblo.personajes}}
+    </ul>
+  </div>
+</section>{{/pueblo.personajes.length}}
+
+{{#pueblo.rutas.length}}<section class="seccion" aria-labelledby="t-rutas">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-rutas">Rutas</h2>
+    <ul class="rutas">
+      {{#pueblo.rutas}}<li class="ruta"><h3 class="ruta__nombre">{{nombre}}</h3><p>{{resumen}}</p>{{#url}}<p><a href="{{url}}">Ver la ruta<span class="sr">: {{nombre}}</span></a></p>{{/url}}</li>
+      {{/pueblo.rutas}}
+    </ul>
+  </div>
+</section>{{/pueblo.rutas.length}}
+
+{{#creditos.length}}<section class="seccion" id="creditos" aria-labelledby="t-creditos">
+  <div class="contenedor texto-largo">
+    <h2 class="seccion__titulo" id="t-creditos">Créditos de las fotos</h2>
+    <ul class="creditos">
+      {{#creditos}}<li><b>{{titulo}}</b>: {{autor}}{{#licencia}}, {{licencia}}{{/licencia}}{{#url}} (<a href="{{url}}">ficha de la foto</a>){{/url}}{{#nota}}. {{nota}}{{/nota}}</li>
+      {{/creditos}}
+    </ul>
+  </div>
+</section>{{/creditos.length}}
+{{> documento_abajo}}

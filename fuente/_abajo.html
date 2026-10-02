@@ -1,0 +1,75 @@
+<footer class="pie">
+  <section class="sede-franja" aria-labelledby="t-sede">
+    <div class="contenedor">
+      <h2 class="sede-franja__titulo" id="t-sede">Sede electrónica e información pública</h2>
+      <ul class="sede-franja__lista">
+        <li><a class="sede-franja__enlace" href="{{sede.inicio}}"><svg class="icono" aria-hidden="true"><use href="#i-sede"/></svg><span><b>Sede electrónica</b><span>Trámites con certificado o Cl@ve</span></span></a></li>
+        <li><a class="sede-franja__enlace" href="{{sede.tablon}}"><svg class="icono" aria-hidden="true"><use href="#i-tablon"/></svg><span><b>Tablón de anuncios</b><span>Edictos y anuncios oficiales</span></span></a></li>
+        <li><a class="sede-franja__enlace" href="{{sede.transparencia}}"><svg class="icono" aria-hidden="true"><use href="#i-ojo"/></svg><span><b>Transparencia</b><span>Cuentas, contratos y acuerdos</span></span></a></li>
+        <li><a class="sede-franja__enlace" href="{{sede.perfil}}"><svg class="icono" aria-hidden="true"><use href="#i-contrato"/></svg><span><b>Perfil del contratante</b><span>Licitaciones del Ayuntamiento</span></span></a></li>
+      </ul>
+      <p class="sede-franja__nota">Estos cuatro enlaces le llevan a la sede electrónica o a la Plataforma de Contratación del Sector Público.</p>
+    </div>
+  </section>
+  <div class="pie__cuerpo">
+    <div class="contenedor pie__rejilla">
+      <div class="pie__id">
+        <img class="pie__escudo" src="{{raiz}}marca/escudo-160.png" width="{{escudo.ancho160}}" height="160" alt="">
+        <div>
+          <p class="pie__nombre">Ayuntamiento de {{nombre}}</p>
+          <p>{{contacto.direccion}} · {{contacto.cp}} {{nombre}} ({{provincia}})</p>
+          <p>Teléfono <a href="{{contacto.tel_href}}">{{contacto.telefono}}</a> · <a class="rompe" href="mailto:{{contacto.correo}}">{{contacto.correo}}</a></p>
+          <p{{#horario.ejemplo}} data-dato-ejemplo="horario"{{/horario.ejemplo}}>{{horario.texto}}{{#horario.ejemplo}} <span class="ejemplo">Ejemplo</span>{{/horario.ejemplo}}</p>
+        </div>
+      </div>
+      <nav class="pie__nav" aria-label="Información legal">
+        <ul>
+          <li><a href="{{raiz}}contacto.html">Contacto</a></li>
+          <li><a href="{{raiz}}aviso-legal.html">Aviso legal</a></li>
+          <li><a href="{{raiz}}privacidad.html">Privacidad</a></li>
+          <li><a href="{{raiz}}cookies.html">Cookies</a></li>
+          <li><a href="{{raiz}}accesibilidad.html">Declaración de accesibilidad</a></li>
+        </ul>
+      </nav>
+      {{#redes.length}}<ul class="pie__redes" aria-label="Redes sociales del Ayuntamiento">
+        {{#redes}}<li><a href="{{url}}">{{nombre}}</a></li>{{/redes}}
+      </ul>{{/redes.length}}
+      <p class="pie__creditos">Escudo: {{escudo_credito.autor}}, {{escudo_credito.licencia}} (<a href="{{escudo_credito.url}}">Wikimedia Commons</a>).{{#hay_creditos_fotos}} Las fotos llevan su autor y licencia en <a href="{{raiz}}pueblo.html#creditos">El pueblo</a>.{{/hay_creditos_fotos}}</p>
+      {{#propuesta}}<p class="pie__propuesta" data-propuesta>Propuesta de diseño para el Ayuntamiento de {{nombre}} · no es la web oficial.</p>{{/propuesta}}
+    </div>
+  </div>
+</footer>
+
+<div class="cookies" id="cookies" role="region" aria-label="Aviso de cookies" hidden>
+  <div class="cookies__texto">
+    <p>Esta web no usa cookies. Solo guarda en su navegador que ha leído este aviso. El mapa de Google se carga únicamente si usted lo pide. <a href="{{raiz}}cookies.html">Más información</a>.</p>
+    <!-- [MANDO DE MAQUETA] inicio -->
+    <p class="cookies__revision">Durante la revisión de la propuesta también guarda la versión y el color que se estén probando.</p>
+    <!-- [MANDO DE MAQUETA] fin -->
+  </div>
+  <button class="boton boton--marca" type="button" data-aceptar-cookies>Entendido</button>
+</div>
+
+<!-- [MANDO DE MAQUETA] inicio -->
+<!-- Mando de la reunión: solo con ?revision. NUNCA viaja al sitio del Ayuntamiento:
+     python scripts/quitar_mandos.py lo borra (README, «Antes de entregar»). -->
+<div class="mando" id="mando" role="region" aria-label="Versiones de la propuesta" hidden>
+  <div class="mando__grupo" role="group" aria-labelledby="mando-version">
+    <p class="mando__titulo" id="mando-version">Versión</p>
+    <button type="button" class="mando__boton" data-densidad="puerta" aria-pressed="true">Puerta abierta</button>
+    <button type="button" class="mando__boton" data-densidad="sobria" aria-pressed="false">Sobria</button>
+  </div>
+  <div class="mando__grupo" role="group" aria-labelledby="mando-color">
+    <p class="mando__titulo" id="mando-color">Color</p>
+    {{#paletas}}<button type="button" class="mando__boton" data-paleta="{{clave}}" aria-pressed="{{pulsado}}"><span class="mando__muestra mando__muestra--{{clave}}" aria-hidden="true"></span>{{nombre}}</button>
+    {{/paletas}}
+  </div>
+</div>
+<!-- [MANDO DE MAQUETA] fin -->
+
+<script type="application/json" id="datos-vivos">{{{datos_vivos}}}</script>
+<script src="{{raiz}}js/vivo.js?v={{v.vivo}}" defer></script>
+<script src="{{raiz}}js/main.js?v={{v.main}}" defer></script>
+{{#pagina.cortina}}<script src="{{raiz}}js/vendor/gsap.min.js?v=3.12.5" defer></script>
+<script src="{{raiz}}js/cortina.js?v={{v.cortina}}" defer></script>
+{{/pagina.cortina}}

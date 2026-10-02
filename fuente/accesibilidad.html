@@ -1,0 +1,51 @@
+{{> documento_arriba}}
+<div class="seccion seccion--primera">
+  <div class="contenedor texto-largo legal">
+    <p>{{legal.titular}} se ha comprometido a hacer accesible su sitio web de conformidad con el Real Decreto 1112/2018, de 7 de septiembre, sobre accesibilidad de los sitios web y aplicaciones para dispositivos móviles del sector público.</p>
+    <p>Esta declaración de accesibilidad se aplica a este sitio web{{#url}} ({{url}}){{/url}}.</p>
+
+    <h2>Situación de cumplimiento</h2>
+    <p>Este sitio web es <b>parcialmente conforme</b> con el Real Decreto 1112/2018 debido a las excepciones y a la falta de conformidad de los aspectos que se indican a continuación. Se mantendrá así hasta que una auditoría externa compruebe la conformidad completa.</p>
+
+    <h2>Contenido no accesible</h2>
+    <h3>Falta de conformidad con el Real Decreto 1112/2018</h3>
+    <ul>
+      <li>Los documentos en PDF del tablón de anuncios y de la sede electrónica pueden no ser accesibles. No forman parte de esta web: los publica la sede electrónica.</li>
+      <li>El mapa de Google de la página de contacto es un contenido de terceros. Se ofrece también la dirección escrita y un enlace para abrirla en Google Maps.</li>
+      <li>Hasta la auditoría externa, la conformidad se ha comprobado con herramientas automáticas y con una revisión manual, que no garantizan cubrir todos los casos.</li>
+    </ul>
+    <h3>Carga desproporcionada</h3>
+    <p>No se aplica.</p>
+    <h3>El contenido no entra dentro del ámbito de la legislación aplicable</h3>
+    <ul>
+      <li>Los contenidos de terceros que no están financiados ni desarrollados por el Ayuntamiento ni están bajo su control: la sede electrónica, la Plataforma de Contratación del Sector Público y las redes sociales.</li>
+      <li>Los documentos ofimáticos publicados antes del 20 de septiembre de 2018.</li>
+    </ul>
+
+    <h2>Preparación de esta declaración</h2>
+    <p>Esta declaración se preparó el {{accesibilidad.fecha_texto}}.</p>
+    <p>El método empleado ha sido una autoevaluación hecha por quien ha desarrollado el sitio:</p>
+    <ul>
+      <li>comprobación automática de todas las páginas con axe-core, con las reglas de las WCAG 2.1 de nivel A y AA;</li>
+      <li>revisión manual del contraste, del uso con teclado, del zoom al 200 % y de la lectura en pantallas de 320 píxeles de ancho.</li>
+    </ul>
+    <p>Última revisión de la declaración: {{accesibilidad.fecha_texto}}.</p>
+
+    <h2>Observaciones y datos de contacto</h2>
+    <p>Puede hacer comunicaciones sobre requisitos de accesibilidad (artículo 10.2.a del Real Decreto 1112/2018). Por ejemplo:</p>
+    <ul>
+      <li>informar sobre cualquier posible incumplimiento por parte de este sitio web;</li>
+      <li>contarnos otras dificultades de acceso al contenido;</li>
+      <li>hacer cualquier otra consulta o sugerencia de mejora relativa a la accesibilidad del sitio web.</li>
+    </ul>
+    <p>Para ello, use el trámite <a href="{{accesibilidad.comunicaciones}}">{{accesibilidad.comunicaciones_nombre}}<span class="sr">, se abre la sede electrónica</span></a> de la sede electrónica, o llame al <a href="{{contacto.tel_href}}">{{contacto.telefono}}</a>.</p>
+    <p>También puede presentar una solicitud de información accesible o una queja con el trámite <a href="{{accesibilidad.solicitudes}}">{{accesibilidad.solicitudes_nombre}}<span class="sr">, se abre la sede electrónica</span></a>.</p>
+    <p>Las comunicaciones las recibe y las trata {{legal.titular}}.</p>
+
+    <h2>Procedimiento de aplicación</h2>
+    <p>El procedimiento de reclamación recogido en el artículo 13 del Real Decreto 1112/2018 se inicia presentando una reclamación con el trámite <a href="{{accesibilidad.reclamacion}}">{{accesibilidad.reclamacion_nombre}}<span class="sr">, se abre la sede electrónica</span></a>.</p>
+    <p>Puede iniciar una reclamación si, después de hacer una solicitud de información accesible o una queja, se la han desestimado, no está de acuerdo con la decisión o la respuesta no cumple los requisitos del artículo 12.5. También puede hacerlo si han pasado veinte días hábiles sin respuesta.</p>
+    <p>La reclamación la resuelve {{legal.titular}}.</p>
+  </div>
+</div>
+{{> documento_abajo}}

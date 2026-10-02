@@ -1,0 +1,25 @@
+{{> documento_arriba}}
+<div class="seccion seccion--primera">
+  <div class="contenedor texto-largo legal">
+    <h2>Esta web no recoge datos personales</h2>
+    <p>No tiene formularios, cuentas de usuario, estadísticas de visitas ni publicidad. No usa cookies. Las letras y los programas que necesita se sirven desde esta misma web, así que visitarla no avisa a ninguna empresa externa.</p>
+
+    <h2>Lo que se guarda en su navegador</h2>
+    <p>Solo lo imprescindible para que la web funcione, y nunca sale de su dispositivo. El detalle está en la <a href="cookies.html">página de cookies</a>.</p>
+
+    <h2>El mapa de Google</h2>
+    <p>En la página de contacto, el mapa de Google no se carga hasta que usted pulsa «Ver el mapa». Si lo pulsa, Google recibe su dirección IP y puede usar cookies, según su propia <a href="https://policies.google.com/privacy?hl=es">política de privacidad</a>.</p>
+
+    <h2>Trámites, solicitudes y quejas</h2>
+    <p>Se hacen en la <a href="{{sede.inicio}}">sede electrónica</a>. Allí el responsable del tratamiento de sus datos es {{legal.titular}}, y cada trámite le informa de para qué se usan sus datos y durante cuánto tiempo.</p>
+
+    <h2>Sus derechos</h2>
+    <p>Puede pedir el acceso, la rectificación, la supresión, la limitación, la portabilidad o la oposición al tratamiento de sus datos en la sede electrónica:</p>
+    <ul>
+      {{#privacidad.tramites}}<li><a href="{{href}}">{{nombre}}<span class="sr">, se abre la sede electrónica</span></a></li>
+      {{/privacidad.tramites}}
+    </ul>
+    <p>Si cree que no se han respetado sus derechos, puede reclamar ante la <a href="https://www.aepd.es/">Agencia Española de Protección de Datos</a>.</p>
+  </div>
+</div>
+{{> documento_abajo}}

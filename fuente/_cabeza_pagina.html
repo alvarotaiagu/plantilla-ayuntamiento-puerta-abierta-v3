@@ -1,0 +1,13 @@
+<div class="cabeza-pagina">
+  <div class="contenedor">
+    <nav class="migas" aria-label="Usted está aquí">
+      <ol>
+        <li><a href="{{raiz}}index.html">Inicio</a></li>
+        {{#pagina.migas}}<li><a href="{{raiz}}{{href}}">{{texto}}</a></li>{{/pagina.migas}}
+        <li><span aria-current="page">{{pagina.titulo}}</span></li>
+      </ol>
+    </nav>
+    <h1 class="cabeza-pagina__titulo" id="titulo-pagina">{{pagina.titulo}}</h1>
+    {{#pagina.entradilla}}<p class="entradilla">{{pagina.entradilla}}</p>{{/pagina.entradilla}}
+  </div>
+</div>

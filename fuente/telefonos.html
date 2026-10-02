@@ -1,0 +1,22 @@
+{{> documento_arriba}}
+<section class="seccion seccion--primera" aria-labelledby="t-listin">
+  <div class="contenedor">
+    <h2 class="sr" id="t-listin">Listín de teléfonos</h2>
+    <div class="listin-completo">
+      {{#listin_grupos}}<div class="listin-grupo">
+        <h3 class="listin-grupo__titulo">{{grupo}}</h3>
+        <ul class="listin">
+          {{#items}}<li class="listin__fila{{#urgente}} listin__fila--urgente{{/urgente}}">
+            <span class="listin__nombre">{{nombre}}{{#detalle}}<small>{{detalle}}</small>{{/detalle}}{{#clave}}<span class="listin__estado" data-vivo="servicio" data-clave="{{clave}}">{{{estado}}}</span>{{/clave}}</span>
+            <span class="listin__puntos" aria-hidden="true"></span>
+            <a class="listin__numero" href="{{tel_href}}"><span class="sr">Llamar a {{nombre}}: </span>{{telefono}}</a>
+          </li>
+          {{/items}}
+        </ul>
+      </div>
+      {{/listin_grupos}}
+    </div>
+    <p class="nota-fuente">Solo aparecen los teléfonos confirmados. Si echa en falta uno, llame al Ayuntamiento: <a href="{{contacto.tel_href}}">{{contacto.telefono}}</a>.</p>
+  </div>
+</section>
+{{> documento_abajo}}

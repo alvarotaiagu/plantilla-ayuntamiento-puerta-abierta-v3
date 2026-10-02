@@ -1,0 +1,32 @@
+{
+  "slug": "ribera-del-fresno",
+  "letra": {
+    "titulares": "Besley",
+    "texto": "Libre Franklin",
+    "google": "family=Besley:ital,wght@0,600;0,700;1,600&family=Libre+Franklin:wght@400;600"
+  },
+  "giros_paleta": [
+    100,
+    -100
+  ],
+  "densidad": "puerta",
+  "colores": {
+    "papel": "#FAF9F5",
+    "superficie": "#FFFFFF",
+    "tinta": "#1A1E1B",
+    "marca": "#008F4C",
+    "oro": "#EAC102",
+    "alerta": "#ED1C24"
+  },
+  "esmaltes": {
+    "azur": "#0071BC",
+    "gules": "#ED1C24",
+    "natural": "#784421",
+    "oro": "#EAC102",
+    "plata": "#E3E4E5",
+    "sable": "#000000",
+    "sinople": "#008F4C"
+  },
+  "principal": "sinople",
+  "principal_motivo": "El fresno de sinople es la pieza que da nombre al pueblo; por área ganaría el azur de la campaña."
+}

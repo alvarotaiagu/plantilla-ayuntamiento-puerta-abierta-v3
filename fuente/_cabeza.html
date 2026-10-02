@@ -1,0 +1,52 @@
+<meta charset="utf-8">
+{{#robots_no}}<meta name="robots" content="noindex, nofollow">
+{{/robots_no}}<meta name="viewport" content="width=device-width, initial-scale=1">
+{{#base_404}}<base href="{{base_404}}">
+{{/base_404}}<title>{{pagina.titulo_doc}}</title>
+<meta name="description" content="{{pagina.descripcion}}">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_ES">
+<meta property="og:title" content="{{og.titulo}}">
+<meta property="og:description" content="{{og.descripcion}}">
+<meta property="og:image" content="{{og.imagen}}">
+<meta name="theme-color" content="{{color_tema}}">
+<link rel="icon" href="{{raiz}}favicon.svg" type="image/svg+xml">
+<link rel="icon" href="{{raiz}}favicon.png" type="image/png" sizes="64x64">
+<link rel="manifest" href="{{raiz}}manifest.json">
+{{#precargar}}<link rel="preload" href="{{raiz}}{{.}}" as="font" type="font/woff2" crossorigin>
+{{/precargar}}<link rel="stylesheet" href="{{raiz}}css/fuentes.css?v={{v.fuentes}}">
+<link rel="stylesheet" href="{{raiz}}css/marca.css?v={{v.marca}}">
+<link rel="stylesheet" href="{{raiz}}css/base.css?v={{v.base}}">
+<script>
+/* Bloqueante a propósito: lo que cambia el aspecto se decide antes del primer
+   pintado, o la página arranca de una forma y salta a otra. */
+(function () {
+  var h = document.documentElement;
+  h.className = h.className.replace('sin-js', 'con-js');
+{{#pagina.cortina}}
+  /* La cortina: solo en la portada, una vez por sesión, nunca con movimiento
+     reducido. Si sessionStorage falla (navegación privada estricta), no sale. */
+  try {
+    var quieto = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!quieto && !sessionStorage.getItem('{{marca.slug}}-cortina')) {
+      sessionStorage.setItem('{{marca.slug}}-cortina', '1');
+      h.classList.add('con-cortina');
+      /* red de seguridad: si js/cortina.js no llega, se quita igual */
+      window.__cortinaSeguro = setTimeout(function () { h.classList.remove('con-cortina'); }, 2600);
+    }
+  } catch (e) {}
+{{/pagina.cortina}}
+  /* [MANDO DE MAQUETA] inicio */
+  /* Solo con ?revision: lo guardado no cuenta fuera de la reunión, o un móvil
+     donde se probó la versión sobria la seguiría viendo sin mando para volver. */
+  if (!/[?&]revision\b/.test(location.search)) return;
+  h.classList.add('en-revision');
+  try {
+    var d = localStorage.getItem('{{marca.slug}}-densidad');
+    if (d === 'sobria' || d === 'puerta') { h.classList.remove('densidad-puerta', 'densidad-sobria'); h.classList.add('densidad-' + d); }
+    var p = localStorage.getItem('{{marca.slug}}-paleta');
+    if (p === 'a' || p === 'b' || p === 'c') h.setAttribute('data-paleta', p);
+  } catch (e) {}
+  /* [MANDO DE MAQUETA] fin */
+})();
+</script>

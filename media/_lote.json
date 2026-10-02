@@ -1,0 +1,10 @@
+[
+  { "origen": "../../plantilla-ayuntamiento-bocetos/img/web-calle-con-torre.jpg", "salida": "calle-torre" },
+  { "origen": "../../plantilla-ayuntamiento-bocetos/img/web-cabecera-panoramica-iglesia.jpg", "salida": "iglesia-torres", "recorte": [0, 0, 1, 0.8] },
+  { "origen": "../../plantilla-ayuntamiento-bocetos/img/web-casa-cultura-fachada.jpg", "salida": "casa-cultura" },
+  { "origen": "../../plantilla-ayuntamiento-bocetos/img/commons-monumento-melendez-valdes.jpg", "salida": "monumento-melendez" },
+  { "origen": "../../plantilla-ayuntamiento-bocetos/img/commons-oppidum-hornachuelos-3.jpg", "salida": "oppidum" },
+  { "origen": "../../plantilla-ayuntamiento-bocetos/img/commons-pozo-la-tinajona.jpg", "salida": "pozo-tinajona", "recorte": [0, 0, 0.86, 0.88] },
+  { "origen": "../../plantilla-ayuntamiento-bocetos/img/commons-lavadero-lanas-arcos.jpg", "salida": "lavadero", "recorte": [0, 0, 0.86, 0.88] },
+  { "origen": "../../plantilla-ayuntamiento-bocetos/img/web-dulces-tipicos-1.jpg", "salida": "dulces" }
+]

@@ -1,0 +1,4 @@
+[
+  { "origen": "../../../../plantilla-ayuntamiento-bocetos/segura/castillo-commons.jpg", "salida": "../pruebas/segura-de-leon/media/castillo" },
+  { "origen": "../../../../plantilla-ayuntamiento-bocetos/segura/pueblo-desde-castillo-commons.jpg", "salida": "../pruebas/segura-de-leon/media/pueblo-desde-castillo" }
+]

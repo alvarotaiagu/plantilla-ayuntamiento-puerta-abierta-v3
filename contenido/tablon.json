@@ -1,0 +1,116 @@
+{
+  "_leeme": "GENERADO por scripts/tablon.mjs. Se puede editar a mano titulo_claro (título en lenguaje claro), tema (+ \"tema_manual\": true) y oculto. Lo demás se pisa al refrescar.",
+  "fuente": "https://riberadelfresno.sedelectronica.es/board (copia del 02/10/2026)",
+  "actualizado": "2026-10-02T16:14:39.116Z",
+  "excluidas": 2,
+  "motivos_exclusion": [
+    "declaración de herederos",
+    "acta de selección"
+  ],
+  "entradas": [
+    {
+      "titulo": "CONVOCATORIA AYUDA NATALIDAD CORRECTA 2026",
+      "descripcion": "CONVOCATORIA 2026 AYUDAS A LA NATALIDAD",
+      "expediente": "182/2026",
+      "procedimiento": "Disposiciones Normativas",
+      "categoria": "Anuncios",
+      "fecha": "2026-10-01",
+      "url": "https://riberadelfresno.sedelectronica.es/preview-document/02af28b6-9fdb-4b29-968c-eee1a7582f0a",
+      "tema": "Ayudas",
+      "tema_manual": false,
+      "titulo_claro": "Convocatoria 2026 de ayudas a la natalidad",
+      "oculto": false
+    },
+    {
+      "titulo": "ANUNCIO PREVIO A LA CONSTRUCCIÓN DE INSTALACIÓN ELÉCTRICAS ANILLO NORTE",
+      "descripcion": "AUTORIZACIÓN PREVIA A LA CONSTRUCCIÓN DE INSTALACIONES ELÉCTRICAS ANILLO NORTE EN RIBERA DEL FRESNO",
+      "expediente": "1526/2026",
+      "procedimiento": "Procedimiento Genérico",
+      "categoria": "Anuncios",
+      "fecha": "2026-09-29",
+      "url": "https://riberadelfresno.sedelectronica.es/preview-document/e93c0528-669d-435a-9c14-ea0cd2393a51",
+      "tema": "Obras",
+      "tema_manual": false,
+      "titulo_claro": "Anuncio previo de las instalaciones eléctricas «Anillo Norte»",
+      "oculto": false
+    },
+    {
+      "titulo": "Anuncio celebración sesión Ordinaria Pleno 30 de septiembre de 2026",
+      "descripcion": "Sesión Pleno Ordinario día 30 de septiembre de 2026.",
+      "expediente": "1504/2026",
+      "procedimiento": "Procedimiento Genérico",
+      "categoria": "Órganos de gobierno",
+      "fecha": "2026-09-25",
+      "url": "https://riberadelfresno.sedelectronica.es/preview-document/38e93efa-c78c-46df-a85c-31b2cf7f017c",
+      "tema": "Pleno",
+      "tema_manual": false,
+      "titulo_claro": "Pleno ordinario del 30 de septiembre: convocatoria",
+      "oculto": false
+    },
+    {
+      "titulo": "ANUNCIO COBRANZA IAE 2026",
+      "descripcion": "ANUNCIO COBRANZA IAE 2026",
+      "expediente": "1101/2026",
+      "procedimiento": "Procedimiento Genérico",
+      "categoria": "Anuncios",
+      "fecha": "2026-08-24",
+      "url": "https://riberadelfresno.sedelectronica.es/preview-document/3f841651-c794-4d5f-abc7-f70773d5bb3e",
+      "tema": "Impuestos",
+      "tema_manual": false,
+      "titulo_claro": "Periodo de cobro del IAE 2026",
+      "oculto": false
+    },
+    {
+      "titulo": "Anuncio celebración sesión Extraordinaria Pleno 06 de agosto 2026",
+      "descripcion": "Sesión Extraordinaria Pleno 06 de agosto de 2026.",
+      "expediente": "1256/2026",
+      "procedimiento": "Procedimiento Genérico",
+      "categoria": "Órganos de gobierno",
+      "fecha": "2026-08-03",
+      "url": "https://riberadelfresno.sedelectronica.es/preview-document/731a9524-6eee-45c4-8078-90c16624a687",
+      "tema": "Pleno",
+      "tema_manual": false,
+      "titulo_claro": "Pleno extraordinario del 6 de agosto: convocatoria",
+      "oculto": false
+    },
+    {
+      "titulo": "Anuncio incorporación nuevo punto orden del día celebración sesión Extraordinaria Pleno 06 de agosto 2026",
+      "descripcion": "Sesión Extraordinaria Pleno 06 de agosto de 2026.",
+      "expediente": "1256/2026",
+      "procedimiento": "Procedimiento Genérico",
+      "categoria": "Órganos de gobierno",
+      "fecha": "2026-08-03",
+      "url": "https://riberadelfresno.sedelectronica.es/preview-document/56744471-3e15-4f83-bb45-5610964f3bc8",
+      "tema": "Pleno",
+      "tema_manual": false,
+      "titulo_claro": "Pleno del 6 de agosto: punto añadido al orden del día",
+      "oculto": false
+    },
+    {
+      "titulo": "Extracto Bases Asociaciones",
+      "descripcion": "EXTRRACTO BASES SUBVENCION ASOCIACIONES",
+      "expediente": "1153/2026",
+      "procedimiento": "Concesión de Subvenciones",
+      "categoria": "Ayudas y Subvenciones",
+      "fecha": "2026-07-16",
+      "url": "https://riberadelfresno.sedelectronica.es/preview-document/a18eb373-57db-40ae-9cde-4c13311f98bf",
+      "tema": "Ayudas",
+      "tema_manual": false,
+      "titulo_claro": "Subvenciones para asociaciones: extracto de las bases",
+      "oculto": false
+    },
+    {
+      "titulo": "B.O.P. nº. 91 - Anuncio 1752_2026 Bases reguladoras para ayudas mínimos vitales 2026",
+      "descripcion": "Bases reguladoras ayudas para suministros mínimos vitales 2026",
+      "expediente": "745/2026",
+      "procedimiento": "Concesión de Subvenciones",
+      "categoria": "Ayudas y Subvenciones",
+      "fecha": "2026-05-19",
+      "url": "https://riberadelfresno.sedelectronica.es/preview-document/6f4c8681-90a6-46ae-a32f-c5601f49af42",
+      "tema": "Ayudas",
+      "tema_manual": false,
+      "titulo_claro": "Ayudas para suministros mínimos vitales 2026: bases (BOP n.º 91)",
+      "oculto": false
+    }
+  ]
+}

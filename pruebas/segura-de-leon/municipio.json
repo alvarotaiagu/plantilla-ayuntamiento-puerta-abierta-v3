@@ -1,0 +1,130 @@
+{
+  "_leeme": "Prueba de reskin con un segundo municipio real (datos comprobados el 02/10/2026, fuentes en plantilla-ayuntamiento-bocetos/segura/DATOS-SEGURA.md). La usa scripts/verificar.mjs: aplica esta carpeta sobre una copia y falla si queda algún resto del primer municipio.",
+  "slug": "segura-de-leon",
+  "nombre": "Segura de León",
+  "nombre_corto": "Segura",
+  "provincia": "Badajoz",
+  "comarca": "Tentudía",
+  "gentilicio": "segureños",
+  "habitantes": { "valor": 1758, "fuente": "INE, padrón a 1-1-2025" },
+  "altitud_m": 698,
+  "lema": null,
+  "propuesta": true,
+  "indexar": false,
+  "url": "",
+  "fecha_datos": "2026-10-02",
+  "web_actual": "https://seguradeleon.es",
+  "contacto": {
+    "direccion": "Plaza de España, 1",
+    "cp": "06270",
+    "telefono": "924 703 011",
+    "fax": "924 703 109",
+    "correo": "ayuntamiento@seguradeleon.es",
+    "mapa_consulta": "Ayuntamiento de Segura de León, Plaza de España 1, 06270 Segura de León, Badajoz"
+  },
+  "horario": {
+    "texto": "Lunes a viernes, de 9:00 a 14:00",
+    "tramos": [{ "dias": [1, 2, 3, 4, 5], "de": "09:00", "a": "14:00" }],
+    "ejemplo": true
+  },
+  "redes": [
+    { "nombre": "Facebook", "url": "https://www.facebook.com/aytoseguradeleon" },
+    { "nombre": "Instagram", "url": "https://www.instagram.com/ayuntamientoseguradeleon/" }
+  ],
+  "plenos_video": null,
+  "sede": {
+    "tipo": "gestiona",
+    "base": "https://seguradeleon.sedelectronica.es",
+    "perfil_contratante": "https://contrataciondelestado.es/wps/poc?uri=deeplink:perfilContratante&idBp=uJC17TpChbQQK2TEfXGy%2BA%3D%3D",
+    "instancia_general": "5161fa8d-970e-4b48-a506-b2ac34ceafe5",
+    "quejas": "ae05799c-df61-43d1-be43-31943561cea9"
+  },
+  "tablon_autorizado": false,
+  "hoja": { "id": "", "pestanas": { "avisos": "Avisos", "agenda": "Agenda", "noticias": "Noticias" } },
+  "legal": { "titular": "Ayuntamiento de Segura de León", "nif": "P0612400B", "dir3": "L01061247", "direccion_registro": "Plaza de España, 1" },
+  "escudo_credito": { "autor": "Mfarinias (diseño original de Antonio Alfaro de Prado)", "licencia": "CC BY-SA 4.0", "url": "https://commons.wikimedia.org/wiki/File:Escudo_Segura_de_Le%C3%B3n.svg" },
+  "corporacion": {
+    "nota": "La lista completa de concejales está por confirmar.",
+    "grupos": [],
+    "miembros": [
+      { "nombre": "Isabel María Garduño Carmona", "grupo": "PSOE", "cargo": "Alcaldesa-Presidenta", "alcalde": true }
+    ]
+  },
+  "alcaldia": {},
+  "quien": [],
+  "servicios": [
+    { "nombre": "Guardia Civil", "direccion": "C/ Guardia Civil, 5", "telefono": "924 703 130", "grupo": "Urgencias y seguridad" },
+    { "nombre": "Consultorio médico", "direccion": "C/ Iglesia, 7", "telefono": "924 703 326", "grupo": "Salud" },
+    { "nombre": "Biblioteca «Maestro Don Jacinto»", "direccion": "C/ Manuel Medina Gata, 2", "horario": "Lunes a viernes, de 16:00 a 20:00 (en julio y agosto, de 10:00 a 14:00)", "tramos": [{ "dias": [1, 2, 3, 4, 5], "de": "16:00", "a": "20:00" }], "telefono": "924 703 525", "grupo": "Cultura" }
+  ],
+  "urgencias": [{ "nombre": "Emergencias", "telefono": "112" }],
+  "listin_corto": ["Emergencias", "Guardia Civil", "Consultorio médico", "Biblioteca «Maestro Don Jacinto»"],
+  "tramites": {
+    "atajos": [
+      { "nombre": "Empadronarme", "nota": "Alta o renovación en el padrón", "id": "d120f65c-c936-4a95-bd50-e7ae970ca149" },
+      { "nombre": "Volante de empadronamiento", "nota": "Certificado o volante", "id": "1c74bc66-8b69-4f3c-8183-d3591f0504ed" },
+      { "nombre": "Licencia de obra", "nota": "Licencia o autorización urbanística", "id": "15fabacb-83b1-47d1-b435-508245672051" },
+      { "nombre": "Avisar de una incidencia", "nota": "Una farola, un bache, un contenedor", "id": "d643e8cf-0824-4617-a997-c523799b4a93" }
+    ],
+    "temas": [
+      { "nombre": "Vivir aquí", "nota": "Padrón, certificados, boda civil", "icono": "casa", "tramites": [
+        { "nombre": "Empadronarme o renovar", "id": "d120f65c-c936-4a95-bd50-e7ae970ca149" },
+        { "nombre": "Volante de empadronamiento", "id": "1c74bc66-8b69-4f3c-8183-d3591f0504ed" },
+        { "nombre": "Casarme en el Ayuntamiento", "id": "fe871c4e-f81e-4357-a5b8-94ef42a9da42" } ] },
+      { "nombre": "Casa y obras", "nota": "Licencias y agua", "icono": "obra", "tramites": [
+        { "nombre": "Obra pequeña: declaración responsable", "id": "5d383e20-32a5-4fcf-8725-e51c51e83e6a" },
+        { "nombre": "Obra mayor: licencia urbanística", "id": "15fabacb-83b1-47d1-b435-508245672051" },
+        { "nombre": "Dar de alta el agua", "id": "5697411e-7a60-4df6-9867-07258add24de" } ] },
+      { "nombre": "Opinar y avisar", "nota": "Quejas, incidencias, cualquier solicitud", "icono": "mensaje", "tramites": [
+        { "nombre": "Avisar de una incidencia en la calle", "id": "d643e8cf-0824-4617-a997-c523799b4a93" },
+        { "nombre": "Quejas y sugerencias", "id": "ae05799c-df61-43d1-be43-31943561cea9" },
+        { "nombre": "Cualquier otra solicitud", "id": "5161fa8d-970e-4b48-a506-b2ac34ceafe5" } ] }
+    ],
+    "momentos": [
+      { "nombre": "Voy a hacer obra", "nota": "Según el tamaño de la obra, un papel u otro.", "pasos": [
+        { "texto": "Obra pequeña: declaración responsable", "id": "5d383e20-32a5-4fcf-8725-e51c51e83e6a" },
+        { "texto": "Obra mayor: licencia urbanística", "id": "15fabacb-83b1-47d1-b435-508245672051" } ] }
+    ],
+    "sinonimos": {
+      "empadronarme": ["padrón", "empadronamiento"], "obra": ["urbanística", "obras"], "agua": ["abastecimiento", "agua potable"],
+      "boda": ["matrimonio"], "queja": ["quejas", "sugerencias"], "bache": ["incidencia", "vía pública"], "certificado": ["volante", "certificado"]
+    },
+    "todos": [
+      { "nombre": "Instancia General", "id": "5161fa8d-970e-4b48-a506-b2ac34ceafe5" },
+      { "nombre": "Solicitud de Certificado o Volante de Empadronamiento", "id": "1c74bc66-8b69-4f3c-8183-d3591f0504ed" },
+      { "nombre": "Solicitud de Alta o Renovación de la Inscripción en el Padrón Municipal de Habitantes", "id": "d120f65c-c936-4a95-bd50-e7ae970ca149" },
+      { "nombre": "Aviso de Incidencia en la Vía Pública", "id": "d643e8cf-0824-4617-a997-c523799b4a93" },
+      { "nombre": "Quejas y Sugerencias", "id": "ae05799c-df61-43d1-be43-31943561cea9" },
+      { "nombre": "Solicitud de Licencia o Autorización Urbanística", "id": "15fabacb-83b1-47d1-b435-508245672051" },
+      { "nombre": "Declaración Responsable o Comunicación en Materia Urbanística", "id": "5d383e20-32a5-4fcf-8725-e51c51e83e6a" },
+      { "nombre": "Domiciliación de Tributos Periódicos (alta, baja y modificación)", "id": "a93cd417-195c-40c5-acf2-9a92b36c8809" },
+      { "nombre": "Alta de Abastecimiento y Suministro de Agua Potable", "id": "5697411e-7a60-4df6-9867-07258add24de" },
+      { "nombre": "Inscripción en Actividades y Cursos", "id": "1086e3fa-b560-4deb-9c55-66bed39d82f4" },
+      { "nombre": "Solicitud para la Celebración de Matrimonio Civil", "id": "fe871c4e-f81e-4357-a5b8-94ef42a9da42" },
+      { "nombre": "Solicitud de Participación en Procesos de Selección de Personal", "id": "970c9466-4c31-4645-bebc-61e2d9f413ff" }
+    ]
+  },
+  "pueblo": {
+    "entradilla": "Una villa de Tentudía a la sombra de un castillo santiaguista, capital de la Encomienda Mayor de León de la Orden de Santiago.",
+    "historia": [
+      "La Orden de Santiago concedió fuero a la villa en 1274 y la hizo capital de la Encomienda Mayor de León. De ahí la cruz de Santiago y el león de su escudo.",
+      "El castillo lo levantó la Orden en el siglo XIV. Alonso de Cárdenas, último maestre de la Orden, lo convirtió en su palacio cuando fue comendador mayor. Hoy se puede visitar."
+    ],
+    "lugares": [
+      { "nombre": "El castillo", "texto": "Castillo santiaguista del siglo XIV, con la torre del Homenaje y sus 24 almenas.", "foto": "castillo", "alt": "El castillo sobre el caserío blanco" },
+      { "nombre": "El pueblo desde el castillo", "texto": "Los tejados de la villa vistos desde las murallas.", "foto": "pueblo-desde-castillo", "alt": "Tejados del pueblo vistos desde lo alto del castillo" }
+    ],
+    "patrimonio": [],
+    "fiestas": [
+      { "mes": 2, "nombre": "Candelaria y San Blas", "cuando": "2 de febrero", "fecha_fija": "02-02" },
+      { "mes": 5, "nombre": "Virgen de los Remedios y Cruces de Mayo", "cuando": "En mayo" },
+      { "mes": 8, "nombre": "San Roque, patrón", "cuando": "15 y 16 de agosto", "fecha_fija": "08-16" },
+      { "mes": 9, "nombre": "Las Capeas, en honor al Cristo de la Reja", "cuando": "Mediados de septiembre; los actos centrales, el 14", "fecha_fija": "09-14", "mayor": true }
+    ],
+    "personajes": [],
+    "rutas": []
+  },
+  "fotos": {
+    "hero": { "archivo": "castillo", "alt": "El castillo santiaguista sobre las casas encaladas", "posicion": "50% 40%" }
+  }
+}

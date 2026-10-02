@@ -1,0 +1,1555 @@
+{
+  "_leeme": "Datos del municipio. Lo lee scripts/aplicar.mjs. Fuentes de cada dato en DATOS.md. Lo que no está confirmado lleva \"ejemplo\": true y sale con la etiqueta «Ejemplo».",
+  "slug": "ribera-del-fresno",
+  "nombre": "Ribera del Fresno",
+  "nombre_corto": "Ribera",
+  "provincia": "Badajoz",
+  "comarca": "Tierra de Barros",
+  "gentilicio": "ribereños",
+  "habitantes": {
+    "valor": 3130,
+    "fuente": "INE 2025"
+  },
+  "altitud_m": 399,
+  "lema": "Vive la Historia",
+  "propuesta": true,
+  "indexar": false,
+  "url": "",
+  "fecha_datos": "2026-10-02",
+  "web_actual": "https://riberadelfresno.es",
+  "contacto": {
+    "direccion": "C/ Ayuntamiento, 1",
+    "cp": "06225",
+    "telefono": "924 536 011",
+    "fax": "924 536 428",
+    "correo": "ayuntamiento@riberadelfresno.es",
+    "mapa_consulta": "Ayuntamiento de Ribera del Fresno, Calle Ayuntamiento 1, 06225 Ribera del Fresno, Badajoz"
+  },
+  "horario": {
+    "texto": "Lunes a viernes, de 9:00 a 14:00",
+    "tramos": [
+      {
+        "dias": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "de": "09:00",
+        "a": "14:00"
+      }
+    ],
+    "ejemplo": true
+  },
+  "redes": [
+    {
+      "nombre": "Facebook",
+      "url": "https://www.facebook.com/AyuntamientodeRiberadelFresno"
+    },
+    {
+      "nombre": "Instagram",
+      "url": "https://www.instagram.com/aytoriberadelfresno/"
+    },
+    {
+      "nombre": "X (Twitter)",
+      "url": "https://twitter.com/aytoribera"
+    },
+    {
+      "nombre": "YouTube",
+      "url": "https://www.youtube.com/channel/UC6OMGwPGD_SNkhk9ew5Bc-A"
+    }
+  ],
+  "plenos_video": {
+    "texto": "Las grabaciones de los plenos se publican en el Facebook del Ayuntamiento.",
+    "url": "https://www.facebook.com/AyuntamientodeRiberadelFresno"
+  },
+  "sede": {
+    "tipo": "gestiona",
+    "base": "https://riberadelfresno.sedelectronica.es",
+    "perfil_contratante": "https://contrataciondelestado.es/wps/portal/!ut/p/b0/DcexDkAwEADQTzqLBImhmsYsBtx2ieKiTlPH4Ot52wOEEVDo4ZWUT6Hwf5q9j4Flr6JPCwd7iiZSEvUwAALy3ESYss5i6bY3uaK_10tN06bc1DXE4zAfE0Dcfg!!/",
+    "instancia_general": "5161fa8d-970e-4b48-a506-b2ac34ceafe5",
+    "quejas": "ae05799c-df61-43d1-be43-31943561cea9"
+  },
+  "tablon_autorizado": false,
+  "hoja": {
+    "id": "",
+    "pestanas": {
+      "avisos": "Avisos",
+      "agenda": "Agenda",
+      "noticias": "Noticias"
+    }
+  },
+  "legal": {
+    "titular": "Ayuntamiento de Ribera del Fresno",
+    "nif": "P0611300E",
+    "dir3": "L01061134",
+    "direccion_registro": "C/ Ayuntamiento, 1"
+  },
+  "escudo_nota": "Escudo de Wikimedia Commons (SanchoPanzaXXI, CC BY-SA 4.0). El Pleno abrió en 2024 un expediente para modificarlo.",
+  "escudo_credito": {
+    "autor": "SanchoPanzaXXI",
+    "licencia": "CC BY-SA 4.0",
+    "url": "https://commons.wikimedia.org/wiki/File:Escudo_de_Ribera_del_Fresno.svg"
+  },
+  "corporacion": {
+    "legislatura": "2023-2027",
+    "nota": "Gobierna una coalición de PP, Grupo Independiente de Ribera (GIR) e IU. Según los BOP de 2023 a 2026.",
+    "grupos": [
+      {
+        "sigla": "PP",
+        "nombre": "Partido Popular",
+        "color": "#1F5FA8",
+        "trama": "liso",
+        "gobierno": true
+      },
+      {
+        "sigla": "GIR",
+        "nombre": "Grupo Independiente de Ribera",
+        "color": "#2E7D4F",
+        "trama": "rayas",
+        "gobierno": true
+      },
+      {
+        "sigla": "IU",
+        "nombre": "Izquierda Unida",
+        "color": "#8E2F4F",
+        "trama": "puntos",
+        "gobierno": true
+      },
+      {
+        "sigla": "PSOE",
+        "nombre": "Partido Socialista",
+        "color": "#C8402A",
+        "trama": "cuadros",
+        "gobierno": false
+      }
+    ],
+    "miembros": [
+      {
+        "nombre": "Miguel Ángel Araya Salguero",
+        "grupo": "PP",
+        "cargo": "Alcalde-Presidente",
+        "alcalde": true
+      },
+      {
+        "nombre": "Tamara Ledesma Becerra",
+        "grupo": "GIR",
+        "cargo": "Primera teniente de alcalde",
+        "delegacion": "Cultura y Participación Ciudadana"
+      },
+      {
+        "nombre": "Andrés Bermejo Fernández",
+        "grupo": "IU",
+        "cargo": "Segundo teniente de alcalde",
+        "delegacion": "Deporte, Juventud, Mujer e Igualdad"
+      },
+      {
+        "nombre": "Teresa Hernández Gordillo",
+        "grupo": "PP",
+        "cargo": "Tercera teniente de alcalde",
+        "delegacion": "Festejos, Sanidad y Agricultura"
+      },
+      {
+        "nombre": "Ángel Rebollo Silva",
+        "grupo": "GIR",
+        "cargo": "Concejal delegado",
+        "delegacion": "Urbanismo, Infraestructuras, Obras y Servicios"
+      },
+      {
+        "nombre": "María Teresa Rodríguez Rosa",
+        "grupo": "IU",
+        "cargo": "Concejala delegada",
+        "delegacion": "Turismo, Patrimonio Cultural y Natural, Comercio y Promoción Industrial"
+      },
+      {
+        "nombre": "Inmaculada Campillejo Carvajal",
+        "grupo": "PP",
+        "cargo": "Concejala delegada",
+        "delegacion": "Educación, Políticas Sociales y Universidad Popular"
+      },
+      {
+        "nombre": "Noelia Contreras Campillejo",
+        "grupo": "PSOE",
+        "cargo": "Concejala"
+      },
+      {
+        "nombre": "Antonio Domínguez Guerrero",
+        "grupo": "PSOE",
+        "cargo": "Concejal"
+      },
+      {
+        "nombre": "María del Rosario Campillejo Murillo",
+        "grupo": "PSOE",
+        "cargo": "Concejala"
+      },
+      {
+        "nombre": "Manuel Chacón Valverde",
+        "grupo": "PSOE",
+        "cargo": "Concejal"
+      }
+    ],
+    "secretaria": "María José Guillén Gerez, secretaria-interventora"
+  },
+  "alcaldia": {
+    "saluda": "Esta web es la puerta del Ayuntamiento abierta todo el día. Aquí puede hacer sus trámites sin desplazarse, enterarse de lo que pasa en el pueblo y saber a quién dirigirse en cada caso.",
+    "saluda_ejemplo": true
+  },
+  "quien": [
+    {
+      "tema": "Obras, calles y servicios",
+      "nombre": "Ángel Rebollo Silva",
+      "cargo": "Concejal de Urbanismo, Infraestructuras, Obras y Servicios",
+      "portada": true
+    },
+    {
+      "tema": "Colegios, servicios sociales y Universidad Popular",
+      "nombre": "Inmaculada Campillejo Carvajal",
+      "cargo": "Concejala de Educación y Políticas Sociales",
+      "portada": true
+    },
+    {
+      "tema": "Fiestas, sanidad y campo",
+      "nombre": "Teresa Hernández Gordillo",
+      "cargo": "Tercera teniente de alcalde",
+      "portada": true
+    },
+    {
+      "tema": "Deporte, juventud e igualdad",
+      "nombre": "Andrés Bermejo Fernández",
+      "cargo": "Segundo teniente de alcalde",
+      "portada": true
+    },
+    {
+      "tema": "Cultura y participación",
+      "nombre": "Tamara Ledesma Becerra",
+      "cargo": "Primera teniente de alcalde"
+    },
+    {
+      "tema": "Turismo, patrimonio y comercio",
+      "nombre": "María Teresa Rodríguez Rosa",
+      "cargo": "Concejala de Turismo, Patrimonio y Comercio"
+    },
+    {
+      "tema": "Todo lo demás",
+      "nombre": "Miguel Ángel Araya Salguero",
+      "cargo": "Alcalde"
+    }
+  ],
+  "servicios": [
+    {
+      "nombre": "Ayuntamiento",
+      "nota": "Registro, padrón y OMIC (consumo)",
+      "direccion": "C/ Ayuntamiento, 1",
+      "telefono": "924 536 011",
+      "grupo": "Ayuntamiento"
+    },
+    {
+      "nombre": "Guardería Rural y Punto de Información Catastral",
+      "nota": "Oficina de 13:00 a 15:00 (cambia en campaña de uva y aceituna)",
+      "direccion": "Antiguo centro de salud",
+      "telefono": "615 196 716",
+      "grupo": "Ayuntamiento"
+    },
+    {
+      "nombre": "Policía Local",
+      "direccion": "C/ Hospital (antigua Cámara Agraria)",
+      "telefono": "654 338 096",
+      "grupo": "Urgencias y seguridad"
+    },
+    {
+      "nombre": "Guardia Civil",
+      "direccion": "Avda. Cuartel, s/n",
+      "telefono": "924 536 013",
+      "grupo": "Urgencias y seguridad"
+    },
+    {
+      "nombre": "Protección Civil",
+      "direccion": "C/ Escuela",
+      "telefono": "638 763 187",
+      "grupo": "Urgencias y seguridad"
+    },
+    {
+      "nombre": "Consultorio médico",
+      "telefono": "924 536 551",
+      "grupo": "Salud y mayores"
+    },
+    {
+      "nombre": "Centro de Día «La Ribera»",
+      "direccion": "C/ Virgilio Gutiérrez, s/n",
+      "horario": "Lunes a viernes, de 10:00 a 18:00",
+      "tramos": [
+        {
+          "dias": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "de": "10:00",
+          "a": "18:00"
+        }
+      ],
+      "telefono": "924 028 924",
+      "grupo": "Salud y mayores"
+    },
+    {
+      "nombre": "Hogar del Pensionista",
+      "telefono": "924 536 819",
+      "grupo": "Salud y mayores"
+    },
+    {
+      "nombre": "Residencia «San Juan Macías»",
+      "telefono": "924 537 280",
+      "grupo": "Salud y mayores"
+    },
+    {
+      "nombre": "Hogar de Nazaret «La Providencia»",
+      "nota": "Atención a personas con discapacidad",
+      "telefono": "924 536 278",
+      "grupo": "Salud y mayores"
+    },
+    {
+      "nombre": "CEIP Meléndez Valdés",
+      "direccion": "C/ Escuelas, s/n",
+      "telefono": "924 028 770",
+      "grupo": "Educación, cultura y deporte"
+    },
+    {
+      "nombre": "IESO Valdemedel",
+      "telefono": "924 281 470",
+      "grupo": "Educación, cultura y deporte"
+    },
+    {
+      "nombre": "Biblioteca «Virgilio Gutiérrez»",
+      "direccion": "C/ San Juan Macías, 2 (Casa de la Cultura)",
+      "horario": "Lunes a viernes, de 9:30 a 14:00",
+      "tramos": [
+        {
+          "dias": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "de": "09:30",
+          "a": "14:00"
+        }
+      ],
+      "telefono": "924 537 224",
+      "grupo": "Educación, cultura y deporte"
+    },
+    {
+      "nombre": "Casa de la Cultura y Escuela de Música",
+      "direccion": "C/ San Juan Macías, 2",
+      "telefono": "924 537 224",
+      "grupo": "Educación, cultura y deporte"
+    },
+    {
+      "nombre": "Piscina municipal",
+      "telefono": "924 536 804",
+      "grupo": "Educación, cultura y deporte"
+    },
+    {
+      "nombre": "Parroquia de Nuestra Señora de Gracia",
+      "direccion": "C/ Iglesia, 2",
+      "telefono": "924 536 002",
+      "grupo": "Otros"
+    }
+  ],
+  "urgencias": [
+    {
+      "nombre": "Emergencias",
+      "telefono": "112"
+    }
+  ],
+  "listin_corto": [
+    "Emergencias",
+    "Policía Local",
+    "Guardia Civil",
+    "Consultorio médico"
+  ],
+  "tramites": {
+    "atajos": [
+      {
+        "nombre": "Empadronarme",
+        "nota": "Alta o renovación en el padrón",
+        "id": "d120f65c-c936-4a95-bd50-e7ae970ca149"
+      },
+      {
+        "nombre": "Domiciliar recibos",
+        "nota": "Alta, baja o cambio de cuenta",
+        "id": "a93cd417-195c-40c5-acf2-9a92b36c8809"
+      },
+      {
+        "nombre": "Licencia de obra",
+        "nota": "Licencia o autorización urbanística",
+        "id": "15fabacb-83b1-47d1-b435-508245672051"
+      },
+      {
+        "nombre": "Ayudas a la natalidad",
+        "nota": "Convocatoria 2026: bases y solicitud en el tablón",
+        "url": "https://riberadelfresno.sedelectronica.es/preview-document/02af28b6-9fdb-4b29-968c-eee1a7582f0a",
+        "tipo": "documento"
+      }
+    ],
+    "temas": [
+      {
+        "nombre": "Vivir aquí",
+        "nota": "Padrón, certificados, boda civil",
+        "icono": "casa",
+        "tramites": [
+          {
+            "nombre": "Empadronarme o renovar",
+            "id": "d120f65c-c936-4a95-bd50-e7ae970ca149"
+          },
+          {
+            "nombre": "Cambiar mis datos del padrón",
+            "id": "d74e17fb-69a1-4ef6-931a-d0381be7ffdc"
+          },
+          {
+            "nombre": "Volante de empadronamiento",
+            "id": "1c74bc66-8b69-4f3c-8183-d3591f0504ed"
+          },
+          {
+            "nombre": "Volante de convivencia",
+            "id": "e268d9e6-d835-4922-be8f-a18c9738a331"
+          },
+          {
+            "nombre": "Casarme en el Ayuntamiento",
+            "id": "fe871c4e-f81e-4357-a5b8-94ef42a9da42"
+          }
+        ]
+      },
+      {
+        "nombre": "Casa, obras y campo",
+        "nota": "Licencias, agua, quemas",
+        "icono": "obra",
+        "tramites": [
+          {
+            "nombre": "Obra pequeña: declaración responsable",
+            "id": "5d383e20-32a5-4fcf-8725-e51c51e83e6a"
+          },
+          {
+            "nombre": "Obra mayor: licencia urbanística",
+            "id": "15fabacb-83b1-47d1-b435-508245672051"
+          },
+          {
+            "nombre": "Licencia de ocupación",
+            "id": "b834b3fa-3690-4626-9c92-d82669d6f26f"
+          },
+          {
+            "nombre": "Dar de alta el agua",
+            "id": "5697411e-7a60-4df6-9867-07258add24de"
+          },
+          {
+            "nombre": "Cambiar el titular del agua",
+            "id": "a4806ac2-0236-4222-9c47-52bdaaa42c9e"
+          },
+          {
+            "nombre": "Permiso para quemar rastrojos",
+            "id": "e8f22e0c-b09a-4c0e-8cb1-555f661bb086"
+          }
+        ]
+      },
+      {
+        "nombre": "Pagos e impuestos",
+        "nota": "Recibos, aplazamientos, bonificaciones",
+        "icono": "recibo",
+        "tramites": [
+          {
+            "nombre": "Domiciliar recibos",
+            "id": "a93cd417-195c-40c5-acf2-9a92b36c8809"
+          },
+          {
+            "nombre": "Pagar una autoliquidación",
+            "id": "65228bd7-0692-484e-afd5-4f18d4faa7f5"
+          },
+          {
+            "nombre": "Aplazar o fraccionar un pago",
+            "id": "1fb37055-447d-48b6-8ea6-a670f5a9629b"
+          },
+          {
+            "nombre": "Pedir una bonificación o exención",
+            "id": "4f89832a-e472-4c39-bbd4-d519e35946dd"
+          }
+        ]
+      },
+      {
+        "nombre": "Familia, mayores y ocio",
+        "nota": "Ayuda a domicilio, servicios sociales, cursos",
+        "icono": "familia",
+        "tramites": [
+          {
+            "nombre": "Teleasistencia o ayuda a domicilio",
+            "id": "70b01f0b-8951-4ebe-aadc-75d6de315b7e"
+          },
+          {
+            "nombre": "Darme de alta en servicios sociales",
+            "id": "1eadf89e-c7e0-4c8e-bdf4-4c2bb9a7ea09"
+          },
+          {
+            "nombre": "Apuntarme a cursos y actividades",
+            "id": "1086e3fa-b560-4deb-9c55-66bed39d82f4"
+          }
+        ]
+      },
+      {
+        "nombre": "Opinar y avisar",
+        "nota": "Quejas, incidencias, información pública",
+        "icono": "mensaje",
+        "tramites": [
+          {
+            "nombre": "Avisar de una incidencia en la calle",
+            "id": "d643e8cf-0824-4617-a997-c523799b4a93"
+          },
+          {
+            "nombre": "Quejas y sugerencias",
+            "id": "ae05799c-df61-43d1-be43-31943561cea9"
+          },
+          {
+            "nombre": "Pedir información pública",
+            "id": "cb08f2a7-e5f7-42eb-bbfa-13a2b485e606"
+          },
+          {
+            "nombre": "Cualquier otra solicitud",
+            "id": "5161fa8d-970e-4b48-a506-b2ac34ceafe5"
+          }
+        ]
+      }
+    ],
+    "momentos": [
+      {
+        "nombre": "Me vengo a vivir aquí",
+        "nota": "Lo que conviene hacer las primeras semanas.",
+        "pasos": [
+          {
+            "texto": "Empadronarme",
+            "id": "d120f65c-c936-4a95-bd50-e7ae970ca149"
+          },
+          {
+            "texto": "Poner el agua a mi nombre",
+            "id": "a4806ac2-0236-4222-9c47-52bdaaa42c9e"
+          },
+          {
+            "texto": "Domiciliar los recibos",
+            "id": "a93cd417-195c-40c5-acf2-9a92b36c8809"
+          },
+          {
+            "texto": "Apuntarme a cursos y actividades",
+            "id": "1086e3fa-b560-4deb-9c55-66bed39d82f4"
+          }
+        ]
+      },
+      {
+        "nombre": "Voy a hacer obra",
+        "nota": "Según el tamaño de la obra, un papel u otro.",
+        "pasos": [
+          {
+            "texto": "Obra pequeña: declaración responsable",
+            "id": "5d383e20-32a5-4fcf-8725-e51c51e83e6a"
+          },
+          {
+            "texto": "Obra mayor: licencia urbanística",
+            "id": "15fabacb-83b1-47d1-b435-508245672051"
+          },
+          {
+            "texto": "Al terminar una vivienda: licencia de ocupación",
+            "id": "b834b3fa-3690-4626-9c92-d82669d6f26f"
+          }
+        ]
+      },
+      {
+        "nombre": "Tengo que pagar algo",
+        "nota": "Recibos, plazos y descuentos.",
+        "pasos": [
+          {
+            "texto": "Pagar una autoliquidación",
+            "id": "65228bd7-0692-484e-afd5-4f18d4faa7f5"
+          },
+          {
+            "texto": "Domiciliar para no olvidarme",
+            "id": "a93cd417-195c-40c5-acf2-9a92b36c8809"
+          },
+          {
+            "texto": "Aplazar o fraccionar",
+            "id": "1fb37055-447d-48b6-8ea6-a670f5a9629b"
+          },
+          {
+            "texto": "Pedir una bonificación",
+            "id": "4f89832a-e472-4c39-bbd4-d519e35946dd"
+          }
+        ]
+      },
+      {
+        "nombre": "Ha pasado algo en mi calle",
+        "nota": "Un bache, una farola, un contenedor.",
+        "pasos": [
+          {
+            "texto": "Avisar de la incidencia",
+            "id": "d643e8cf-0824-4617-a997-c523799b4a93"
+          },
+          {
+            "texto": "Si es urgente, llamar a la Policía Local: 654 338 096"
+          },
+          {
+            "texto": "Dejar una queja o sugerencia",
+            "id": "ae05799c-df61-43d1-be43-31943561cea9"
+          }
+        ]
+      }
+    ],
+    "sinonimos": {
+      "empadronarme": [
+        "padrón",
+        "empadronamiento"
+      ],
+      "empadronar": [
+        "padrón"
+      ],
+      "censo": [
+        "padrón"
+      ],
+      "obra": [
+        "urbanística",
+        "obras",
+        "licencia de ocupación"
+      ],
+      "obras": [
+        "urbanística"
+      ],
+      "reforma": [
+        "urbanística"
+      ],
+      "placas": [
+        "fotovoltaica"
+      ],
+      "solar": [
+        "fotovoltaica"
+      ],
+      "agua": [
+        "abastecimiento",
+        "aguas",
+        "contadores"
+      ],
+      "contador": [
+        "contadores"
+      ],
+      "recibo": [
+        "tributos",
+        "domiciliación",
+        "autoliquidación"
+      ],
+      "recibos": [
+        "tributos",
+        "domiciliación"
+      ],
+      "pagar": [
+        "autoliquidación",
+        "tributo",
+        "aplazamiento"
+      ],
+      "impuesto": [
+        "tributo",
+        "tributos",
+        "padrón fiscal"
+      ],
+      "ibi": [
+        "tributo",
+        "catastral"
+      ],
+      "descuento": [
+        "bonificación"
+      ],
+      "boda": [
+        "matrimonio"
+      ],
+      "casarme": [
+        "matrimonio"
+      ],
+      "casarse": [
+        "matrimonio"
+      ],
+      "queja": [
+        "quejas",
+        "sugerencias",
+        "reclamación"
+      ],
+      "reclamar": [
+        "reclamación",
+        "recurso"
+      ],
+      "bache": [
+        "incidencia",
+        "vía pública"
+      ],
+      "farola": [
+        "incidencia",
+        "vía pública"
+      ],
+      "contenedor": [
+        "incidencia"
+      ],
+      "calle": [
+        "vía pública"
+      ],
+      "certificado": [
+        "volante",
+        "certificado"
+      ],
+      "volante": [
+        "volante"
+      ],
+      "perro": [
+        "animales"
+      ],
+      "mascota": [
+        "animales"
+      ],
+      "quemar": [
+        "quema",
+        "rastrojos"
+      ],
+      "rastrojos": [
+        "quema"
+      ],
+      "mayores": [
+        "teleasistencia",
+        "ayuda a domicilio",
+        "servicios sociales"
+      ],
+      "dependencia": [
+        "ayuda a domicilio",
+        "servicios sociales"
+      ],
+      "curso": [
+        "cursos",
+        "actividades"
+      ],
+      "deporte": [
+        "actividades"
+      ],
+      "nicho": [
+        "funerario",
+        "nichos"
+      ],
+      "cementerio": [
+        "funerario",
+        "nichos",
+        "exhumación"
+      ],
+      "aparcamiento": [
+        "tarjeta de aparcamiento"
+      ],
+      "discapacidad": [
+        "tarjeta de aparcamiento",
+        "accesible"
+      ],
+      "papel": [
+        "instancia general",
+        "aportación de documentos"
+      ],
+      "solicitud": [
+        "instancia general"
+      ],
+      "mercadillo": [
+        "venta ambulante"
+      ],
+      "taxi": [
+        "auto-taxi",
+        "auto -taxi"
+      ],
+      "fiesta": [
+        "eventos",
+        "espectáculos",
+        "pirotécnicos"
+      ],
+      "ayuda": [
+        "subvención",
+        "servicios sociales"
+      ],
+      "subvencion": [
+        "subvención"
+      ]
+    },
+    "todos": [
+      {
+        "nombre": "Abastecimiento de Aguas (Baja)",
+        "id": "27666b59-7238-4f55-9968-d45406f433f9"
+      },
+      {
+        "nombre": "Abastecimiento de Aguas (Cambio de Titularidad)",
+        "id": "a4806ac2-0236-4222-9c47-52bdaaa42c9e"
+      },
+      {
+        "nombre": "Acceso al Servicio de Teleasistencia o de Ayuda a Domicilio",
+        "id": "70b01f0b-8951-4ebe-aadc-75d6de315b7e"
+      },
+      {
+        "nombre": "Alta de Abastecimiento y Suministro de Agua Potable",
+        "id": "5697411e-7a60-4df6-9867-07258add24de"
+      },
+      {
+        "nombre": "Alta, Baja o Modificación de Datos en el Registro de Animales",
+        "id": "30e885b0-2005-4c8e-aa16-79e63140e436"
+      },
+      {
+        "nombre": "Aportación de Documentos",
+        "id": "3a04a0b4-b6ff-4fb0-97f3-9f1fdd2c97ab"
+      },
+      {
+        "nombre": "Autoliquidación",
+        "id": "65228bd7-0692-484e-afd5-4f18d4faa7f5"
+      },
+      {
+        "nombre": "Aviso de Incidencia en la Vía Pública",
+        "id": "d643e8cf-0824-4617-a997-c523799b4a93"
+      },
+      {
+        "nombre": "Baja Voluntaria de la Autorización para el Ejercicio de la Venta Ambulante",
+        "id": "a98dc0b1-de78-4419-b0d2-618ce6a58f45"
+      },
+      {
+        "nombre": "Compensación de Deudas Tributarias",
+        "id": "f7a523be-6085-41da-a981-48452bab781e"
+      },
+      {
+        "nombre": "Comunicaciones sobre Requisitos de Accesibilidad",
+        "id": "34801c79-0732-49f0-830d-b52652a01e80"
+      },
+      {
+        "nombre": "Comunicación",
+        "id": "6d1f216d-c95d-4ad7-a2fa-16ca0b0d1cd4"
+      },
+      {
+        "nombre": "Comunicación del Cambio de Datos que figuran en el Padrón Fiscal",
+        "id": "e3cc8077-25a4-4297-8e44-fd54adc50c88"
+      },
+      {
+        "nombre": "Comunicación o Declaración Responsable de Actividades y Espectáculos Públicos",
+        "id": "36fa4d83-67b8-4671-808c-09185dae1c62"
+      },
+      {
+        "nombre": "Consignación en la Oficina de Objetos Perdidos",
+        "id": "7fdc3c6c-7397-4e29-a101-3a68824a55c9"
+      },
+      {
+        "nombre": "Constitución de Garantía",
+        "id": "8e285144-5df7-411a-8649-de1cca8e4fbd"
+      },
+      {
+        "nombre": "Corte de la Vía Pública",
+        "id": "e1589c6a-9246-45f5-9132-fa5dd98ba76a"
+      },
+      {
+        "nombre": "Declaración Responsable",
+        "id": "2c557ac9-fd3a-4a47-bda3-f42a082861db"
+      },
+      {
+        "nombre": "Declaración Responsable o Comunicación en Materia Urbanística",
+        "id": "5d383e20-32a5-4fcf-8725-e51c51e83e6a"
+      },
+      {
+        "nombre": "Declaración Responsable o Comunicación en Materia de Actividades",
+        "id": "df2d1685-af1d-454c-90dd-f0d077868573"
+      },
+      {
+        "nombre": "Declaración de Alteración Catastral de un Bien Inmueble",
+        "id": "f4d91759-67a9-454a-ada9-41498dc1fb7b"
+      },
+      {
+        "nombre": "Denuncia",
+        "id": "197fd308-4f33-4a7c-b77d-17d68993b8e8"
+      },
+      {
+        "nombre": "Domiciliación de Tributos Periódicos (alta, baja y modificación)",
+        "id": "a93cd417-195c-40c5-acf2-9a92b36c8809"
+      },
+      {
+        "nombre": "Ejercicio de Derechos ante el Registro de Asociaciones",
+        "id": "d66b3878-d39e-4e7e-bc85-bc37e27852ec"
+      },
+      {
+        "nombre": "Ejercicio de Derechos en Relación con el Registro de Uniones o Parejas de Hecho",
+        "id": "a8bdd0e8-3a1a-49b2-a8a6-ce0401f2006b"
+      },
+      {
+        "nombre": "Ejercicio de los Derechos de Rectificación, Supresión, Limitación, Portabilidad u Oposición en relación con Datos de Carácter Personal",
+        "id": "daae6a9b-bb8d-485a-816a-940bc433eb66"
+      },
+      {
+        "nombre": "Ejercicio del Derecho de Acceso (Datos de Carácter Personal)",
+        "id": "fa0b2865-b1ad-4cd2-b998-c63113f1689c"
+      },
+      {
+        "nombre": "Exhumación en Nichos, Panteones, Columbarios...",
+        "id": "429370fc-157c-44d1-a8cf-0ae460b810db"
+      },
+      {
+        "nombre": "Formulario de Contacto con el Delegado de Protección de Datos",
+        "id": "2b75a7ef-9aeb-4f6e-bd02-936334b22679"
+      },
+      {
+        "nombre": "Ingreso en Centro de Asistencia Social",
+        "id": "af93fe26-e314-4fd8-8a8d-a526ea39cf68"
+      },
+      {
+        "nombre": "Inscripción en Actividades y Cursos",
+        "id": "1086e3fa-b560-4deb-9c55-66bed39d82f4"
+      },
+      {
+        "nombre": "Instancia General",
+        "id": "5161fa8d-970e-4b48-a506-b2ac34ceafe5"
+      },
+      {
+        "nombre": "Interposición de Recurso Administrativo",
+        "id": "b001292e-cdf4-4e48-89db-6eae243fd878"
+      },
+      {
+        "nombre": "Interposición de Recurso Especial en Materia de Contratación",
+        "id": "252ba3d7-fb9a-4d7c-a33f-6e3b58fb06f7"
+      },
+      {
+        "nombre": "Interposición de Recurso de Reposición o de Apelación ante el Juez de Paz",
+        "id": "ffe7e592-8358-4889-9df5-cd79f1927866"
+      },
+      {
+        "nombre": "Interposición de un Recurso de Reposición de Actos de Naturaleza Tributaria",
+        "id": "a0ef28ba-fb41-4289-921e-61b4a31b7de2"
+      },
+      {
+        "nombre": "Justificación de Subvención Concedida",
+        "id": "6f0f91f4-6c6c-4a6f-b1c9-6aea9b293f58"
+      },
+      {
+        "nombre": "Licencia de Actividad (Modificación o Renuncia)",
+        "id": "6a5af5af-b462-4ca9-8062-5ba4c95a4241"
+      },
+      {
+        "nombre": "Licencia de Actividades y Espectáculos Públicos",
+        "id": "87679048-b42c-47a7-8c33-3d54d162f988"
+      },
+      {
+        "nombre": "Licencia de Aprovechamiento",
+        "id": "b4931ddf-2d87-471a-8433-a2721751b129"
+      },
+      {
+        "nombre": "Licencia de Auto -Taxi (Transmisión)",
+        "id": "8190625d-2f7b-44c1-9624-47dd39c5103d"
+      },
+      {
+        "nombre": "Licencia de Vehículos Especiales",
+        "id": "ad4b6040-7ed9-4aa7-b19a-55d92aab30cb"
+      },
+      {
+        "nombre": "Liquidación (a Instancia de Parte)",
+        "id": "f1dc66f0-fed7-46bb-997b-73c609457f2b"
+      },
+      {
+        "nombre": "Modificación del Planeamiento de Desarrollo",
+        "id": "6e8237a3-0b83-469d-b0ad-70159b9a9c26"
+      },
+      {
+        "nombre": "Modificación, Revocación o Renuncia de la Licencia de Ocupación",
+        "id": "a7e311fe-df7a-4b5d-863b-3f1c4b8ca71f"
+      },
+      {
+        "nombre": "Otorgar Poderes de Representación",
+        "id": "a9807f3d-0ce2-4e16-ac6a-786f4a8aa3d0"
+      },
+      {
+        "nombre": "Participación en la Elaboración de Normativa",
+        "id": "eec1d111-c724-4967-b122-077375011648"
+      },
+      {
+        "nombre": "Petición de Consulta Popular",
+        "id": "d8c4b9b6-1cdd-4944-b7be-f76fbb3720e5"
+      },
+      {
+        "nombre": "Planeamiento General (Modificación)",
+        "id": "96514574-aca1-40e1-a800-e06485e6d016"
+      },
+      {
+        "nombre": "Quejas y Sugerencias",
+        "id": "ae05799c-df61-43d1-be43-31943561cea9"
+      },
+      {
+        "nombre": "Reclamaciones de Consumo",
+        "id": "9f707e83-9fc0-4425-b66b-2b28c0498894"
+      },
+      {
+        "nombre": "Reclamación contra la Solicitud de Información Accesible y Queja",
+        "id": "daf77f45-60d1-47f8-9fcb-ca9ea7c88b32"
+      },
+      {
+        "nombre": "Resolución de Contrataciones Patrimoniales",
+        "id": "04c7cc72-89c1-4a8b-9188-6b11c48cf81b"
+      },
+      {
+        "nombre": "Servicios Públicos (Alta, Baja o Modificación)",
+        "id": "5c2a56b7-1cc7-4f53-ad58-766047e3a07a"
+      },
+      {
+        "nombre": "Solicitud de Acceso a la Información Pública por los Ciudadanos",
+        "id": "cb08f2a7-e5f7-42eb-bbfa-13a2b485e606"
+      },
+      {
+        "nombre": "Solicitud de Acceso a una Notificación Rechazada",
+        "id": "11df4bb2-d63f-455e-997a-e0982d8af50f"
+      },
+      {
+        "nombre": "Solicitud de Actuación Urbanística",
+        "id": "f91e4a50-d23d-45c1-a19b-b148da37c59f"
+      },
+      {
+        "nombre": "Solicitud de Adhesión al Sistema de Arbitraje",
+        "id": "ab96fd31-5837-4ed8-ba56-77145f24bbda"
+      },
+      {
+        "nombre": "Solicitud de Alta en los Servicios Sociales",
+        "id": "1eadf89e-c7e0-4c8e-bdf4-4c2bb9a7ea09"
+      },
+      {
+        "nombre": "Solicitud de Alta o Renovación de la Inscripción en el Padrón Municipal de Habitantes",
+        "id": "d120f65c-c936-4a95-bd50-e7ae970ca149"
+      },
+      {
+        "nombre": "Solicitud de Aplazamiento o Fraccionamiento de Obligaciones Tributarias",
+        "id": "1fb37055-447d-48b6-8ea6-a670f5a9629b"
+      },
+      {
+        "nombre": "Solicitud de Aprobación de Planeamiento de Desarrollo",
+        "id": "23c80d53-bdad-47a5-b731-f786c411e08d"
+      },
+      {
+        "nombre": "Solicitud de Aprobación de un Proyecto de Compensación",
+        "id": "774714c1-ade3-4dd9-a093-3ca045647fa3"
+      },
+      {
+        "nombre": "Solicitud de Autorización",
+        "id": "28adaa8c-63bc-49bc-b468-9ac9900a7006"
+      },
+      {
+        "nombre": "Solicitud de Autorización Ambiental",
+        "id": "abfb134a-80d0-495d-a52a-457340f5f78f"
+      },
+      {
+        "nombre": "Solicitud de Autorización Especial para la Celebración de Eventos Especiales (Uso de Artificios Pirotécnicos)",
+        "id": "c6b06508-6603-4b75-9e5e-cce272e4a0f9"
+      },
+      {
+        "nombre": "Solicitud de Autorización de Usos Funerarios: Nichos, Panteones, Columbarios...",
+        "id": "aa1413d7-4616-49e7-a405-726f7b3e5689"
+      },
+      {
+        "nombre": "Solicitud de Autorización para el Ejercicio de Venta Ambulante",
+        "id": "66b59a72-7c44-4c95-9b50-7133fd31cb56"
+      },
+      {
+        "nombre": "Solicitud de Baja en el Padrón Municipal de Habitantes por Cambio de Residencia de Extranjeros que se trasladan al Extranjero",
+        "id": "f60c66ec-6337-443d-aa6e-983050992392"
+      },
+      {
+        "nombre": "Solicitud de Bonificación o Exención de un Tributo",
+        "id": "4f89832a-e472-4c39-bbd4-d519e35946dd"
+      },
+      {
+        "nombre": "Solicitud de Cambio de Puesto de Trabajo: Permutas, Comisiones de Servicios,...",
+        "id": "902bdb06-4d77-4f2a-9c02-5d7b5e780bd9"
+      },
+      {
+        "nombre": "Solicitud de Cambio de Titularidad de Derecho Funerario: Nichos, Panteones, Columbarios,...",
+        "id": "967cce52-b589-482d-8d55-0f017b55348b"
+      },
+      {
+        "nombre": "Solicitud de Certificado de Deuda a mi Favor",
+        "id": "f6d7d008-0ad3-4bfa-be5b-0f3302d888dc"
+      },
+      {
+        "nombre": "Solicitud de Certificado de una Subvención Concedida",
+        "id": "2fb6a1c3-4040-4c1b-84bc-c6b127fac3cb"
+      },
+      {
+        "nombre": "Solicitud de Certificado o Informe",
+        "id": "f422cab6-2a5e-4a75-b9c7-2531bfa239c7"
+      },
+      {
+        "nombre": "Solicitud de Certificado o Informe Tributario",
+        "id": "8e9712d9-a992-4d8e-a5a2-76e5f11acf12"
+      },
+      {
+        "nombre": "Solicitud de Certificado o Informe Urbanístico",
+        "id": "e247f7c3-b1ff-42ef-8b7d-5195c14e9bbf"
+      },
+      {
+        "nombre": "Solicitud de Certificado o Volante de Convivencia",
+        "id": "e268d9e6-d835-4922-be8f-a18c9738a331"
+      },
+      {
+        "nombre": "Solicitud de Certificado o Volante de Empadronamiento",
+        "id": "1c74bc66-8b69-4f3c-8183-d3591f0504ed"
+      },
+      {
+        "nombre": "Solicitud de Consulta de Fondos del Archivo",
+        "id": "2e66d84c-8d27-411f-a711-9a345c14be70"
+      },
+      {
+        "nombre": "Solicitud de Declaración de Nulidad de Pleno Derecho de Actos Administrativos de Naturaleza Tributaria",
+        "id": "c0314398-fd54-4586-91e6-570fbbf6fb1e"
+      },
+      {
+        "nombre": "Solicitud de Declaración de Ruina",
+        "id": "e64a8029-2e12-49aa-a002-120e27ca1386"
+      },
+      {
+        "nombre": "Solicitud de Devolución de Garantía",
+        "id": "8f8a80e9-6a03-4b2b-a21d-4191ab1bf51e"
+      },
+      {
+        "nombre": "Solicitud de Devolución de Ingresos Indebidos",
+        "id": "28338128-8e01-4325-bd5e-a698b12b441e"
+      },
+      {
+        "nombre": "Solicitud de Licencia de Actividad",
+        "id": "bf5e9be9-4ba9-4bbd-86cd-2f915f8b3c78"
+      },
+      {
+        "nombre": "Solicitud de Licencia de Conexión a las Redes de Abastecimiento o Saneamiento de Aguas",
+        "id": "c66a05a4-4510-434c-9e82-851788cf42e6"
+      },
+      {
+        "nombre": "Solicitud de Licencia de Ocupación",
+        "id": "b834b3fa-3690-4626-9c92-d82669d6f26f"
+      },
+      {
+        "nombre": "Solicitud de Licencia o Autorización Urbanística",
+        "id": "15fabacb-83b1-47d1-b435-508245672051"
+      },
+      {
+        "nombre": "Solicitud de Licencia para la Tenencia de Animales Potencialmente Peligrosos",
+        "id": "42fc1e2b-c6be-4972-841f-904b4cce2ccd"
+      },
+      {
+        "nombre": "Solicitud de Mediación",
+        "id": "6dfd75f7-af86-4d45-b4eb-aaf30a25c983"
+      },
+      {
+        "nombre": "Solicitud de Modificaciones en las Condiciones del Contrato: Cesiones, Prórroga, Revisión de Precios...",
+        "id": "d747c1e5-fb79-46f1-85e6-dd32acbecf24"
+      },
+      {
+        "nombre": "Solicitud de Modificación de los Datos del Padrón Municipal de Habitantes",
+        "id": "d74e17fb-69a1-4ef6-931a-d0381be7ffdc"
+      },
+      {
+        "nombre": "Solicitud de Modificación o Renuncia de una Licencia Urbanística",
+        "id": "a3c783fb-bb19-4ea3-b40f-0072d69aebae"
+      },
+      {
+        "nombre": "Solicitud de Prestación de Servicios Sociales",
+        "id": "37b15924-7921-4bc5-83de-3cec20016ebe"
+      },
+      {
+        "nombre": "Solicitud de Recepción de Obras de Urbanización",
+        "id": "e8594295-30ea-4a16-8f17-60c061a8a147"
+      },
+      {
+        "nombre": "Solicitud de Resolución de Contrato",
+        "id": "788eacc5-12d8-4016-ac6f-273eef2c5b1e"
+      },
+      {
+        "nombre": "Solicitud de Responsabilidad Patrimonial",
+        "id": "9ef28355-2f43-4c8a-bee7-93c6f39f2a8b"
+      },
+      {
+        "nombre": "Solicitud de Reuniones y Entrevistas con el Personal de esta Entidad",
+        "id": "25ddfc96-745e-42d5-80c8-8e82964a68f0"
+      },
+      {
+        "nombre": "Solicitud de Tarjeta de Armas",
+        "id": "8ab9325a-e61c-41b5-8a49-b353f382579a"
+      },
+      {
+        "nombre": "Solicitud de Uso Puntual de un Bien",
+        "id": "84e1c073-a87d-4428-b32c-8b9a24b20ad5"
+      },
+      {
+        "nombre": "Solicitud de la Devolución de Ingresos Derivada de la Normativa del Tributo (Art. 31 LGT)",
+        "id": "0b5b5d9d-7549-4e4c-949c-16b152ba1b47"
+      },
+      {
+        "nombre": "Solicitud de la Tarjeta de Aparcamiento para Residentes en zonas de Estacionamiento Limitado",
+        "id": "abf6fdef-9e43-4ede-aa2b-e95db9d07f13"
+      },
+      {
+        "nombre": "Solicitud para la Celebración de Matrimonio Civil",
+        "id": "fe871c4e-f81e-4357-a5b8-94ef42a9da42"
+      },
+      {
+        "nombre": "Solicitud para la Constitución de un Consorcio",
+        "id": "397c5c61-2867-4754-9c54-ddc00d5ef844"
+      },
+      {
+        "nombre": "Solicitud para la Quema de Rastrojos",
+        "id": "e8f22e0c-b09a-4c0e-8cb1-555f661bb086"
+      },
+      {
+        "nombre": "Solicitud para la Renumeración o Denominación de una Vía Pública",
+        "id": "990ec0df-7d47-4fbf-8d41-51e269920b76"
+      },
+      {
+        "nombre": "Solicitud para la gestión de la Tarjeta de Aparcamiento para Personas en Situación de Discapacidad",
+        "id": "b439034b-8550-4b62-9f31-172f5792bae9"
+      },
+      {
+        "nombre": "Solicitudes de Información Accesible y Quejas",
+        "id": "bfdcf208-2d99-46f6-b78f-116f61936045"
+      },
+      {
+        "nombre": "Subvenciones Directas o Nominativas",
+        "id": "a96835f4-5214-4258-8d8b-47439196226b"
+      },
+      {
+        "nombre": "Sustitución de un Vehículo Sujeto a una Licencia de Auto-Taxi",
+        "id": "da566145-fd06-47cf-bed1-d146edbd688a"
+      },
+      {
+        "nombre": "Verificación, Lectura o Cambio de Ubicación de Contadores de Aguas",
+        "id": "8c02079a-91f2-4c82-87a4-963a73ebd40d"
+      },
+      {
+        "nombre": "Modelo de Instancia Oficial",
+        "url": "https://riberadelfresno.es/repositorio/20210423104443.pdf",
+        "tipo": "pdf"
+      },
+      {
+        "nombre": "Solicitud de Licencia de Obras",
+        "url": "https://riberadelfresno.es/documentos/20251001084925.pdf",
+        "tipo": "pdf"
+      },
+      {
+        "nombre": "Comunicación de Finalización de Obras",
+        "url": "https://riberadelfresno.es/documentos/20251001090738.pdf",
+        "tipo": "pdf"
+      },
+      {
+        "nombre": "Comunicación previa de Instalación Fotovoltaica",
+        "url": "https://riberadelfresno.es/documentos/20251001091143.pdf",
+        "tipo": "pdf"
+      },
+      {
+        "nombre": "Inscripción online actividades deportivas infantiles",
+        "url": "https://forms.gle/9vdQXbvZJEUBzp3X9",
+        "vigente": false,
+        "nota": "Formulario de la temporada 2023: no se enseña"
+      },
+      {
+        "nombre": "Inscripción online actividades deportivas adultos",
+        "url": "https://forms.gle/Fqe9Ni2bcz16p94QA",
+        "vigente": false,
+        "nota": "Formulario de la temporada 2023: no se enseña"
+      }
+    ]
+  },
+  "pueblo": {
+    "entradilla": "Un pueblo encalado de Tierra de Barros, con una iglesia de dos torres, un poblado prerromano en lo alto de un cerro y un poeta de la Ilustración.",
+    "historia": [
+      "En el Oppidum de Hornachuelos, probablemente la Fornacis de Ptolomeo, ya vivía gente en la Edad del Cobre, y su mejor época fue entre el siglo II antes de Cristo y el I después de Cristo.",
+      "La Orden de Santiago repobló la villa en el siglo XIII y llegó a ser cabeza de Encomienda; la primera referencia escrita es de 1257. Según la tradición, el nombre viene de un gran fresno a orillas del arroyo Valdemedel.",
+      "El casco se rehízo en los siglos XVII y XVIII: casas encaladas con rejas negras y casonas barrocas con blasones. El Ayuntamiento ocupa el antiguo convento de Jesús y María, de las clarisas, fundado en 1535."
+    ],
+    "placa": {
+      "lineas": [
+        "En esta casa que ves",
+        "nació el poeta admirable",
+        "Don Juan Meléndez Valdés"
+      ],
+      "pie": "Placa de la casa natal del poeta, en la calle Larga",
+      "texto": "Juan Meléndez Valdés (1754-1817), poeta y magistrado de la Ilustración, nació en esta calle. El busto de bronce del pueblo es de 1985, obra de Luis Martínez Giraldo.",
+      "titulo": "La casa del poeta"
+    },
+    "lugares": [
+      {
+        "nombre": "Iglesia de Nuestra Señora de Gracia",
+        "texto": "Dos torres gemelas, un retablo barroco y un púlpito de mármol de Estremoz. En sus tejados anida el cernícalo primilla.",
+        "foto": "iglesia-torres",
+        "alt": "Las dos torres de la iglesia sobre los tejados, con la sierra al fondo"
+      },
+      {
+        "nombre": "Monumento a Meléndez Valdés",
+        "texto": "El poeta de la Ilustración nació en la calle Larga en 1754. Su busto de bronce es de 1985.",
+        "foto": "monumento-melendez",
+        "alt": "Busto de bronce de Meléndez Valdés sobre un pedestal"
+      },
+      {
+        "nombre": "Casa de Vargas-Zúñiga",
+        "texto": "Casa-palacio de los siglos XVII y XVIII, hoy Casa de la Cultura y biblioteca.",
+        "foto": "casa-cultura",
+        "alt": "Fachada encalada de la Casa de la Cultura, con rejas y balcones"
+      },
+      {
+        "nombre": "Oppidum de Hornachuelos",
+        "texto": "Poblado fortificado prerromano de unas cinco hectáreas, con centro de interpretación en la Casa de la Cultura.",
+        "foto": "oppidum",
+        "alt": "Restos de muros de piedra del poblado entre la hierba"
+      },
+      {
+        "nombre": "Los pozos rojos y blancos",
+        "texto": "Los pozos del término se pintan de rojo el cuerpo y de blanco el brocal.",
+        "foto": "pozo-tinajona",
+        "alt": "Pozo de cuerpo rojo y brocal blanco con su arco de hierro, en el campo"
+      },
+      {
+        "nombre": "Lavadero de lanas",
+        "texto": "Las ruinas de sus arcos, junto al arroyo Valdemedel.",
+        "foto": "lavadero",
+        "alt": "Arcos de ladrillo en ruinas del antiguo lavadero de lanas"
+      }
+    ],
+    "patrimonio": [
+      {
+        "nombre": "Iglesia de Nuestra Señora de Gracia",
+        "detalle": "Del siglo XIII-XIV, reedificada en 1745 y 1859. Dos torres gemelas, un retablo barroco de Alonso Rodríguez Lucas y un púlpito de mármol de Estremoz. C/ Iglesia, 2."
+      },
+      {
+        "nombre": "Ermita del Cristo de la Misericordia",
+        "detalle": "Del siglo XVIII, con atrio, arcada lateral y torre. Guarda la imagen del Cristo, que la tradición atribuye a Pedro Roldán."
+      },
+      {
+        "nombre": "Ermita de la Aurora",
+        "detalle": "En la calle Meléndez Valdés. Conserva la sillería de los Trece de la Orden de Santiago y piedras visigodas en el umbral."
+      },
+      {
+        "nombre": "Ermita del Cristo Viejo",
+        "detalle": "Del siglo XVI, hoy en ruinas, con cúpula y una torre de remate bulboso."
+      },
+      {
+        "nombre": "Ermita de San Juan Macías",
+        "detalle": "Levantada en 1985 en la casa natal del santo."
+      },
+      {
+        "nombre": "Ermita de San Isidro",
+        "detalle": "De 1998, a unos 4 km del pueblo."
+      },
+      {
+        "nombre": "Casa natal de Juan Meléndez Valdés",
+        "detalle": "En la calle Larga, con la placa que recuerda al poeta."
+      },
+      {
+        "nombre": "Monumento a Meléndez Valdés",
+        "detalle": "Busto de bronce de 1985, obra del escultor pacense Luis Martínez Giraldo."
+      },
+      {
+        "nombre": "Casa de Vargas-Zúñiga",
+        "detalle": "Casa-palacio de los siglos XVII y XVIII, con balcón, escudo con venera y rejas con la cruz de Santiago. Hoy es la Casa de la Cultura."
+      },
+      {
+        "nombre": "Palacio de Quintanilla",
+        "detalle": "En la calle Ayuntamiento, con fachada barroca."
+      },
+      {
+        "nombre": "Casa de Bazo",
+        "detalle": "Con un balcón bajo bóveda de venera."
+      },
+      {
+        "nombre": "Casas de los Olea y de los Grajera",
+        "detalle": "Casas de esquina con blasones, de los siglos XVII y XVIII."
+      },
+      {
+        "nombre": "Antiguo convento de Jesús y María",
+        "detalle": "Convento de clarisas fundado en 1535. Hoy es el Ayuntamiento."
+      },
+      {
+        "nombre": "Oppidum de Hornachuelos",
+        "detalle": "Poblado fortificado prerromano de unas cinco hectáreas, excavado entre 1986 y 1997. Tiene centro de interpretación en la Casa de la Cultura."
+      },
+      {
+        "nombre": "Pozo de San Juan Macías",
+        "detalle": "En la finca del Valle Garzón, a unos 4 km: el lugar del primer milagro del santo."
+      },
+      {
+        "nombre": "Pilar del Caño",
+        "detalle": "Pilar tradicional, a las afueras del pueblo."
+      },
+      {
+        "nombre": "Los pozos rojos y blancos",
+        "detalle": "Los pozos del término se pintan de rojo el cuerpo y de blanco el brocal."
+      },
+      {
+        "nombre": "Ruinas del lavadero de lanas",
+        "detalle": "Arcos de ladrillo junto al arroyo Valdemedel."
+      }
+    ],
+    "fiestas": [
+      {
+        "mes": 2,
+        "nombre": "Jueves de Compadres",
+        "cuando": "Dos jueves antes del Miércoles de Ceniza"
+      },
+      {
+        "mes": 2,
+        "nombre": "Muestra de Vinos de Pitarra y Matanza",
+        "cuando": "Finales de febrero"
+      },
+      {
+        "mes": 3,
+        "nombre": "Carnaval y Semana Santa",
+        "cuando": "Fecha variable",
+        "meses": [
+          2,
+          3,
+          4
+        ]
+      },
+      {
+        "mes": 5,
+        "nombre": "San Isidro",
+        "cuando": "15 de mayo",
+        "fecha_fija": "05-15"
+      },
+      {
+        "mes": 7,
+        "nombre": "Festival Folklórico Internacional de la Baja Extremadura",
+        "cuando": "Tercer fin de semana de julio"
+      },
+      {
+        "mes": 8,
+        "nombre": "Festival de Teatro «Meléndez Valdés»",
+        "cuando": "En verano"
+      },
+      {
+        "mes": 8,
+        "nombre": "Jornadas Gastronómicas y Artesanales",
+        "cuando": "Primer fin de semana de agosto"
+      },
+      {
+        "mes": 8,
+        "nombre": "Fiestas del Emigrante",
+        "cuando": "15 de agosto",
+        "fecha_fija": "08-15"
+      },
+      {
+        "mes": 9,
+        "nombre": "Día de Extremadura",
+        "cuando": "8 de septiembre",
+        "fecha_fija": "09-08"
+      },
+      {
+        "mes": 9,
+        "nombre": "Ferias y Fiestas del Cristo de la Misericordia",
+        "cuando": "Desde el 14 de septiembre, cuatro días",
+        "fecha_fija": "09-14",
+        "mayor": true
+      },
+      {
+        "mes": 9,
+        "nombre": "Romería al Pozo de San Juan Macías",
+        "cuando": "El domingo después de las fiestas del Cristo"
+      },
+      {
+        "mes": 11,
+        "nombre": "FEAVIR, Feria Avícola",
+        "cuando": "Segunda semana de noviembre"
+      }
+    ],
+    "gastronomia": {
+      "platos": [
+        "Gazpacho",
+        "Bacalao en cantina",
+        "Escabeche",
+        "Caldereta de cordero",
+        "Pescadilla",
+        "Tapas de guarrino",
+        "Migas",
+        "Garbanzos con romazas",
+        "Repápalos de leche"
+      ],
+      "dulces": [
+        "Roscas de candil",
+        "Flores",
+        "Prestines",
+        "Tirabuzones",
+        "Perrunillas",
+        "Bollos de Pascua",
+        "Coquillos",
+        "Hijuelas",
+        "Torrijas"
+      ],
+      "bebidas": [
+        "Vino de pitarra",
+        "Resóleo",
+        "Vino y aceite de oliva virgen extra de la tierra"
+      ],
+      "foto": "dulces",
+      "alt": "Bandeja de dulces típicos: flores, perrunillas y roscas"
+    },
+    "personajes": [
+      {
+        "nombre": "Juan Meléndez Valdés",
+        "fechas": "1754-1817",
+        "texto": "Poeta y magistrado de la Ilustración. Nació en la calle Larga."
+      },
+      {
+        "nombre": "San Juan Macías",
+        "fechas": "1585-1645",
+        "texto": "Dominico en Lima, canonizado en 1975. Su casa natal es hoy una ermita."
+      },
+      {
+        "nombre": "Alonso García Bravo",
+        "fechas": "h. 1490-1561",
+        "texto": "Alarife de Hernán Cortés: trazó la primera planta de la Ciudad de México."
+      },
+      {
+        "nombre": "José María Chacón Pachón",
+        "fechas": "siglo XIX",
+        "texto": "Diputado en la I República."
+      }
+    ],
+    "rutas": [
+      {
+        "nombre": "Ruta al Cerro de Hornachuelos",
+        "resumen": "Por el camino de Peñas del Agua hasta la Cañada Real Leonesa; vistas a 5-6 pueblos y al embalse de Los Molinos",
+        "url": "https://riberadelfresno.es/plantilla.php?enlace=rutacerrohornachuelos"
+      },
+      {
+        "nombre": "Ruta al Pozo de San Juan Macías",
+        "resumen": "Desde la plaza de España por la C/ Sevilla; unos 4 km; vuelta por la Vereda de la Tía Juana",
+        "url": "https://riberadelfresno.es/plantilla.php?enlace=rutapozosanjuanmacias"
+      },
+      {
+        "nombre": "Ruta al Cortijo de Siete Iglesias",
+        "resumen": "Cortijo del s. XVIII del Marqués de Siete Iglesias, en la Cañada Real Leonesa",
+        "url": "https://riberadelfresno.es/plantilla.php?enlace=rutacortijosieteiglesias"
+      },
+      {
+        "nombre": "Ruta al Cortijo de Quintana",
+        "resumen": "Cortijo de principios del s. XX con almazara y bodega",
+        "url": "https://riberadelfresno.es/plantilla.php?enlace=rutacortijoquintana"
+      },
+      {
+        "nombre": "Ruta a la Bodega y Cortijo de Peñaovejera",
+        "resumen": "Bodega histórica; asentamientos visigodos y romanos cerca",
+        "url": "https://riberadelfresno.es/plantilla.php?enlace=rutabodegacortijopenaovejera"
+      },
+      {
+        "nombre": "Ruta al Punto de Mira de Las Cabezas",
+        "resumen": "Cerro con vistas a 6 pueblos y un asentamiento romano",
+        "url": "https://riberadelfresno.es/plantilla.php?enlace=rutapuntomiracabezas"
+      },
+      {
+        "nombre": "Ruta al Cortijo Bonito",
+        "resumen": "Pasa por Los Pilones (zona de recreo en el arroyo Valdemedel); avutardas y grullas",
+        "url": "https://riberadelfresno.es/plantilla.php?enlace=rutacortijobonito"
+      }
+    ]
+  },
+  "fotos": {
+    "hero": {
+      "archivo": "calle-torre",
+      "alt": "Avenida arbolada que lleva a una torre blanca con reloj",
+      "posicion": "58% 50%"
+    }
+  }
+}

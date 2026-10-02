@@ -1,0 +1,52 @@
+/* GENERADO por scripts/aplicar.mjs desde marca/marca.json. No editar a mano.
+   Es el ÚNICO archivo con colores y fuentes. Paletas B y C: el mando de la reunión. */
+:root {
+  --papel: #FAF9F5;
+  --superficie: #FFFFFF;
+  --tinta: #1A1E1B;
+  --marca-escudo: #008F4C;
+  --marca-tenue: #E8F5EF;
+  --superficie-2: #F2F1ED;
+  --apagado: #6B6D69;
+  --marca: #0A7940;
+  --marca-fuerte: #026131;
+  --sobre-marca: #FFFFFF;
+  --sobre-marca-apagado: #E7F2EC;
+  --linea: #DBDAD6;
+  --linea-fuerte: #8A8C88;
+  --oro: #EAC102;
+  --alerta: #CF0317;
+  --sobre-alerta: #FFFFFF;
+  --foco: #0A7940;
+  --foco-claro: #FFFFFF;
+  --cortina: #EFEEEA;
+  --sombra-alta: 0 .75rem 2.5rem #1A1E1B2E;
+  --velo: #1A1E1B99;
+  --muestra-a: #0A7940;
+  --muestra-b: #1B6AB9;
+  --muestra-c: #A25412;
+  --f-titulo: 'Besley', Georgia, 'Times New Roman', serif;
+  --f-texto: 'Libre Franklin', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --interlineado-titulos: 1.12;
+  --ajuste-nombre: 1.274;
+}
+:root[data-paleta="b"] {
+  --marca-escudo: #2D79CA;
+  --marca-tenue: #ECF3FA;
+  --marca: #1B6AB9;
+  --marca-fuerte: #05549B;
+  --sobre-marca: #FFFFFF;
+  --sobre-marca-apagado: #E8F0F8;
+  --foco: #1B6AB9;
+  --foco-claro: #FFFFFF;
+}
+:root[data-paleta="c"] {
+  --marca-escudo: #B35D15;
+  --marca-tenue: #F8F0EA;
+  --marca: #A25412;
+  --marca-fuerte: #84430B;
+  --sobre-marca: #FFFFFF;
+  --sobre-marca-apagado: #F6EEE7;
+  --foco: #A25412;
+  --foco-claro: #FFFFFF;
+}

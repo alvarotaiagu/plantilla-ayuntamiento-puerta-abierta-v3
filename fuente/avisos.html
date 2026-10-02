@@ -1,0 +1,25 @@
+{{> documento_arriba}}
+{{#avisos.length}}<section class="seccion seccion--primera" aria-labelledby="t-avisos">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-avisos">Avisos del Ayuntamiento</h2>
+    <ol class="avisos">
+      {{#avisos}}<li class="aviso{{#urgente}} aviso--urgente{{/urgente}}" id="aviso-{{id}}"{{#ejemplo}} data-dato-ejemplo="aviso:{{id}}"{{/ejemplo}}>
+        <p class="aviso__meta"><span class="chip">{{tema}}</span><time datetime="{{fecha}}">{{fecha_texto}}</time>{{#urgente}}<span class="chip chip--urgente">Urgente</span>{{/urgente}}{{#ejemplo}}<span class="ejemplo">Ejemplo</span>{{/ejemplo}}</p>
+        <h3 class="aviso__titulo">{{titulo}}</h3>
+        <p class="aviso__texto">{{texto}}</p>
+        {{#enlace}}<p><a href="{{enlace}}">Más información<span class="sr"> sobre {{titulo}}</span></a></p>{{/enlace}}
+      </li>
+      {{/avisos}}
+    </ol>
+  </div>
+</section>{{/avisos.length}}
+
+<section class="seccion" aria-labelledby="t-tablon-todo">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-tablon-todo">Todos los avisos y anuncios</h2>
+    <p class="seccion__entradilla">Los avisos del Ayuntamiento y los anuncios del tablón oficial, juntos y del más nuevo al más antiguo. Puede filtrarlos por tema.</p>
+    <div class="tablon" data-vivo="tablon">{{{vivo.tablon_todo}}}</div>
+    <p class="nota-fuente">Los anuncios del tablón oficial se toman de su <a href="{{sede.tablon}}">tablón de anuncios en la sede electrónica</a>, que es el que tiene validez legal.{{#tablon.excluidas}} {{tablon.excluidas}} anuncios con datos personales (por ejemplo, declaraciones de herederos o actas de selección de personal) no se repiten en esta web: están solo en el tablón oficial.{{/tablon.excluidas}}</p>
+  </div>
+</section>
+{{> documento_abajo}}

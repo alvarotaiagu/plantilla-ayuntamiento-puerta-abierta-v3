@@ -1,0 +1,264 @@
+# Plantilla municipal «Puerta abierta» · Ribera del Fresno
+
+Es una plantilla de web municipal que se reskinea a cualquier ayuntamiento cambiando datos, escudo y colores, sin tocar HTML, CSS ni JS. El primer caso es real: el **Ayuntamiento de Ribera del Fresno** (Badajoz, 3.130 habitantes). Esta carpeta es la **maqueta que se le propone**.
+
+- En local, con git y sin publicar.
+- Lleva en todas las páginas la banda «Propuesta de diseño… no es la web oficial».
+- Lleva `noindex, nofollow` en todas las páginas.
+
+```bash
+npm install                        # Playwright y axe-core (solo para los scripts)
+node scripts/aplicar.mjs           # genera la web desde los datos
+node scripts/servir.mjs            # http://127.0.0.1:4192/  ·  con ?revision, el mando
+node scripts/verificar.mjs         # todas las comprobaciones (≈ 10 min; --rapido ≈ 4)
+```
+
+---
+
+## El concepto: «la puerta del Ayuntamiento, abierta todo el día»
+
+La web es una puerta de medio punto encalada que da paso a lo que pasa hoy en el pueblo. El arco es el único motivo dibujado; todo lo demás es tipografía, datos y orden. Un solo arco, una puerta: nunca una arcada (eso es `restaurante-gabi-zafra-web`).
+
+**Por qué esta versión:**
+- **Responde sin hacer buscar.** El panel «Hoy en Ribera» dice si el Ayuntamiento está abierto (se calcula), qué es lo próximo de la agenda y cuál es el último aviso.
+- **Aguanta sin fotos buenas.** El arco recorta cualquier foto y disimula su poca resolución. Ribera no tiene una foto decente de la iglesia ni de la plaza.
+- **Es la más fácil de reskinear.** El arco y la cal valen para cualquier pueblo extremeño; el escudo solo aporta el color.
+- **Nunca parece abandonada.** Las webs de la zona están feas porque **nadie publica**. Aquí lo vivo se mueve solo:
+  - el tablón oficial entra por script;
+  - las fiestas de fecha fija llenan la agenda;
+  - el «abierto ahora», la marca de «hoy» y el mes en curso se calculan en el navegador con la hora real.
+
+**Carácter:**
+- Letra: Besley para los titulares y Libre Franklin para el texto. Se sirven desde la propia web.
+- Cal `#FAF9F5` y tinta `#1A1E1B`.
+- El sinople del escudo, oscurecido hasta AA (`#0A7940`), como marca.
+- Oro `#EAC102` solo en filetes, en la marca de «hoy» y en el borde del mes actual. **Nunca como texto.**
+- El gules, oscurecido (`#CF0317`), solo en la franja urgente y en el 112.
+- Esquinas de 6 px, filetes de 1 px y casi ninguna sombra.
+
+**El único gesto: la cortina** (solo en la portada, una vez por sesión, 1,2 s):
+1. Se traza un arco en sinople de abajo arriba, con su umbral de oro.
+2. El hueco del arco se abre desde la base y deja ver la portada.
+3. El hueco vuela hasta el arco de la foto del hero y aterriza al píxel; el arco se vuelve a medir en cada fotograma.
+
+Se salta con un clic, una tecla o la rueda. Con movimiento reducido no existe, y sin GSAP se quita sola.
+
+## Sector público: la accesibilidad manda
+
+El RD 1112/2018 obliga a cumplir WCAG 2.1 AA. Por eso esta plantilla **rompe a propósito** el listón «motionsites» del PLIEGO:
+- Sin cursor propio, sin Lenis, sin marquee, sin imanes y sin char-reveal. El scroll es el nativo.
+- La cabecera **no es fija**: con el zoom al 200 % se comería media pantalla.
+- Texto base de 18 px con interlineado de 1,6, como máximo 75 caracteres por línea (medido) y zonas táctiles de 44 px.
+- Ningún texto se apaga con `opacity`: cada fondo tiene su token apagado, medido por script.
+- Desplegables con `<details>` y buscador con `<dialog>` nativo, que resuelven el teclado y Esc.
+- Menú móvil con `aria-expanded`; se cierra con Esc y el foco no se escapa del panel.
+- Declaración de accesibilidad según el modelo del RD («parcialmente conforme» hasta la auditoría). Enlaza a los trámites reales de su sede: comunicaciones, solicitudes y reclamación.
+- **Ni una petición a terceros**: letras, GSAP y escudo se sirven desde la propia web. El mapa de Google solo se carga si se pulsa.
+
+## Mapa de páginas
+
+| Página | Qué tiene |
+|---|---|
+| `index.html` | Franja urgente (si la hay). Hero «Hoy en Ribera» con el arco. Trámites por temas con 4 atajos. Tablón con filtros (los 6 últimos). «Lo que viene y lo que pasó» con el listín corto. «¿Quién se ocupa de qué?». «El año en Ribera». Franja de sede y pie |
+| `tramites.html` | Buscador, «Por momentos», por temas y «Todos los trámites (115)» con filtro |
+| `ayuntamiento.html` | Alcaldía (retrato como hueco diseñado y saluda de ejemplo). Quién se ocupa de qué. El pleno en hemiciclo (color, trama y rótulo). Concejalías. Horario y contacto. Enlace a las grabaciones de pleno |
+| `avisos.html` | Avisos propios y el tablón completo con filtros |
+| `noticias.html` y `noticia-*.html` | Lista y detalle de cada noticia |
+| `agenda.html` | Lo que viene (con las fiestas de fecha fija), lo que pasó y el año en fiestas |
+| `telefonos.html` | El listín completo, con el 112 el primero y el «abierto ahora» de la biblioteca y el centro de día |
+| `pueblo.html` | Carril de lugares con fotos en arco, la placa de la casa natal de Meléndez Valdés, historia, patrimonio, fiestas, gastronomía, personajes, rutas y créditos de las fotos |
+| `contacto.html` | Dirección, horario, mapa bajo clic, instancia general y quejas (en la sede), y datos de la entidad |
+| `aviso-legal.html`, `privacidad.html`, `cookies.html`, `accesibilidad.html`, `404.html` | Lo legal y la página de error |
+
+## Cómo está hecho (y cómo se reskinea)
+
+```
+municipio.json          el municipio (fuentes en DATOS.md)
+marca/marca.json        colores sacados del escudo, letra, densidad
+marca/escudo*.png       el escudo rasterizado (escudo.svg es el original de Commons)
+contenido/*.json        avisos, agenda, noticias y tablón: lo que cambia
+media/ + creditos.json  fotos con gradación común y su crédito
+fuente/*.html           plantillas (Mustache mínimo, como en plantilla-veterinaria-web)
+js/vivo.js              lo que cambia solo; lo ejecutan aplicar.mjs (Node) y el navegador
+scripts/                aplicar, escudo, marca-desde-escudo, fuentes, medir-letra,
+                        fotos, tablon, verificar, quitar_mandos, servir, og
+pruebas/segura-de-leon/ el reskin de prueba (otro municipio real)
+```
+
+La receta completa está en **[RESKIN.md](RESKIN.md)**. En resumen:
+1. rellenar `municipio.json`;
+2. `node scripts/escudo.mjs escudo.svg`;
+3. `python scripts/marca-desde-escudo.py`;
+4. `python scripts/fotos.py --lote …`;
+5. `node scripts/aplicar.mjs`;
+6. `node scripts/verificar.mjs`.
+
+Cada paso funciona igual que en la veterinaria:
+- los colores se calculan como hex en el script (`scripts/lib/color.mjs`);
+- `css/marca.css` es el único archivo con colores y letras;
+- `aplicar.mjs` se niega a escribir si:
+  - un color no llega a AA;
+  - falta un dato obligatorio;
+  - queda un `[PENDIENTE]`;
+  - una foto no tiene crédito.
+
+**Prueba de reskin.** `verificar.mjs` aplica `pruebas/segura-de-leon/` sobre una copia: otro escudo, otra sede de Gestiona, tres servicios y sin pleno, noticias ni placa. Falla si queda cualquier resto de Ribera (nombre, sede, correo, teléfono, comarca, concejales) en lo que se publica. Además, pasa axe y comprueba el desborde a 320 px en la copia.
+
+## Cómo se mantiene viva
+
+| Qué | Cómo | Quién |
+|---|---|---|
+| **Avisos, agenda y noticias** | `contenido/*.json` o una **hoja de Google** publicada (ver abajo). La web pinta primero lo que trae y luego fusiona lo de la hoja | El Ayuntamiento, desde la hoja |
+| **Aviso urgente** | Un aviso con `"urgente": true` y `"caduca": "AAAA-MM-DD"`. Sale en una franja roja en todas las páginas y se quita solo al caducar | El Ayuntamiento |
+| **Tablón oficial** | `node scripts/tablon.mjs` lee `/board` de la sede, quita lo que lleva datos personales y conserva el `titulo_claro` que haya puesto una persona. La web refresca `contenido/tablon.json` al cargar | Una tarea diaria (ver abajo) + una persona para el lenguaje claro |
+| **Fiestas** | `municipio.json → pueblo.fiestas`. Las de `fecha_fija` entran solas en la agenda | Una vez al año |
+| **Abierto ahora, «hoy», mes actual** | Se calculan en el navegador con la hora de Madrid | Nadie |
+
+**La hoja de cálculo** (memoria «hoja de cálculo como CMS»):
+1. Crea una hoja de Google con tres pestañas: `Avisos`, `Agenda` y `Noticias`.
+   - En la primera fila van los nombres de columna (`id`, `fecha`, `tema`, `titulo`, `texto`, `urgente`, `caduca`, `hora`, `lugar`, `resumen`, `estado`).
+   - Un `estado` «oculto» o «borrador» la oculta.
+2. Archivo → Compartir → Publicar en la web.
+3. Pon su id en `municipio.json → hoja.id`.
+
+La web lee la hoja por el endpoint `gviz`, con `credentials: "omit"` (sin cookies) y un corte a 7 segundos. Si la hoja no contesta, se queda lo que venía en la página. Está probado en los dos sentidos.
+
+**El tablón y el robots.txt.** La sede de Gestiona **no tiene RSS, JSON ni CORS**, y su `robots.txt` prohíbe a los robots todo salvo `/info` (comprobado el 02/10/2026). Por eso:
+- **en la maqueta** el tablón sale de una copia del 2 de octubre (`pruebas/tablon/board-ribera.html`, con el nombre del causante de una declaración de herederos sustituido), con `node scripts/tablon.mjs --desde …`;
+- **en producción** la lectura automática solo se activa con `"tablon_autorizado": true`, cuando el Ayuntamiento (titular de la sede) lo autorice por escrito. Entonces, una tarea diaria (GitHub Actions o un cron del hosting) ejecuta `node scripts/tablon.mjs && node scripts/aplicar.mjs` y publica.
+- Si la sede no responde o cambia el marcado, **no se toca** el último `tablon.json`.
+
+Datos personales: se excluyen por patrón y hay pruebas con 17 títulos reales de sedes de la zona. Entran:
+- declaraciones de herederos;
+- listas de admitidos y excluidos;
+- actas de selección o de tribunal;
+- baremaciones;
+- nombramientos;
+- bolsas de trabajo;
+- jurados;
+- notificaciones;
+- cualquier DNI o NIE.
+
+En el tablón del 2 de octubre había 10 anuncios; salen 8 y 2 se quedan fuera.
+
+**La cuota de mantenimiento** cubriría:
+- poner en marcha la tarea diaria del tablón;
+- revisar cada semana los títulos en lenguaje claro;
+- publicar en la hoja lo que el Ayuntamiento mande por WhatsApp o correo;
+- actualizar la corporación, los horarios y las fiestas;
+- revisar la accesibilidad una vez al año (y la declaración);
+- vigilar que la sede no cambie las rutas.
+
+## El mando de la reunión (`?revision`)
+
+Abajo a la izquierda. Solo aparece con `?revision` y se aparta mientras está el aviso de cookies.
+- **Versión:**
+  - **«Puerta abierta»** (la cargada): el arco enmarca también las fotos del carril, de las noticias y el retrato vacío, y la marca de «hoy» lleva un arquito.
+  - **«Sobria»**: el arco solo en el hero. A cambio, el panel «Hoy» **añade** «111 trámites en la sede, las 24 horas» (contados de los datos) y los tres próximos eventos.
+- **Color:** Sinople (el real), Azur y Almagre. Se derivan girando el matiz ±100° con la misma estructura de contraste. El escudo no cambia.
+
+**Antes de entregar** (comprobado por script contra una copia, en cada verificación):
+```bash
+# 1. fijar lo elegido en la reunión
+#    versión sobria → "densidad": "sobria" en marca/marca.json
+node scripts/aplicar.mjs --fijar-paleta b      # solo si eligen otro color (b = Azur, c = Almagre)
+# 2. quitar el mando
+python scripts/quitar_mandos.py --comprobar     # lo prueba en una copia
+python scripts/quitar_mandos.py                 # borra los bloques [MANDO DE MAQUETA] y regenera
+# 3. cuando sea la web oficial: "propuesta": false e "indexar": true en municipio.json
+node scripts/aplicar.mjs && node scripts/verificar.mjs
+```
+
+## Decisiones que conviene saber
+
+- **El color de marca es el sinople, elegido a mano.** Por área ganaría el azur de la campaña del escudo (y el oro de la corona, que nunca puede ser marca). El sinople es el fresno que da nombre al pueblo, y el prompt lo pedía; el motivo queda escrito en `marca/marca.json`. En el reskin, si gana el gules, la marca pasa al siguiente esmalte: el rojo es el de las alertas. Le pasó a Segura de León.
+- **Trámites: 115 en la lista, 111 en la sede.** `datos-ribera.json` trae 117:
+  - 111 son del catálogo de la sede;
+  - 4 son impresos en PDF de su web;
+  - 2 son formularios de Google de la temporada deportiva **2023**, que no se enseñan (`vigente: false`) porque llevarían a una inscripción caducada.
+  
+  Las cifras se cuentan de los datos, no se escriben a mano.
+- **«Ayudas a la natalidad»** no tiene trámite propio en el catálogo. El atajo lleva al anuncio de la convocatoria 2026 en el tablón de la sede, y lo dice («Documento en el tablón de la sede»).
+- **Letras y GSAP alojados en la propia web** (`scripts/fuentes.mjs`, `js/vendor/gsap.min.js`). Una web municipal no debería mandar la IP de cada vecino a Google para pintar una letra.
+- **Medidas tipográficas** (`scripts/medir-letra.mjs`, con las letras de verdad):
+  - altura de x de 0,52 en Besley y 0,53 en Libre Franklin;
+  - el nombre de la cabecera va a ×1,274 del menú, para que su altura de x sea exactamente 1,25 la del menú (verificado en el navegador);
+  - interlineado de titulares de 1,12, porque la tilde de la ñ (0,76) más la bajada de la g (0,27) más un respiro piden 1,07.
+- **La cortina, sin `clip-path: path()`.** El muro es un trazado SVG con `fill-rule: evenodd`. Durante las pruebas, el Chromium sin cabeza se colgaba al pausar, capturar y mover la animación. No llegó a pasar en una ejecución normal, pero no se arriesga.
+- **Gradación común de las fotos** (`scripts/fotos.py`): cielos neutros, cal limpia y saturación contenida. Las fechas naranjas de las fotos de Diegui57 se recortan.
+
+### Erratas de su web, corregidas al usar sus textos
+- «Vigilio» → **Virgilio** (biblioteca «Virgilio Gutiérrez»).
+- «Matrachel» → **Matachel** (Mancomunidad Tierra de Barros – Río Matachel).
+- «Alcade» → **Alcalde**.
+- El teléfono de la Guardia Civil que da su web (924 53 60 11) es el del Ayuntamiento. Se usa el de guardiacivil.es: **924 536 013**.
+
+### Datos que se contradicen
+- **Distancias a Badajoz**: 82, 83 o 107,6 km según la fuente. No se enseñan.
+- **Muestra de Vinos de Pitarra**: «finales de febrero» según su web y «puente de diciembre» según Wikipedia. Se usa febrero.
+- **Fiestas del Cristo**: su web dice desde el 14 de septiembre, cuatro días; la Diputación, del 13 al 16. Se usa la de su web.
+
+## Créditos de las fotos
+
+| Foto | Autor | Licencia |
+|---|---|---|
+| Avenida con torre (portada), Casa de la Cultura, dulces | web del Ayuntamiento | **Solo para la propuesta**: su aviso legal prohíbe reproducirlas sin autorización |
+| Las dos torres de la iglesia | cartel de DEMA y la Junta de Extremadura (2014), web del Ayuntamiento | Ídem. Es una foto pequeña (728 px) |
+| Monumento a Meléndez Valdés | F. Enrique Suárez | CC BY-SA 3.0 |
+| Oppidum de Hornachuelos | Ángel M. Felicísimo | CC BY 2.0 |
+| Pozo de «La Tinajona», lavadero de lanas | Diegui57 | CC BY 4.0 y CC BY-SA 4.0 |
+| Escudo | SanchoPanzaXXI (Wikimedia Commons) | CC BY-SA 4.0 |
+
+Todas tienen enlace a su ficha en `media/creditos.json` y en la página «El pueblo».
+
+## Pendientes para el Ayuntamiento
+
+- [ ] **Horario de atención** al público. Ahora sale el de ejemplo, «Lunes a viernes, de 9:00 a 14:00», con la etiqueta.
+- [ ] **Fotos propias**: la iglesia, la plaza y las fiestas, y **autorización** para usar las de su web.
+- [ ] **El escudo**: el Pleno abrió en 2024 un expediente para cambiarlo y crear bandera. Si se aprueba, se rehace con `scripts/escudo.mjs` y los colores salen solos.
+- [ ] **Fechas de FEAVIR 2026 y de la V Feria del Comercio.** FEAVIR sale como ejemplo (12 de noviembre); también la apertura del camino al Pozo de San Juan.
+- [ ] Si usan **Bandomóvil** u otra app de avisos (para enlazarla o no duplicar).
+- [ ] Enlazar su **Instagram** (`@aytoriberadelfresno`): su web actual apunta a plus.google.com. Esta propuesta ya lo enlaza en el pie y en contacto.
+- [ ] **Dirección del registro**: C/ Ayuntamiento n.º 1 (web) o n.º 2 (directorio DIR3 de la sede).
+- [ ] El **saluda** de la alcaldía: el texto actual es de ejemplo.
+- [ ] **Autorización para leer su tablón** de la sede (`robots.txt` lo prohíbe a los robots).
+- [ ] Confirmar las delegaciones vigentes de Urbanismo y el orden de los tenientes de alcalde. El último BOP localizado es del 19/06/2026.
+
+Los datos de cada página tienen su fuente en **[DATOS.md](DATOS.md)**.
+
+## Verificación
+
+`node scripts/verificar.mjs` hace, con Playwright:
+- **axe-core** (WCAG 2.1 A y AA) en las 20 páginas, con las dos densidades y las tres paletas. También en móvil, con el aviso de cookies, el menú abierto y el buscador con resultados.
+- **Contraste** de las 21 parejas de tokens en las tres paletas.
+- **Sin scroll horizontal** a 320, 360, 390, 768, 1024 y 1440 px, y con el zoom al 200 %.
+- **Teclado**: el foco se recorre entero y se ve siempre, con estilo y contraste medidos. Menú móvil con Esc.
+- **Cortina**:
+  - se traza de verdad (muestreada fotograma a fotograma);
+  - un fotograma a mitad se comprueba por píxel;
+  - aterriza al píxel sobre el arco;
+  - sale una vez por sesión, no sale en interiores ni con movimiento reducido;
+  - se retira sin GSAP y sin `cortina.js`;
+  - se salta con la rueda.
+- **«Abierto ahora»** con la fecha simulada: un martes a las 10:00 y un domingo.
+- **Tablón**:
+  - los filtros cuentan filas visibles;
+  - las exclusiones se prueban con entradas de prueba;
+  - con `route.abort` se pinta el respaldo y un tablón nuevo se pinta solo;
+  - la hoja de cálculo se prueba en los dos sentidos;
+  - la sede caída no rompe nada.
+- **Reskin** a Segura de León sin restos de Ribera, y la banda de propuesta que se apaga con `"propuesta": false`.
+- **Contenido**:
+  - «Ejemplo» exactamente en los 5 datos marcados;
+  - banda y `noindex` en todas las páginas;
+  - los 302 enlaces de la sede con el patrón de Gestiona.
+- **Checklist**: cookies con `:not([hidden])`, menú con `height: 100dvh`, la receta de borrado del mando, la medida de la letra, las zonas táctiles y la estructura (un `h1`, títulos sin saltos, landmarks).
+
+### Última pasada: 2 de octubre de 2026
+
+`node scripts/verificar.mjs --capturas` → **85 de 85 comprobaciones**, en 8 minutos y medio. Las capturas quedan en `screenshots/`, sin versionar.
+
+Lo que costó y conviene saber al tocarla:
+- **El reloj de la cortina.** En una carga en frío termina antes de que Playwright devuelva el control, así que se muestrea con un enganche en `addInitScript`. Pausar, capturar y mover la animación colgaba el Chromium sin cabeza.
+- **El movimiento reducido** quita las transiciones (`transition: none`), no las acorta a 0,01 ms. Acortadas, el estilo computado llegaba un fotograma tarde y las pruebas del mando fallaban de vez en cuando.
+- **El nombre largo de un municipio** («Segura de León») se montaba sobre los botones a 320 px sin provocar scroll horizontal. Ahora hay una prueba específica de que no se pisan.

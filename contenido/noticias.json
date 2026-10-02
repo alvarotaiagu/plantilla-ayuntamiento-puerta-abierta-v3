@@ -1,0 +1,60 @@
+{
+  "_leeme": "Noticias. Campos: id (sale en la dirección: noticia-<id>.html), fecha, titulo, resumen, cuerpo (lista de párrafos), imagen (nombre en media/, sin .jpg) + imagen_alt, fuente {nombre, url}, fecha_aproximada (las de Facebook solo dan «hace 1 d»).",
+  "noticias": [
+    {
+      "id": "reunion-v-feria-comercio",
+      "fecha": "2026-10-02",
+      "titulo": "Reunión informativa sobre la V Feria del Comercio",
+      "resumen": "Hoy viernes, a las 20:30, en la Casa de la Cultura.",
+      "cuerpo": ["El Ayuntamiento convoca una reunión informativa sobre la V Feria del Comercio el viernes 2 de octubre, a las 20:30, en la Casa de la Cultura.", "La fecha de la feria se anunciará más adelante."],
+      "imagen": "casa-cultura",
+      "imagen_alt": "Fachada encalada de la Casa de la Cultura",
+      "fuente": { "nombre": "Facebook del Ayuntamiento", "url": "https://www.facebook.com/AyuntamientodeRiberadelFresno" },
+      "fecha_aproximada": true
+    },
+    {
+      "id": "cruz-pozo-san-juan",
+      "fecha": "2026-10-01",
+      "titulo": "Instalada una nueva cruz de 8 × 4 metros en el Pozo de San Juan",
+      "resumen": "El camino de peregrinación desde el pueblo estará listo a finales de año.",
+      "cuerpo": ["Se ha instalado una nueva cruz metálica de 8 por 4 metros en el Pozo de San Juan Macías.", "El camino de peregrinación entre el pueblo y el Pozo estará listo a finales de 2026, y se prepara un hermanamiento con Lima."],
+      "fuente": { "nombre": "Facebook del Ayuntamiento", "url": "https://www.facebook.com/AyuntamientodeRiberadelFresno" },
+      "fecha_aproximada": true
+    },
+    {
+      "id": "ayudas-natalidad-2026",
+      "fecha": "2026-10-01",
+      "titulo": "Abierta la convocatoria 2026 de ayudas a la natalidad",
+      "resumen": "Las bases y la solicitud están en el tablón de la sede electrónica.",
+      "cuerpo": ["El Ayuntamiento ha publicado la convocatoria 2026 de ayudas a la natalidad (expediente 182/2026).", "Las bases y el modo de pedirla están en el tablón de anuncios de la sede electrónica."],
+      "fuente": { "nombre": "Tablón de anuncios de la sede", "url": "https://riberadelfresno.sedelectronica.es/preview-document/02af28b6-9fdb-4b29-968c-eee1a7582f0a" }
+    },
+    {
+      "id": "campo-cesped-artificial",
+      "fecha": "2026-10-01",
+      "titulo": "El concejal de Deportes informa sobre el campo de césped artificial",
+      "resumen": "Andrés Bermejo explica en qué punto está el proyecto.",
+      "cuerpo": ["El concejal Andrés Bermejo ha informado de la situación del proyecto del campo de fútbol de césped artificial."],
+      "fuente": { "nombre": "Facebook del Ayuntamiento", "url": "https://www.facebook.com/AyuntamientodeRiberadelFresno" },
+      "relacionado": { "nombre": "La Gaceta Independiente", "url": "https://lagacetaindependiente.com/2026/10/01/el-campo-de-futbol-de-ribera-del-fresno-afronta-un-nuevo-capitulo-de-espera-tras-tres-anos-de-tramitacion" },
+      "fecha_aproximada": true
+    },
+    {
+      "id": "grabacion-pleno-30-septiembre",
+      "fecha": "2026-10-01",
+      "titulo": "Ya se puede ver la grabación del pleno del 30 de septiembre",
+      "resumen": "El pleno ordinario, grabado entero.",
+      "cuerpo": ["La grabación del pleno ordinario del 30 de septiembre de 2026 está publicada en el Facebook del Ayuntamiento."],
+      "fuente": { "nombre": "Facebook del Ayuntamiento", "url": "https://www.facebook.com/AyuntamientodeRiberadelFresno" },
+      "fecha_aproximada": true
+    },
+    {
+      "id": "anillo-norte",
+      "fecha": "2026-09-29",
+      "titulo": "Anuncio previo de las instalaciones eléctricas «Anillo Norte»",
+      "resumen": "Publicado en el tablón antes de empezar la obra.",
+      "cuerpo": ["Se ha publicado en el tablón de anuncios el anuncio previo a la autorización de las instalaciones eléctricas «Anillo Norte» (expediente 1526/2026)."],
+      "fuente": { "nombre": "Tablón de anuncios de la sede", "url": "https://riberadelfresno.sedelectronica.es/preview-document/e93c0528-669d-435a-9c14-ea0cd2393a51" }
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "plantilla-ayuntamiento-puerta-abierta",
+  "private": true,
+  "type": "module",
+  "description": "Plantilla de web municipal «Puerta abierta». Se genera con node scripts/aplicar.mjs.",
+  "scripts": {
+    "aplicar": "node scripts/aplicar.mjs",
+    "tablon": "node scripts/tablon.mjs",
+    "verificar": "node scripts/verificar.mjs",
+    "servir": "node scripts/servir.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "playwright": "1.63.0"
+  }
+}

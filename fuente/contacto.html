@@ -1,0 +1,50 @@
+{{> documento_arriba}}
+<section class="seccion seccion--primera" aria-labelledby="t-donde">
+  <div class="contenedor contacto">
+    <div>
+      <h2 class="seccion__titulo" id="t-donde">Dónde y cuándo</h2>
+      <div class="estado-ayto" data-vivo="servicio" data-clave="ayuntamiento">{{{vivo.estado_ayto}}}</div>
+      <dl class="datos">
+        <div><dt>Dirección</dt><dd>{{contacto.direccion}} · {{contacto.cp}} {{nombre}} ({{provincia}})</dd></div>
+        <div{{#horario.ejemplo}} data-dato-ejemplo="horario"{{/horario.ejemplo}}><dt>Horario de atención</dt><dd>{{horario.texto}}{{#horario.ejemplo}} <span class="ejemplo">Ejemplo</span>{{/horario.ejemplo}}</dd></div>
+        <div><dt>Teléfono</dt><dd><a href="{{contacto.tel_href}}">{{contacto.telefono}}</a></dd></div>
+        {{#contacto.fax}}<div><dt>Fax</dt><dd>{{contacto.fax}}</dd></div>{{/contacto.fax}}
+        <div><dt>Correo</dt><dd><a class="rompe" href="mailto:{{contacto.correo}}">{{contacto.correo}}</a></dd></div>
+      </dl>
+    </div>
+    <div class="mapa" data-mapa="{{mapa_embed_url}}" data-mapa-titulo="Mapa: Ayuntamiento de {{nombre}}">
+      <div class="mapa__aviso">
+        <svg class="icono mapa__icono" aria-hidden="true"><use href="#i-pin"/></svg>
+        <p>El mapa es de Google. Para no enviarle datos sin su permiso, solo se carga si usted lo pide.</p>
+        <button class="boton boton--borde" type="button" data-cargar-mapa hidden>Ver el mapa</button>
+        <p><a href="{{como_llegar_url}}">Abrir la dirección en Google Maps</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="seccion" aria-labelledby="t-escribir">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-escribir">Escribir al Ayuntamiento</h2>
+    <p class="seccion__entradilla">Esta web no recoge datos. Las solicitudes, quejas y sugerencias se presentan en la sede electrónica, que le da un justificante con fecha y número de registro.</p>
+    <ul class="fichas">
+      <li class="ficha"><h3 class="ficha__titulo">Cualquier solicitud</h3><p>La instancia general sirve para todo lo que no tiene un trámite propio.</p><p><a class="boton boton--marca" href="{{sede.instancia}}"><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg>Instancia general<span class="sr">, se abre la sede electrónica</span></a></p></li>
+      {{#sede.quejas}}<li class="ficha"><h3 class="ficha__titulo">Quejas y sugerencias</h3><p>Su opinión sobre cualquier servicio municipal.</p><p><a class="boton boton--borde" href="{{sede.quejas}}"><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg>Quejas y sugerencias<span class="sr">, se abre la sede electrónica</span></a></p></li>{{/sede.quejas}}
+      <li class="ficha"><h3 class="ficha__titulo">Una consulta rápida</h3><p>Por teléfono, en horario de atención: <a href="{{contacto.tel_href}}">{{contacto.telefono}}</a>. O por correo: <a class="rompe" href="mailto:{{contacto.correo}}">{{contacto.correo}}</a>.</p></li>
+    </ul>
+  </div>
+</section>
+
+<section class="seccion" aria-labelledby="t-datos">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-datos">Datos de la entidad</h2>
+    <dl class="datos datos--fila">
+      <div><dt>Titular</dt><dd>{{legal.titular}}</dd></div>
+      <div><dt>NIF</dt><dd>{{legal.nif}}</dd></div>
+      {{#legal.dir3}}<div><dt>Código DIR3 (facturas)</dt><dd>{{legal.dir3}}</dd></div>{{/legal.dir3}}
+    </dl>
+    {{#redes.length}}<h3 class="subtitulo">Redes sociales</h3>
+    <ul class="lista-enlaces">{{#redes}}<li><a href="{{url}}">{{nombre}}</a></li>{{/redes}}</ul>{{/redes.length}}
+  </div>
+</section>
+{{> documento_abajo}}

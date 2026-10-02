@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<!-- {{aviso_generado}} -->
+<html lang="es" class="sin-js densidad-{{marca.densidad}}">
+<head>
+{{> cabeza}}
+</head>
+<body class="pagina-inicio">
+{{#pagina.cortina}}<div class="cortina" aria-hidden="true">
+  <div class="cortina__velo"></div>
+  <svg class="cortina__trazo" width="100%" height="100%">
+    <path class="cortina__muro" fill-rule="evenodd" d="M0 0"/>
+    <path class="cortina__lado" pathLength="1" d="M0 0"/>
+    <path class="cortina__lado" pathLength="1" d="M0 0"/>
+    <path class="cortina__umbral" pathLength="1" d="M0 0"/>
+  </svg>
+</div>{{/pagina.cortina}}
+{{> arriba}}
+<main id="contenido" tabindex="-1">
+
+  <section class="hero" aria-labelledby="titulo-pagina">
+    <div class="contenedor hero__rejilla">
+      <div class="puerta">
+        {{#hero_foto}}<figure class="arco puerta__arco" id="arco-hero">
+          <img src="media/{{archivo}}.jpg" srcset="media/{{archivo}}-800.jpg 800w, media/{{archivo}}.jpg {{ancho}}w" sizes="(min-width: 56em) 36vw, 92vw" width="{{ancho}}" height="{{alto}}" alt="{{alt}}" style="object-position: {{posicion}}" fetchpriority="high" decoding="async">
+        </figure>{{/hero_foto}}
+        {{^hero_foto}}<div class="arco puerta__arco arco--vacio" id="arco-hero"><img src="marca/escudo-480.png" width="{{escudo.ancho480}}" height="480" alt=""></div>{{/hero_foto}}
+        <span class="puerta__umbral" aria-hidden="true"></span>
+      </div>
+      <div class="hero__texto">
+        <p class="hero__ante">Ayuntamiento de</p>
+        <h1 class="hero__titulo" id="titulo-pagina">{{nombre}}</h1>
+        {{#lema}}<p class="hero__lema">{{lema}}</p>{{/lema}}
+        <section class="hoy" aria-labelledby="hoy-titulo" data-vivo="hoy">{{{vivo.hoy}}}</section>
+        <ul class="hero__botones">
+          <li><a class="boton boton--marca" href="tramites.html"><svg class="icono" aria-hidden="true"><use href="#i-sede"/></svg>Hacer un trámite</a></li>
+          <li><a class="boton boton--borde" href="telefonos.html"><svg class="icono" aria-hidden="true"><use href="#i-telefono"/></svg>Teléfonos</a></li>
+          <li><a class="boton boton--borde" href="agenda.html"><svg class="icono" aria-hidden="true"><use href="#i-calendario"/></svg>Agenda</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" aria-labelledby="t-tramites">
+    <div class="contenedor">
+      <div class="seccion__cabeza">
+        <h2 class="seccion__titulo" id="t-tramites">¿Qué necesita hacer?</h2>
+        <a class="ver-todo" href="tramites.html">Todos los trámites<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+      </div>
+      <ul class="atajos">
+        {{#tramites.atajos}}<li><a class="atajo" href="{{href}}">
+          <span class="atajo__nombre">{{nombre}}</span>
+          <span class="atajo__nota">{{nota}}</span>
+          <span class="atajo__destino"><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg>{{destino}}</span>
+        </a></li>
+        {{/tramites.atajos}}
+      </ul>
+      {{> temas}}
+    </div>
+  </section>
+
+  <section class="seccion seccion--tablon" aria-labelledby="t-tablon">
+    <div class="contenedor">
+      <div class="seccion__cabeza">
+        <h2 class="seccion__titulo" id="t-tablon">Tablón de avisos</h2>
+        <a class="ver-todo" href="avisos.html">Todos los avisos y anuncios<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+      </div>
+      <div class="tablon" data-vivo="tablon" data-limite="6">{{{vivo.tablon_portada}}}</div>
+      <p class="nota-fuente">Los anuncios marcados «Tablón oficial» vienen del tablón de anuncios de la sede electrónica, con el título explicado en lenguaje claro.</p>
+    </div>
+  </section>
+
+  <section class="seccion" aria-labelledby="t-linea">
+    <div class="contenedor linea-rejilla">
+      <div class="linea-columna">
+        <h2 class="seccion__titulo" id="t-linea">Lo que viene y lo que pasó</h2>
+        <ol class="linea" data-vivo="linea">{{{vivo.linea}}}</ol>
+        <p class="enlaces-pie"><a href="agenda.html">Toda la agenda</a> · <a href="noticias.html">Todas las noticias</a></p>
+      </div>
+      <aside class="listin-corto" aria-labelledby="t-listin-corto">
+        <h3 class="listin-corto__titulo" id="t-listin-corto">Los teléfonos más usados</h3>
+        <ul class="listin">
+          {{#listin_corto}}<li class="listin__fila{{#urgente}} listin__fila--urgente{{/urgente}}"><span class="listin__nombre">{{nombre}}</span><span class="listin__puntos" aria-hidden="true"></span><a class="listin__numero" href="{{tel_href}}">{{telefono}}</a></li>
+          {{/listin_corto}}
+        </ul>
+        <a class="ver-todo" href="telefonos.html">Todos los teléfonos<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+      </aside>
+    </div>
+  </section>
+
+  {{#quien_portada.length}}<section class="seccion" aria-labelledby="t-quien">
+    <div class="contenedor">
+      <div class="seccion__cabeza">
+        <h2 class="seccion__titulo" id="t-quien">¿Quién se ocupa de qué?</h2>
+        <a class="ver-todo" href="ayuntamiento.html">El Ayuntamiento<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+      </div>
+      <ul class="quien">
+        {{#quien_portada}}{{> quien_fila}}{{/quien_portada}}
+      </ul>
+    </div>
+  </section>{{/quien_portada.length}}
+
+  {{#fiestas.length}}<section class="seccion" aria-labelledby="t-anio">
+    <div class="contenedor">
+      <div class="seccion__cabeza">
+        <h2 class="seccion__titulo" id="t-anio">El año en {{nombre_corto}}</h2>
+        <a class="ver-todo" href="pueblo.html">Conocer el pueblo<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+      </div>
+      <ol class="anio" data-vivo="anio">{{{vivo.anio}}}</ol>
+    </div>
+  </section>{{/fiestas.length}}
+
+</main>
+{{> abajo}}
+</body>
+</html>

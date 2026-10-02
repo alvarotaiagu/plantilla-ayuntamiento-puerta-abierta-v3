@@ -1,0 +1,34 @@
+{{> documento_arriba}}
+<div class="seccion seccion--primera">
+  <div class="contenedor texto-largo legal">
+    {{#propuesta}}<p class="legal__propuesta" data-propuesta><b>Esta web es una propuesta de diseño</b> preparada para el Ayuntamiento de {{nombre}}. No es su web oficial{{#web_actual}}, que sigue en <a href="{{web_actual}}">{{web_actual_texto}}</a>{{/web_actual}}. Los textos legales están escritos como quedarían si el Ayuntamiento la adopta.</p>{{/propuesta}}
+
+    <h2>Titular</h2>
+    <dl class="datos">
+      <div><dt>Titular</dt><dd>{{legal.titular}}</dd></div>
+      <div><dt>NIF</dt><dd>{{legal.nif}}</dd></div>
+      <div><dt>Dirección</dt><dd>{{contacto.direccion}} · {{contacto.cp}} {{nombre}} ({{provincia}})</dd></div>
+      <div><dt>Teléfono</dt><dd><a href="{{contacto.tel_href}}">{{contacto.telefono}}</a></dd></div>
+      <div><dt>Correo</dt><dd><a class="rompe" href="mailto:{{contacto.correo}}">{{contacto.correo}}</a></dd></div>
+      {{#legal.dir3}}<div><dt>Código DIR3</dt><dd>{{legal.dir3}}</dd></div>{{/legal.dir3}}
+    </dl>
+
+    <h2>Para qué sirve esta web</h2>
+    <p>Esta web informa sobre el Ayuntamiento, sus servicios y el municipio. No tramita nada: los trámites, el registro, el tablón de anuncios con validez legal, el portal de transparencia y el perfil del contratante están en la <a href="{{sede.inicio}}">sede electrónica</a>.</p>
+    <p>La información de esta web es orientativa. Si hay diferencias con lo publicado en la sede electrónica o en un boletín oficial, vale lo publicado allí.</p>
+
+    <h2>Propiedad intelectual</h2>
+    <ul>
+      <li>El escudo procede de Wikimedia Commons: {{escudo_credito.autor}}, licencia {{escudo_credito.licencia}} (<a href="{{escudo_credito.url}}">ficha del escudo</a>).</li>
+      <li>Cada foto lleva su autor y su licencia en <a href="pueblo.html#creditos">El pueblo</a>.</li>
+      <li>Los textos son del Ayuntamiento. Se pueden reproducir citando la fuente.</li>
+    </ul>
+
+    <h2>Enlaces a otras webs</h2>
+    <p>Esta web enlaza a la sede electrónica, a otras administraciones y a las redes sociales del Ayuntamiento. Cada una tiene sus propias condiciones y su propia política de privacidad.</p>
+
+    <h2>Accesibilidad</h2>
+    <p>Puede consultar la <a href="accesibilidad.html">declaración de accesibilidad</a>.</p>
+  </div>
+</div>
+{{> documento_abajo}}

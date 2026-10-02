@@ -1,0 +1,30 @@
+{
+  "slug": "segura-de-leon",
+  "letra": {
+    "titulares": "Besley",
+    "texto": "Libre Franklin",
+    "google": "family=Besley:ital,wght@0,600;0,700;1,600&family=Libre+Franklin:wght@400;600"
+  },
+  "giros_paleta": [
+    100,
+    -100
+  ],
+  "densidad": "puerta",
+  "colores": {
+    "papel": "#FAF9F5",
+    "superficie": "#FFFFFF",
+    "tinta": "#1A1E1B",
+    "marca": "#369A38",
+    "oro": "#C8B100",
+    "alerta": "#DA251C"
+  },
+  "esmaltes": {
+    "gules": "#DA251C",
+    "oro": "#C8B100",
+    "plata": "#FFFFFF",
+    "purpura": "#90546E",
+    "sable": "#000000",
+    "sinople": "#369A38"
+  },
+  "principal": "sinople"
+}

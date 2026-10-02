@@ -1,0 +1,11 @@
+{{> documento_arriba}}
+<section class="seccion seccion--primera" aria-labelledby="t-proximo">
+  <div class="contenedor agenda" data-vivo="agenda">{{{vivo.agenda}}}</div>
+</section>
+{{#fiestas.length}}<section class="seccion" aria-labelledby="t-anio">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-anio">Las fiestas del año</h2>
+    <ol class="anio" data-vivo="anio">{{{vivo.anio}}}</ol>
+  </div>
+</section>{{/fiestas.length}}
+{{> documento_abajo}}

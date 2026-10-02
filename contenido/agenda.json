@@ -1,0 +1,27 @@
+{
+  "_leeme": "Agenda. Campos: id, fecha (AAAA-MM-DD), hora (opcional), titulo, lugar, nota, ejemplo. Las fiestas de fecha fija de municipio.json (pueblo.fiestas[].fecha_fija) se añaden solas: no hace falta repetirlas aquí.",
+  "eventos": [
+    {
+      "id": "reunion-feria-comercio",
+      "fecha": "2026-10-02",
+      "hora": "20:30",
+      "titulo": "Reunión de la V Feria del Comercio",
+      "lugar": "Casa de la Cultura"
+    },
+    {
+      "id": "feavir-2026",
+      "fecha": "2026-11-12",
+      "titulo": "FEAVIR, Feria Avícola",
+      "lugar": "Segunda semana de noviembre",
+      "nota": "Fecha exacta por confirmar.",
+      "ejemplo": true
+    },
+    {
+      "id": "camino-pozo-san-juan",
+      "fecha": "2026-12-15",
+      "titulo": "Apertura del camino de peregrinación al Pozo de San Juan",
+      "lugar": "Prevista para finales de año",
+      "ejemplo": true
+    }
+  ]
+}

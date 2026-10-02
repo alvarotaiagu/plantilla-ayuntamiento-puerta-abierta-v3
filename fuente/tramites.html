@@ -1,0 +1,58 @@
+{{> documento_arriba}}
+<section class="seccion seccion--primera" aria-labelledby="buscar">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="buscar">Buscar un trámite</h2>
+    <div class="buscador-pagina" data-buscador-pagina>
+      <div class="campo" role="search">
+        <label class="campo__etiqueta" for="buscar-campo">¿Qué necesita hacer?</label>
+        <input class="campo__entrada" id="buscar-campo" type="search" autocomplete="off" spellcheck="false" placeholder="Empadronarme, pagar un recibo, una obra…" aria-describedby="buscar-ayuda" data-buscador-campo>
+      </div>
+      <p class="campo__ayuda" id="buscar-ayuda">Escríbalo con sus palabras: «empadronarme», «obra», «agua», «boda». Cada resultado le lleva a su trámite en la sede electrónica.</p>
+      <p class="buscador__cuenta" role="status" data-buscador-cuenta></p>
+      <ul class="resultados" data-buscador-resultados></ul>
+      <noscript><p class="campo__ayuda">El buscador necesita JavaScript. Más abajo tiene la lista completa de trámites.</p></noscript>
+    </div>
+  </div>
+</section>
+
+<section class="seccion" aria-labelledby="t-momentos">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-momentos">Por momentos</h2>
+    <p class="seccion__entradilla">Lo que suele hacer falta, en orden, cuando le pasa una de estas cosas.</p>
+    <ul class="momentos">
+      {{#tramites.momentos}}<li class="momento">
+        <h3 class="momento__titulo">{{nombre}}</h3>
+        <p class="momento__nota">{{nota}}</p>
+        <ol class="pasos">
+          {{#pasos}}<li>{{#href}}<a href="{{href}}">{{texto}}<span class="sr">{{sr}}</span></a>{{/href}}{{^href}}{{texto}}{{/href}}</li>
+          {{/pasos}}
+        </ol>
+      </li>
+      {{/tramites.momentos}}
+    </ul>
+  </div>
+</section>
+
+<section class="seccion" aria-labelledby="t-temas">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-temas">Por temas</h2>
+    {{> temas}}
+  </div>
+</section>
+
+<section class="seccion" aria-labelledby="todos">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="todos">Todos los trámites <span class="seccion__cuenta">({{tramites.total}})</span></h2>
+    <p class="seccion__entradilla">{{tramites.en_sede}} se hacen en la sede electrónica, a cualquier hora, con certificado digital o Cl@ve.{{#tramites.impresos}} {{tramites.impresos}} son impresos en PDF para entregar en el registro del Ayuntamiento.{{/tramites.impresos}}</p>
+    <div class="campo campo--filtro" data-filtro-lista="todos-lista" hidden>
+      <label class="campo__etiqueta" for="filtrar-tramites">Filtrar la lista</label>
+      <input class="campo__entrada" id="filtrar-tramites" type="search" autocomplete="off" spellcheck="false" placeholder="Por ejemplo: padrón, agua, licencia">
+      <p class="buscador__cuenta" role="status" data-filtro-cuenta></p>
+    </div>
+    <ul class="todos" id="todos-lista">
+      {{#tramites.lista}}<li data-texto="{{texto_busqueda}}"><a class="enlace-tramite" href="{{href}}">{{nombre}}<span class="sr">{{sr}}</span>{{#pdf}}<span class="etiqueta-pdf">PDF</span>{{/pdf}}<svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+      {{/tramites.lista}}
+    </ul>
+  </div>
+</section>
+{{> documento_abajo}}

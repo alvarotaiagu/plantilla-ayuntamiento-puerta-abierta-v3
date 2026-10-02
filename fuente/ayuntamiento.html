@@ -1,0 +1,86 @@
+{{> documento_arriba}}
+{{#alcalde}}<section class="seccion seccion--primera" aria-labelledby="t-alcaldia">
+  <div class="contenedor alcaldia">
+    <figure class="retrato">
+      <div class="retrato__hueco arco-opcional"><img class="retrato__escudo" src="marca/escudo-480.png" width="{{escudo.ancho480}}" height="480" alt=""></div>
+      <figcaption class="retrato__pie">Aquí irá el retrato oficial de la alcaldía.</figcaption>
+    </figure>
+    <div class="alcaldia__texto">
+      <h2 class="seccion__titulo" id="t-alcaldia">La alcaldía</h2>
+      {{#alcaldia.saluda}}<blockquote class="saluda"{{#alcaldia.saluda_ejemplo}} data-dato-ejemplo="saluda"{{/alcaldia.saluda_ejemplo}}><p>{{alcaldia.saluda}}{{#alcaldia.saluda_ejemplo}} <span class="ejemplo">Ejemplo</span>{{/alcaldia.saluda_ejemplo}}</p></blockquote>{{/alcaldia.saluda}}
+      <p class="saluda__firma"><b>{{alcalde.nombre}}</b><span>{{alcalde.cargo}} · {{alcalde.grupo}}</span></p>
+    </div>
+  </div>
+</section>{{/alcalde}}
+
+{{#quien.length}}<section class="seccion" id="quien" aria-labelledby="t-quien">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-quien">¿Quién se ocupa de qué?</h2>
+    <p class="seccion__entradilla">Busque su asunto a la izquierda: a la derecha está quien lo lleva en el gobierno municipal.</p>
+    <ul class="quien">
+      {{#quien}}{{> quien_fila}}{{/quien}}
+    </ul>
+  </div>
+</section>{{/quien.length}}
+
+{{#pleno}}<section class="seccion" aria-labelledby="t-pleno">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-pleno">El pleno</h2>
+    <p class="seccion__entradilla">{{corporacion.nota}}</p>
+    <div class="pleno">
+      <figure class="pleno__figura">
+        {{{pleno.svg}}}
+        <figcaption class="sr">{{pleno.descripcion}}</figcaption>
+      </figure>
+      <ul class="pleno__leyenda">
+        {{#pleno.grupos}}<li><svg class="pleno__muestra" viewBox="0 0 28 28" aria-hidden="true">{{{muestra}}}</svg><span><b>{{sigla}}</b> · {{n}} {{concejales}}<span class="pleno__papel">{{nombre}} · {{papel}}</span></span></li>
+        {{/pleno.grupos}}
+      </ul>
+    </div>
+    <div class="grupos">
+      {{#pleno.grupos}}<div class="grupo">
+        <h3 class="grupo__titulo"><svg class="pleno__muestra" viewBox="0 0 28 28" aria-hidden="true">{{{muestra}}}</svg>{{nombre}} ({{sigla}})</h3>
+        <ul class="grupo__lista">
+          {{#miembros}}<li><b>{{nombre}}</b><span>{{cargo}}</span></li>{{/miembros}}
+        </ul>
+      </div>
+      {{/pleno.grupos}}
+    </div>
+    {{#corporacion.secretaria}}<p class="nota-fuente">Secretaría-Intervención: {{corporacion.secretaria}}.</p>{{/corporacion.secretaria}}
+    {{#plenos_video}}<p class="nota-fuente">{{plenos_video.texto}} <a href="{{plenos_video.url}}">Ver las grabaciones</a>.</p>{{/plenos_video}}
+  </div>
+</section>{{/pleno}}
+
+{{#concejalias.length}}<section class="seccion" aria-labelledby="t-concejalias">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-concejalias">Concejalías</h2>
+    <ul class="fichas">
+      {{#concejalias}}<li class="ficha">
+        <h3 class="ficha__titulo">{{delegacion}}</h3>
+        <p class="ficha__persona"><b>{{nombre}}</b><span>{{cargo}} · {{grupo}}</span></p>
+      </li>
+      {{/concejalias}}
+    </ul>
+  </div>
+</section>{{/concejalias.length}}
+
+<section class="seccion" aria-labelledby="t-horario">
+  <div class="contenedor horario-ayto">
+    <div>
+      <h2 class="seccion__titulo" id="t-horario">Horario y contacto</h2>
+      <div class="estado-ayto" data-vivo="servicio" data-clave="ayuntamiento">{{{vivo.estado_ayto}}}</div>
+      <dl class="datos">
+        <div{{#horario.ejemplo}} data-dato-ejemplo="horario"{{/horario.ejemplo}}><dt>Horario de atención</dt><dd>{{horario.texto}}{{#horario.ejemplo}} <span class="ejemplo">Ejemplo</span>{{/horario.ejemplo}}</dd></div>
+        <div><dt>Dirección</dt><dd>{{contacto.direccion}} · {{contacto.cp}} {{nombre}}</dd></div>
+        <div><dt>Teléfono</dt><dd><a href="{{contacto.tel_href}}">{{contacto.telefono}}</a></dd></div>
+        <div><dt>Correo</dt><dd><a class="rompe" href="mailto:{{contacto.correo}}">{{contacto.correo}}</a></dd></div>
+      </dl>
+    </div>
+    <div class="tarjeta">
+      <h3 class="tarjeta__titulo">Presentar un escrito</h3>
+      <p>Cualquier solicitud se puede presentar en la sede electrónica, a cualquier hora, con la instancia general.</p>
+      <a class="boton boton--marca" href="{{sede.instancia}}"><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg>Instancia general<span class="sr">, se abre la sede electrónica</span></a>
+    </div>
+  </div>
+</section>
+{{> documento_abajo}}

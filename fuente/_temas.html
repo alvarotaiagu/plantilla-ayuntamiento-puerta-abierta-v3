@@ -1,0 +1,14 @@
+<div class="temas">
+  {{#tramites.temas}}<details class="tema"{{#@primero}} open{{/@primero}}>
+    <summary class="tema__resumen">
+      <svg class="icono tema__icono" aria-hidden="true"><use href="#i-{{icono}}"/></svg>
+      <span class="tema__textos"><span class="tema__nombre">{{nombre}}</span><span class="tema__nota">{{nota}}</span></span>
+      <svg class="icono tema__chevron" aria-hidden="true"><use href="#i-abajo"/></svg>
+    </summary>
+    <ul class="tema__lista">
+      {{#tramites}}<li><a class="enlace-tramite" href="{{href}}">{{nombre}}<span class="sr">{{sr}}</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+      {{/tramites}}
+    </ul>
+  </details>
+  {{/tramites.temas}}
+</div>

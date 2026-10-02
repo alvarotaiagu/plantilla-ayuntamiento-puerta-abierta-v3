@@ -1,0 +1,30 @@
+{{> documento_arriba}}
+<div class="seccion seccion--primera">
+  <div class="contenedor texto-largo legal">
+    <h2>Esta web no usa cookies</h2>
+    <p>Ni propias ni de terceros. Tampoco mide las visitas ni muestra publicidad.</p>
+
+    <h2>Lo que se guarda en su navegador</h2>
+    <p>La web guarda dos datos en el almacenamiento de su navegador. No son cookies: no viajan a ningún servidor y no sirven para identificarle.</p>
+    <div class="tabla-envoltorio" role="group" aria-labelledby="t-almacen" data-desborda>
+      <table class="tabla">
+        <caption id="t-almacen">Datos que se guardan en su navegador</caption>
+        <thead><tr><th scope="col">Nombre</th><th scope="col">Para qué</th><th scope="col">Cuánto dura</th></tr></thead>
+        <tbody>
+          <tr><td><code>{{marca.slug}}-cookies</code></td><td>Recordar que ya ha leído el aviso de cookies.</td><td>Hasta que borre los datos del navegador.</td></tr>
+          <tr><td><code>{{marca.slug}}-cortina</code></td><td>No repetir la animación de entrada de la portada en la misma visita.</td><td>Hasta que cierre la pestaña.</td></tr>
+          <!-- [MANDO DE MAQUETA] inicio -->
+          <tr><td><code>{{marca.slug}}-densidad</code> y <code>{{marca.slug}}-paleta</code></td><td>Solo durante la revisión de la propuesta: la versión y el color que se están probando.</td><td>Hasta que borre los datos del navegador.</td></tr>
+          <!-- [MANDO DE MAQUETA] fin -->
+        </tbody>
+      </table>
+    </div>
+
+    <h2>El mapa de Google</h2>
+    <p>El mapa de la página de contacto es la única pieza de un tercero. No se carga hasta que pulsa «Ver el mapa». Si lo pulsa, Google puede instalar sus propias cookies.</p>
+
+    <h2>Cómo borrar estos datos</h2>
+    <p>En la configuración de su navegador, en «Privacidad» o «Datos de sitios», borre los datos de esta web. El aviso de cookies volverá a salir la próxima vez.</p>
+  </div>
+</div>
+{{> documento_abajo}}
