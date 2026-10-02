@@ -110,7 +110,7 @@ function estaticas() {
 const { chromium } = await cargarPlaywright();
 const { AxeBuilder } = await import('@axe-core/playwright');
 const navegador = await chromium.launch();
-const servidor = crearServidor(RAIZ, null);
+const servidor = crearServidor(RAIZ, M.url ? new URL(M.url).pathname : null);   /* la 404 lleva <base> con el prefijo de Pages */
 await new Promise(r => servidor.listen(0, '127.0.0.1', r));
 const BASE = 'http://127.0.0.1:' + servidor.address().port + '/';
 
