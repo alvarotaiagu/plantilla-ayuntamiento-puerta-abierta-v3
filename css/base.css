@@ -402,7 +402,9 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .tablon__fila > .ejemplo { margin: -.4rem 0 .85rem .25rem; }
 
 /* ── lo que viene y lo que pasó ── */
-.linea-rejilla { display: grid; gap: 2.5rem; }
+/* minmax(0, …): sin él, la columna crece hasta lo que pida la tarjeta más rígida y la portada
+   desborda a 320 px (Fuente de Cantos: miniatura + «Extremadura» en el título) */
+.linea-rejilla { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
 @media (min-width: 64em) { .linea-rejilla { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; gap: 4rem; } }
 .linea { list-style: none; margin: 1.25rem 0 .5rem; padding: 0; position: relative; }
 .linea::before { content: ""; position: absolute; left: .7rem; top: .6rem; bottom: 1rem; width: 2px; background: var(--linea-fuerte); }
@@ -431,7 +433,7 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .linea__arquito { width: .75rem; height: .95rem; fill: none; stroke: var(--tinta); stroke-width: 2.6; }
 .linea__hoy-texto { font-size: 1.05rem; white-space: nowrap; }
 .linea__hoy-texto b { font: 700 1.3rem var(--f-titulo); }
-@media (max-width: 26em) { .linea__hoy-texto { white-space: normal; } }
+@media (max-width: 26em) { .linea__hoy-texto { white-space: normal; } .linea__foto { display: none; } }
 
 .listin-corto { padding: 1.25rem 1.4rem 1rem; border-top: 3px solid var(--oro); }
 .listin-corto__titulo { font-size: 1.3rem; margin-bottom: .5rem; }

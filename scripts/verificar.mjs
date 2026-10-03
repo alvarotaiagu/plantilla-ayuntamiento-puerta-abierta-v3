@@ -626,12 +626,14 @@ async function reskin() {
     if (!fs.existsSync(path.join(dest, 'marca/_letra.json'))) fs.copyFileSync(path.join(RAIZ, 'marca/_letra.json'), path.join(dest, 'marca/_letra.json'));
     const ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
     if (ap.status !== 0) { comprobar(false, 'reskin: aplicar.mjs falla con ' + otro + ' → ' + (ap.stderr || ap.stdout).slice(-400)); return; }
+    const otroM = JSON.parse(fs.readFileSync(path.join(dest, 'municipio.json'), 'utf8'));
+    /* lo que el otro municipio también tiene no es un resto: Segura y Fuente de Cantos son los dos de Tentudía */
+    const delOtro = JSON.stringify(otroM).toLowerCase();
     const restos = new RegExp([M.nombre, M.nombre_corto + ' ', M.sede.base.replace(/^https:\/\//, ''), M.contacto.correo, M.contacto.telefono, M.comarca, ...((M.corporacion && M.corporacion.miembros) || []).map(m => m.nombre)]
-      .filter(Boolean).map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i');
+      .filter(s => s && !delOtro.includes(s.trim().toLowerCase())).map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i');
     const publicados = [...fs.readdirSync(dest).filter(f => /\.(html|json)$/.test(f) && f !== 'municipio.json' && f !== 'package.json' && f !== 'package-lock.json'),
       ...['css/marca.css', 'css/base.css', 'js/main.js', 'js/vivo.js', 'js/cortina.js', 'js/tramites-datos.js'], ...fs.readdirSync(path.join(dest, 'contenido')).map(f => 'contenido/' + f)];
     const conRestos = publicados.filter(f => restos.test(fs.readFileSync(path.join(dest, f), 'utf8'))).map(f => f + ' («' + fs.readFileSync(path.join(dest, f), 'utf8').match(restos)[0] + '»)');
-    const otroM = JSON.parse(fs.readFileSync(path.join(dest, 'municipio.json'), 'utf8'));
     comprobar(!conRestos.length && fs.readFileSync(path.join(dest, 'index.html'), 'utf8').includes(otroM.nombre),
       `reskin a ${otroM.nombre}: ${publicados.length} archivos publicados sin ningún resto de ${M.nombre}` + (conRestos.length ? ' → ' + conRestos.slice(0, 5).join(', ') : ''));
     /* la copia también pasa axe y no desborda */
