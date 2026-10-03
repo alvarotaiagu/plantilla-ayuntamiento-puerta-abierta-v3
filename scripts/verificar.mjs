@@ -180,6 +180,8 @@ async function desborde() {
         const W = document.documentElement.clientWidth, fuera = [];
         for (const el of document.querySelectorAll('body *')) {
           if (el.closest('.carril, .tabla-envoltorio, .sprite, dialog, .sr, .cortina')) continue;
+          /* lo de dentro de un SVG que recorta (el perfil del pie a 320 px, slice) no puede desbordar: se mide el SVG */
+          if (el.ownerSVGElement && getComputedStyle(el.ownerSVGElement).overflow !== 'visible') continue;
           const b = el.getBoundingClientRect();
           if (b.width && b.right > W + 0.5) fuera.push(el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''));
         }
@@ -1357,12 +1359,269 @@ async function primeraPantalla() {
   comprobar(temas.total > 0 && temas.abiertos === 0, `temas de trámites: los ${temas.total} desplegables, cerrados de entrada`);
 }
 
+/* ═════════════ v3 · identidad: el perfil del pueblo, el pie, el plano, la impresión y el hemiciclo ═════════════
+   - V7. El perfil del pueblo a línea (marca/perfil.svg o el genérico): en el pie, aria-hidden, a todo el
+     ancho sin desbordar (320, 1440, 1920), sin estirar (slice), trazado al asomar y en reposo dibujado.
+   - V8. El pie a tres columnas con el plano propio de OSM (atribución, sin peticiones) y a dos sin él.
+   - F1. La hoja de teléfonos cabe en UNA A4 (PDF de Playwright) y la impresión quita navegación y cookies.
+   - M4. El hemiciclo resalta los escaños de un grupo con el ratón y con el teclado (aria-pressed, Esc).
+   - axe 0 en los estados nuevos y en la copia sin perfil ni plano. */
+async function v3Identidad() {
+  const AXE = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+  const conPerfil = fs.existsSync(path.join(RAIZ, 'marca/perfil.svg')), conPlano = fs.existsSync(path.join(RAIZ, 'marca/plano.svg'));
+
+  /* 0. sin navegador: recursos limpios y la hoja de impresión enlazada con media="print" */
+  {
+    const malos = [];
+    const colorLiteral = /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(|\boklch\(/;
+    for (const rel of ['css/imprimir.css', 'js/identidad.js', 'fuente/_perfil_generico.svg', ...(conPerfil ? ['marca/perfil.svg'] : []), ...(conPlano ? ['marca/plano.svg'] : [])]) {
+      if (!fs.existsSync(path.join(RAIZ, rel))) { malos.push('falta ' + rel); continue; }
+      const t = leer(RAIZ, rel).replace(/url\(#[^)]*\)|href="#[^"]*"/g, '');
+      if (colorLiteral.test(t)) malos.push(rel + ' lleva un color escrito');
+    }
+    for (const p of PAGINAS) if (!/<link rel="stylesheet" href="css\/imprimir\.css\?v=[0-9a-f]{8}" media="print">/.test(leer(RAIZ, p))) malos.push(p + ' sin css/imprimir.css (media="print")');
+    if (conPlano) {
+      const meta = JSON.parse(leer(RAIZ, 'marca', 'plano.json'));
+      if (!/OpenStreetMap/.test(meta.atribucion || '') || !/openstreetmap\.org\/copyright/.test(meta.atribucion_url || '') || !/^(node|way|relation)\/\d+$/.test(meta.osm || '')) malos.push('marca/plano.json sin atribución u origen: ' + JSON.stringify(meta).slice(0, 120));
+    }
+    comprobar(!malos.length, 'v3 identidad: imprimir.css, identidad.js y los SVG del perfil y del plano sin colores escritos; la hoja de impresión en todas las páginas con media="print"; el plano dice de qué elemento de OSM sale' + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+
+  /* 1. V7. el perfil: en el pie, decorativo, a todo el ancho y sin desbordar */
+  {
+    const malos = [];
+    for (const [w, h] of [[320, 640], [390, 844], [1440, 900], [1920, 1080]]) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
+      await ir(page, 'index.html');
+      const r = await page.evaluate(() => {
+        const p = document.querySelector('footer.pie > .pie__perfil'), svg = p && p.querySelector('svg');
+        if (!svg) return null;
+        const b = svg.getBoundingClientRect(), W = document.querySelector('footer.pie').getBoundingClientRect().width, paths = [...svg.querySelectorAll('path')];
+        return { nombre: p.getAttribute('data-perfil'), oculto: svg.getAttribute('aria-hidden'), par: svg.getAttribute('preserveAspectRatio'), izq: b.left, der: b.right, ancho: b.width, alto: b.height, W,
+          sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth, trazos: paths.length, sinLargo: paths.filter(x => x.getAttribute('pathLength') !== '1').length,
+          vb: svg.viewBox.baseVal.width / svg.viewBox.baseVal.height, primero: p === document.querySelector('footer.pie').firstElementChild };
+      });
+      if (!r) { malos.push(w + ' px: no hay perfil en el pie'); await ctx.close(); continue; }
+      if (r.oculto !== 'true' || r.par !== 'xMidYMax slice' || r.trazos < 40 || r.sinLargo || !r.primero) malos.push(`${w} px: ${JSON.stringify(r)}`);
+      if (Math.abs(r.izq) > 0.5 || Math.abs(r.der - r.W) > 0.5 || r.sobra > 0) malos.push(`${w} px: no va de borde a borde o desborda (${Math.round(r.izq)}–${Math.round(r.der)} de ${r.W}, +${r.sobra})`);
+      /* sin estirar: a partir de ~780 px la caja tiene la proporción del lienzo; por debajo, 88 px de alto y se recorta */
+      if (w >= 800 && Math.abs(r.ancho / r.alto - r.vb) > 0.15) malos.push(`${w} px: la caja (${Math.round(r.ancho)}×${Math.round(r.alto)}) no sigue la proporción del dibujo (${r.vb.toFixed(2)})`);
+      if (w < 780 && Math.abs(r.alto - 88) > 1) malos.push(`${w} px: en móvil mide ${Math.round(r.alto)} px de alto (88)`);
+      if (CAPTURAS) await page.locator('.pie__perfil').screenshot({ path: captura(`v3-perfil-${w}.png`) });
+      if (w === 1440 && r.nombre !== (conPerfil ? JSON.parse(leer(RAIZ, 'marca', 'perfil.json')).nombre : 'generico')) malos.push('data-perfil «' + r.nombre + '»');
+      await ctx.close();
+    }
+    comprobar(!malos.length, `v3 V7: el perfil del pueblo («${conPerfil ? 'propio' : 'genérico'}») abre el pie, es aria-hidden, va de borde a borde a 320, 390, 1440 y 1920 px sin desbordar, sin estirarse (slice) y cada trazo lleva pathLength=1` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+
+  /* 2. V7. se traza al asomar (≤ 600 ms) y acaba dibujado; con movimiento reducido, quieto y entero */
+  {
+    const { ctx, page } = await nueva({ reducido: false });
+    await ir(page, 'index.html');
+    const antes = await page.evaluate(() => ({ clase: document.querySelector('.pie__perfil').classList.contains('mov-perfil'), dash: getComputedStyle(document.querySelector('.pie__perfil path')).strokeDasharray }));
+    const durante = await page.evaluate(async () => {
+      document.querySelector('.pie__perfil').scrollIntoView({ block: 'center' });
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(r, 120))));
+      const paths = [...document.querySelectorAll('.pie__perfil path')];
+      const an = paths.flatMap(p => p.getAnimations()).filter(a => a.animationName === 'mov-perfil');
+      const offs = paths.slice(0, 30).map(p => parseFloat(getComputedStyle(p).strokeDashoffset));
+      return { n: an.length, dur: Math.max(0, ...an.map(a => a.effect.getComputedTiming().duration)), medio: offs.some(o => o > 0.05 && o < 0.99) };
+    });
+    await espera(900);
+    const despues = await page.evaluate(() => {
+      const paths = [...document.querySelectorAll('.pie__perfil path')];
+      return { vivas: paths.flatMap(p => p.getAnimations()).filter(a => a.playState === 'running').length,
+        sinDibujar: paths.filter(p => { const cs = getComputedStyle(p); return cs.strokeDasharray !== 'none' || parseFloat(cs.strokeDashoffset) !== 0; }).length, clase: document.querySelector('.pie__perfil').classList.contains('mov-perfil') };
+    });
+    await ctx.close();
+    const q = await nueva();
+    await ir(q.page, 'index.html');
+    const quieto = await q.page.evaluate(async () => {
+      document.querySelector('.pie__perfil').scrollIntoView({ block: 'center' });
+      await new Promise(r => setTimeout(r, 300));
+      const paths = [...document.querySelectorAll('.pie__perfil path')];
+      return { clase: document.querySelector('.pie__perfil').classList.contains('mov-perfil'), an: paths.flatMap(p => p.getAnimations()).length, dash: paths.filter(p => getComputedStyle(p).strokeDasharray !== 'none').length };
+    });
+    await q.ctx.close();
+    const ok = !antes.clase && antes.dash === 'none' && durante.n > 40 && durante.dur > 0 && durante.dur <= 600 && durante.medio && !despues.vivas && !despues.sinDibujar && despues.clase && !quieto.clase && !quieto.an && !quieto.dash;
+    comprobar(ok, `v3 V7: el perfil está dibujado en reposo, se traza al asomar (${durante.n} trazos, ${durante.dur} ms, a medias a los 120 ms) y acaba entero; con movimiento reducido no se anima nada` +
+      (ok ? '' : ' → ' + JSON.stringify({ antes, durante, despues, quieto })));
+  }
+
+  /* 3. V8. el pie a tres columnas con el plano; en móvil, una; el plano sin peticiones y con su atribución */
+  if (conPlano) {
+    const malos = [];
+    const { ctx, page } = await nueva();
+    const fuera = [];
+    page.on('request', r => { if (!r.url().startsWith(BASE)) fuera.push(r.url()); });
+    for (const p of ['index.html', 'telefonos.html', 'ayuntamiento.html']) {
+      await ir(page, p);
+      await page.evaluate(() => document.querySelector('.pie__plano').scrollIntoView());
+      await espera(150);
+    }
+    if (fuera.length) malos.push('peticiones fuera de la web: ' + fuera.slice(0, 3).join(', '));
+    const r = await page.evaluate(() => {
+      const rej = document.querySelector('.pie__rejilla'), cols = [...rej.children].filter(c => c.classList.contains('pie__col'));
+      const plano = document.querySelector('.pie__plano'), svg = plano.querySelector('svg'), osm = [...plano.querySelectorAll('a')].find(a => /openstreetmap\.org\/copyright/.test(a.href));
+      return { pistas: getComputedStyle(rej).gridTemplateColumns.split(' ').length, cols: cols.length, tops: cols.map(c => Math.round(c.getBoundingClientRect().top)),
+        oculto: svg.getAttribute('aria-hidden'), enlace: svg.closest('a') ? svg.closest('a').getAttribute('href') : null, nombre: svg.closest('a') ? svg.closest('a').textContent.trim() : '',
+        osm: osm ? osm.textContent : null, imagenes: svg.querySelectorAll('image, use, foreignObject').length, rotulos: svg.querySelectorAll('text').length,
+        legal: [...document.querySelectorAll('.pie__legal a')].map(a => a.getAttribute('href')), utiles: [...document.querySelectorAll('.pie__lista a')].map(a => a.getAttribute('href')) };
+    });
+    if (r.pistas !== 3 || r.cols !== 3 || Math.max(...r.tops) - Math.min(...r.tops) > 2) malos.push('a 1440 px: ' + JSON.stringify({ pistas: r.pistas, cols: r.cols, tops: r.tops }));
+    if (r.oculto !== 'true' || !/contacto\.html#t-donde$/.test(r.enlace || '') || r.nombre.length < 10) malos.push('el plano: ' + JSON.stringify({ oculto: r.oculto, enlace: r.enlace, nombre: r.nombre }));
+    if (!/© colaboradores de OpenStreetMap/.test(r.osm || '') || r.imagenes || r.rotulos < 2) malos.push('atribución u origen del plano: ' + JSON.stringify({ osm: r.osm, imagenes: r.imagenes, rotulos: r.rotulos }));
+    for (const h of ['aviso-legal.html', 'privacidad.html', 'cookies.html', 'accesibilidad.html']) if (!r.legal.includes(h)) malos.push('falta ' + h + ' en la fila legal');
+    for (const h of ['tramites.html', 'telefonos.html', 'agenda.html', 'accesibilidad.html']) if (!r.utiles.includes(h)) malos.push('falta ' + h + ' en enlaces útiles');
+    if (!r.utiles.some(h => h.startsWith(sedeBase))) malos.push('enlaces útiles sin la sede');
+    if (CAPTURAS) await page.locator('footer.pie').screenshot({ path: captura('v3-pie-1440.png') });
+    await ctx.close();
+    const m = await nueva({ viewport: { width: 390, height: 844 } });
+    await ir(m.page, 'index.html');
+    const mov = await m.page.evaluate(() => { const rej = document.querySelector('.pie__rejilla'); return { pistas: getComputedStyle(rej).gridTemplateColumns.split(' ').length, ancho: Math.round(document.querySelector('.pie__plano svg').getBoundingClientRect().width) }; });
+    if (mov.pistas !== 1 || mov.ancho < 300) malos.push('a 390 px: ' + JSON.stringify(mov));
+    if (CAPTURAS) await m.page.locator('footer.pie').screenshot({ path: captura('v3-pie-390.png') });
+    await m.ctx.close();
+    comprobar(!malos.length, 'v3 V8: el pie va a tres columnas alineadas (el Ayuntamiento, enlaces útiles con la sede y el plano) y a una en móvil; legales en su fila; el plano es un dibujo propio aria-hidden que lleva a «Contacto», con «© colaboradores de OpenStreetMap» y sin una sola petición fuera de la web' + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  } else notas.push('NOTA  · v3 V8: este municipio no tiene marca/plano.svg; el pie va a dos columnas (se prueba abajo)');
+
+  /* 4. sin perfil propio ni plano (copia): el perfil genérico y el pie a dos columnas sin hueco */
+  {
+    const dest = copiar();
+    try {
+      for (const f of ['marca/perfil.svg', 'marca/plano.svg', 'marca/plano.json']) fs.rmSync(path.join(dest, f), { force: true });
+      const ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
+      if (ap.status !== 0) { comprobar(false, 'v3: aplicar.mjs falla sin perfil ni plano → ' + (ap.stderr || ap.stdout).slice(-300)); return; }
+      const srv = crearServidor(dest, null);
+      await new Promise(r => srv.listen(0, '127.0.0.1', r));
+      const b = 'http://127.0.0.1:' + srv.address().port + '/';
+      const malos = [], viol = [];
+      for (const [w, h] of [[320, 640], [1440, 900]]) {
+        const ctx = await navegador.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
+        await ctx.addInitScript(s => { try { localStorage.setItem(s + '-cookies', 'ok'); sessionStorage.setItem(s + '-cortina', '1'); } catch (e) {} }, SLUG);
+        const page = await ctx.newPage();
+        await page.goto(b + 'index.html', { waitUntil: 'networkidle' });
+        const r = await page.evaluate(() => {
+          const rej = document.querySelector('.pie__rejilla'), cs = getComputedStyle(rej), cols = [...rej.children].filter(c => c.classList.contains('pie__col'));
+          const dentro = rej.getBoundingClientRect().right - parseFloat(cs.paddingRight);
+          return { perfil: document.querySelector('.pie__perfil') ? document.querySelector('.pie__perfil').getAttribute('data-perfil') : null, trazos: document.querySelectorAll('.pie__perfil path').length,
+            plano: !!document.querySelector('.pie__plano'), pistas: cs.gridTemplateColumns.split(' ').length, cols: cols.length,
+            hueco: Math.round(dentro - Math.max(...cols.map(c => c.getBoundingClientRect().right))), sobra: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+        });
+        if (r.perfil !== 'generico' || r.trazos < 40 || r.plano || r.cols !== 2 || r.sobra > 0) malos.push(`${w} px: ${JSON.stringify(r)}`);
+        if (w === 1440 && (r.pistas !== 2 || r.hueco > 1)) malos.push(`1440 px: ${r.pistas} columnas, ${r.hueco} px de hueco a la derecha`);
+        viol.push(...(await new AxeBuilder({ page }).withTags(AXE).analyze()).violations.map(v => w + ' ' + v.id));
+        if (CAPTURAS && w === 1440) await page.locator('footer.pie').screenshot({ path: captura('v3-pie-generico-1440.png') });
+        await ctx.close();
+      }
+      srv.close();
+      comprobar(!malos.length && !viol.length, 'v3 V7/V8: sin marca/perfil.svg sale el perfil genérico (casas y espadaña, ninguna arcada) y sin marca/plano.svg el pie queda a dos columnas que llenan el ancho; sin desborde a 320 px y 0 violaciones de axe' + (malos.length ? ' → ' + malos.join(' | ') : '') + (viol.length ? ' → axe: ' + viol.join(', ') : ''));
+    } finally { fs.rmSync(dest, { recursive: true, force: true }); }
+  }
+
+  /* 5. F1. la hoja de teléfonos cabe en UNA A4; la impresión quita navegación, cookies y botones */
+  {
+    const malos = [];
+    const { ctx, page } = await nueva({ conCookies: true });
+    await ir(page, 'telefonos.html');
+    const pantalla = await page.evaluate(() => ({ boton: !!document.querySelector('[data-imprimir]') && document.querySelector('[data-imprimir]').checkVisibility(),
+      cabeza: document.querySelector('.nevera-cabeza').checkVisibility(), pie: document.querySelector('.nevera-pie').checkVisibility(), cookies: document.getElementById('cookies').checkVisibility() }));
+    if (!pantalla.boton || pantalla.cabeza || pantalla.pie || !pantalla.cookies) malos.push('en pantalla: ' + JSON.stringify(pantalla));
+    await page.emulateMedia({ media: 'print' });
+    const papel = await page.evaluate(() => {
+      const ve = s => [...document.querySelectorAll(s)].some(e => e.checkVisibility());
+      const urg = document.querySelector('.listin__fila--urgente .listin__numero'), otro = document.querySelector('.listin-grupo:not(:first-child) .listin__numero');
+      return { nav: ve('.menu, .cabecera, .saltar, .propuesta'), cookies: ve('#cookies'), botones: ve('button, .boton'), pieLargo: ve('.sede-franja, .pie__rejilla, .pie__perfil'),
+        cabeza: ve('.nevera-cabeza'), titulo: (document.querySelector('.nevera-cabeza__titulo') || {}).textContent || '', fecha: (document.querySelector('.nevera-pie') || {}).textContent || '',
+        urgente: urg ? parseFloat(getComputedStyle(urg).fontSize) : 0, numero: otro ? parseFloat(getComputedStyle(otro).fontSize) : 0, fondo: getComputedStyle(document.body).backgroundImage };
+    });
+    if (papel.nav || papel.cookies || papel.botones || papel.pieLargo) malos.push('en papel se ve: ' + JSON.stringify({ nav: papel.nav, cookies: papel.cookies, botones: papel.botones, pie: papel.pieLargo }));
+    if (!papel.cabeza || papel.titulo !== 'Teléfonos útiles de ' + M.nombre || !/actualizados el .*Impreso el/.test(papel.fecha) || papel.urgente < 32 || papel.numero < 17 || papel.fondo !== 'none') malos.push('la hoja: ' + JSON.stringify(papel));
+    const pdf = await page.pdf({ format: 'A4' });
+    const hojas = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+    if (hojas !== 1) malos.push(`el PDF A4 tiene ${hojas} hojas`);
+    if (CAPTURAS) fs.writeFileSync(captura('v3-telefonos-impresion.pdf'), pdf);
+    /* otra página cualquiera en papel: sin navegación ni cookies, con el escudo y la dirección de los enlaces externos */
+    await page.emulateMedia({ media: 'screen' });
+    await ir(page, 'contacto.html');
+    await page.emulateMedia({ media: 'print' });
+    const otra = await page.evaluate(() => {
+      const ve = s => [...document.querySelectorAll(s)].some(e => e.checkVisibility());
+      const ext = [...document.querySelectorAll('main a[href^="http"]')][0];
+      return { nav: ve('.menu, .cabecera__acciones, .propuesta'), cookies: ve('#cookies'), escudo: ve('.cabecera__escudo'), url: ext ? getComputedStyle(ext, '::after').content : 'sin enlace' };
+    });
+    if (otra.nav || otra.cookies || !otra.escudo || !/attr\(href\)|http/.test(otra.url)) malos.push('contacto en papel: ' + JSON.stringify(otra));
+    await ctx.close();
+    /* sin JavaScript, el botón no sale */
+    const sj = await navegador.newContext({ javaScriptEnabled: false });
+    const pj = await sj.newPage();
+    await pj.goto(BASE + 'telefonos.html', { waitUntil: 'networkidle' });
+    if (await pj.evaluate(() => document.querySelector('[data-imprimir]').checkVisibility())) malos.push('sin JS se ve el botón de imprimir');
+    await sj.close();
+    comprobar(!malos.length, `v3 F1: «Imprimir los teléfonos» solo con JS; en papel, la hoja de la nevera (escudo, «Teléfonos útiles de ${M.nombre}», urgencias a ${Math.round(papel.urgente)} px y el resto a ${Math.round(papel.numero)} px, fechas y web) cabe en UNA A4 (${hojas}); y cualquier página se imprime sin navegación, cookies, botones ni pie largo, con la dirección de los enlaces externos` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+
+  /* 6. M4. el hemiciclo resalta los escaños de un grupo con el ratón y con el teclado */
+  const grupos = (M.corporacion && M.corporacion.grupos) || [];
+  if (grupos.length && PAGINAS.includes('ayuntamiento.html')) {
+    const malos = [];
+    const slug = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const cuenta = sig => M.corporacion.miembros.filter(m => m.grupo === sig).length;
+    const estado = page => page.evaluate(() => {
+      const cs = [...document.querySelectorAll('svg.hemiciclo circle[data-grupo]')];
+      return { claros: [...new Set(cs.filter(c => parseFloat(getComputedStyle(c).opacity) > 0.9).map(c => c.getAttribute('data-grupo')))], apagados: cs.filter(c => parseFloat(getComputedStyle(c).opacity) < 0.5).length,
+        total: cs.length, centro: document.querySelector('.hemiciclo__total').textContent + ' ' + document.querySelector('.hemiciclo__rotulo').textContent,
+        pulsados: [...document.querySelectorAll('.pleno__boton[aria-pressed="true"]')].map(b => b.closest('li').getAttribute('data-grupo')), botones: document.querySelectorAll('.pleno__boton').length };
+    });
+    const { ctx, page } = await nueva();
+    await ir(page, 'ayuntamiento.html');
+    const e0 = await estado(page);
+    if (e0.botones !== grupos.length || e0.apagados || e0.pulsados.length) malos.push('en reposo: ' + JSON.stringify(e0));
+    /* ratón: cada grupo de la leyenda */
+    for (const g of grupos) {
+      await page.hover(`.pleno__leyenda li[data-grupo="${slug(g.sigla)}"]`);
+      const e = await estado(page);
+      if (e.claros.length !== 1 || e.claros[0] !== slug(g.sigla) || e.apagados !== e.total - cuenta(g.sigla) || e.centro !== cuenta(g.sigla) + ' de ' + g.sigla) malos.push('ratón en ' + g.sigla + ': ' + JSON.stringify(e));
+    }
+    await page.mouse.move(5, 5);
+    if ((await estado(page)).apagados) malos.push('al salir el ratón quedan escaños apagados');
+    /* la tarjeta de concejales también */
+    await page.hover(`.grupo[data-grupo="${slug(grupos[0].sigla)}"]`);
+    if ((await estado(page)).claros.join() !== slug(grupos[0].sigla)) malos.push('la tarjeta del grupo no resalta');
+    await page.mouse.move(5, 5);
+    /* teclado: el Tabulador llega a la leyenda, el foco resalta, Intro lo deja pulsado y Esc lo suelta */
+    await page.focus('.pleno__boton');
+    await page.keyboard.press('Shift+Tab'); await page.keyboard.press('Tab');
+    const f = await page.evaluate(() => document.activeElement.classList.contains('pleno__boton'));
+    const ef = await estado(page);
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Tab');
+    const eT = await estado(page);
+    if (CAPTURAS) await page.locator('.pleno').screenshot({ path: captura('v3-hemiciclo-resaltado.png') });
+    const violP = (await new AxeBuilder({ page }).include('.pleno').withTags(AXE).analyze()).violations.map(v => v.id);
+    await page.keyboard.press('Escape');
+    const eE = await estado(page);
+    if (!f || ef.claros.join() !== slug(grupos[0].sigla)) malos.push('foco: ' + JSON.stringify({ f, ef }));
+    if (eT.pulsados.join() !== slug(grupos[0].sigla) || (grupos[1] && eT.claros.join() !== slug(grupos[1].sigla))) malos.push('Intro y Tab: ' + JSON.stringify(eT));
+    if (eE.pulsados.length || eE.apagados) malos.push('Esc: ' + JSON.stringify(eE));
+    if (violP.length) malos.push('axe con un grupo pulsado: ' + violP.join(', '));
+    await ctx.close();
+    /* con movimiento, la transición es de opacidad y ≤ 200 ms; con reducido (lo de arriba) no hay */
+    const mv = await nueva({ reducido: false });
+    await ir(mv.page, 'ayuntamiento.html');
+    const tr = await mv.page.evaluate(() => { const cs = getComputedStyle(document.querySelector('svg.hemiciclo circle')); return { p: cs.transitionProperty, d: cs.transitionDuration }; });
+    await mv.ctx.close();
+    if (!/opacity/.test(tr.p) || Math.max(...tr.d.split(',').map(parseFloat)) > 0.2) malos.push('transición: ' + JSON.stringify(tr));
+    comprobar(!malos.length, `v3 M4: el hemiciclo resalta los escaños de cada uno de los ${grupos.length} grupos al pasar el ratón por la leyenda o por su tarjeta (el centro dice «N de SIGLA»), con el teclado (foco, Intro deja el botón pulsado con aria-pressed, Esc lo suelta), transición de opacidad ≤ 200 ms solo con movimiento y 0 violaciones de axe` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+}
+
 /* ═════════════ orden ═════════════ */
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
 if (!SOLO || SOLO.includes('estaticas')) estaticas();
 for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', panelHoy], ['cortina', cortina], ['movimiento', movimiento], ['contenido', contenidoEjemplo], ['interaccion', interaccion],
-  ['estructura', estructura], ['interiores', interiores], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ['primera', primeraPantalla], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
+  ['estructura', estructura], ['interiores', interiores], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ['primera', primeraPantalla], ['v3identidad', v3Identidad], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();
   try { await fn(); } catch (e) { comprobar(false, nombre + ': la prueba se rompió → ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')); }
