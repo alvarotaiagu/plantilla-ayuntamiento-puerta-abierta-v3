@@ -335,6 +335,32 @@
         if (!li.hidden) n++;
       });
       cuenta.textContent = palabras.length ? (n === 1 ? 'Se ve 1 trámite.' : 'Se ven ' + n + ' trámites.') : '';
+      revisarIndice(lista);
+    });
+  });
+
+  /* ═══ v3 · índice A–Z de «Todos los trámites»: refleja lo que deja el filtro (una letra sin
+     trámites a la vista pierde el enlace y sale del orden de tabulación) y, al saltar, el foco va
+     a la letra de la lista, que queda por debajo del índice fijo (scroll-margin-top) ═══ */
+  function revisarIndice(lista) {
+    var nav = lista && $('[data-az="' + lista.id + '"]');
+    if (!nav) return;
+    $$('[data-letra]', lista).forEach(function (g) {
+      var hay = $$('li', g).some(function (li) { return !li.hidden; });
+      g.hidden = !hay;
+      var a = $('a[data-letra="' + g.getAttribute('data-letra') + '"]', nav);
+      if (!a) return;
+      if (hay) { a.setAttribute('href', '#' + g.getAttribute('data-letra')); a.parentNode.removeAttribute('aria-hidden'); }
+      else { a.removeAttribute('href'); a.parentNode.setAttribute('aria-hidden', 'true'); }
+    });
+  }
+  $$('[data-az]').forEach(function (nav) {
+    nav.addEventListener('click', function (ev) {
+      var a = ev.target.closest('a[href^="#"]');
+      var destino = a && document.getElementById(a.getAttribute('href').slice(1));
+      if (!destino) return;
+      /* el salto lo hace el navegador (con el ancla en la dirección); después, el foco */
+      setTimeout(function () { destino.focus({ preventScroll: true }); }, 0);
     });
   });
 

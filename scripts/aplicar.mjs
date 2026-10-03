@@ -220,6 +220,20 @@ const conHref = t => { const href = S.tramite(t); return { ...t, href, sr: srDe(
 const lista = todos.map(conHref).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
   .map(t => ({ ...t, formato: FORMATOS[t.tipo] ? FORMATOS[t.tipo].etiqueta : null, texto_busqueda: normal(t.nombre) }));
 const tramitesSede = lista.filter(t => enSede(t.href)).length;
+/* v3 · «Todos los trámites» por iniciales, con el índice A–Z fijo: las letras sin trámites salen
+   apagadas y sin enlace. La Ñ solo si algún trámite empieza por ella */
+const inicial = n => { const c = (n.match(/\p{L}/u) || ['#'])[0].toUpperCase(); return c === 'Ñ' ? 'Ñ' : c.normalize('NFD').replace(/[̀-ͯ]/g, ''); };
+const letrasTramites = [];
+for (const t of lista) {
+  const l = inicial(t.nombre);
+  let g = letrasTramites.find(x => x.letra === l);
+  if (!g) letrasTramites.push(g = { letra: l, id: 'letra-' + (l === 'Ñ' ? 'enie' : l.toLowerCase()), items: [] });
+  g.items.push(t);
+}
+const ABC = 'ABCDEFGHIJKLMN' + (letrasTramites.some(g => g.letra === 'Ñ') ? 'Ñ' : '') + 'OPQRSTUVWXYZ';
+const indiceAZ = [...ABC].map(l => { const g = letrasTramites.find(x => x.letra === l); return { letra: l, id: 'letra-' + (l === 'Ñ' ? 'enie' : l.toLowerCase()), activa: !!g }; });
+/* lo que no empieza por una letra del abecedario (un número) va al final, sin letra en el índice */
+letrasTramites.sort((a, b) => (ABC.indexOf(a.letra) < 0) - (ABC.indexOf(b.letra) < 0) || ABC.indexOf(a.letra) - ABC.indexOf(b.letra));
 const DESTINO = { pdf: 'Impreso en PDF', doc: 'Impreso en Word', documento: 'Documento en el tablón de la sede' };
 /* iconos del sprite (fuente/_iconos.html): un atajo con un icono que no existe sería un hueco */
 const ICONOS = new Set([...leer('fuente/_iconos.html').matchAll(/id="i-([\w-]+)"/g)].map(m => m[1]));
@@ -242,7 +256,8 @@ const tramites = {
   temas: temasDatos,
   temas_columnas: [temasDatos.slice(0, mitadTemas), temasDatos.slice(mitadTemas)].filter(c => c.length).map(temas => ({ temas })),
   momentos: (M.tramites.momentos || []).map(m => ({ ...m, pasos: m.pasos.map(p => (p.id || p.url ? conHref(p) : { ...p, href: null, sr: '' })) })),
-  lista, total: lista.length, en_sede: tramitesSede, impresos: lista.filter(t => t.formato).length
+  lista, total: lista.length, en_sede: tramitesSede, impresos: lista.filter(t => t.formato).length,
+  letras: letrasTramites, az: indiceAZ
 };
 /* nombres en lenguaje claro para el buscador: los de atajos, temas y momentos */
 const claros = new Map();

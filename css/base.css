@@ -758,8 +758,32 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 .pasos a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; }
 
 .campo--filtro { margin: 1.25rem 0 0; }
-.todos { list-style: none; margin: 1.25rem 0 0; padding: 0; columns: 2 24rem; column-gap: 2.5rem; }
-.todos li { break-inside: avoid; }
+/* v3 · «Todos los trámites» por iniciales y el índice A–Z, fijo arriba al bajar por la lista (la
+   sección no recorta: un overflow:hidden por encima lo despegaría). En el móvil, una fila que se
+   desplaza de lado; las letras sin trámites, apagadas y fuera del orden de tabulación */
+.az { position: sticky; top: 0; z-index: 3; margin: 1.25rem 0 0; padding: .4rem 0; background: var(--papel); border-bottom: 1px solid var(--linea-fuerte); }
+.az__lista { list-style: none; margin: 0; padding: 0; display: flex; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.az__lista li { flex: 1 0 2.75rem; max-width: none; }
+@media (min-width: 64em) { .az__lista li { flex-basis: 2.25rem; } }
+.az__letra {
+  display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: var(--radio);
+  font: 700 1.125rem/1 var(--f-titulo); color: var(--marca); text-decoration: none;
+}
+.az__letra[href]:hover { background: var(--marca-tenue); text-decoration: underline; }
+.az__letra:not([href]) { color: var(--apagado); font-weight: 400; }
+.az__lista:focus-visible { outline-offset: -3px; }
+.todos { margin: 0; }
+.todos__grupo { display: grid; grid-template-columns: minmax(0, 1fr); padding-top: .75rem; border-bottom: 1px solid var(--linea); }
+.todos__inicial { margin: 0; scroll-margin-top: 4.5rem; font-size: 1.75rem; color: var(--marca); }
+.todos__lista { list-style: none; margin: 0; padding: 0; columns: 2 22rem; column-gap: 2.5rem; }
+.todos__lista li { break-inside: avoid; }
+.todos__lista li:first-child .enlace-tramite { border-top: 0; }
+@media (min-width: 48em) {
+  .todos__grupo { grid-template-columns: 4rem minmax(0, 1fr); padding-block: .5rem; }
+  .todos__inicial { padding-top: .35rem; font-size: 2rem; }
+  .todos__lista li .enlace-tramite { border-top: 0; border-bottom: 1px solid var(--linea); }
+  .todos__lista li:last-child .enlace-tramite { border-bottom: 0; }
+}
 
 .avisos { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
 .aviso { background: var(--superficie); border: 1px solid var(--linea); border-left: 4px solid var(--marca); border-radius: var(--radio); padding: 1.1rem 1.25rem .4rem; }
