@@ -403,7 +403,7 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 
 /* ── lo que viene y lo que pasó ── */
 /* minmax(0, …): sin él, la columna crece hasta lo que pida la tarjeta más rígida y la portada
-   desborda a 320 px (Fuente de Cantos: miniatura + «Extremadura» en el título) */
+   desborda a 320 px (una miniatura más una palabra larga en el título) */
 .linea-rejilla { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
 @media (min-width: 64em) { .linea-rejilla { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; gap: 4rem; } }
 .linea { list-style: none; margin: 1.25rem 0 .5rem; padding: 0; position: relative; }
