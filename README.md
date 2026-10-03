@@ -42,7 +42,7 @@ La web es una puerta de medio punto encalada que da paso a lo que pasa hoy en el
 2. El hueco del arco se abre desde la base y deja ver la portada.
 3. El hueco vuela hasta el arco de la foto del hero y aterriza al píxel; el arco se vuelve a medir en cada fotograma.
 
-Se salta con un clic, una tecla o la rueda. Con movimiento reducido no existe, y sin GSAP se quita sola. Al irse, la foto del arco se asienta (de 1,06 a 1) y las filas de «Hoy» entran escalonadas.
+Se salta con un clic, una tecla o la rueda. Con movimiento reducido no existe, y sin GSAP se quita sola. Al irse, la foto del arco se asienta (de 1,06 a 1). Si la cortina ya se vio en la sesión, el hero entra solo: el nombre sube 8 px palabra a palabra y la foto se asienta igual (≤ 600 ms). Las fichas de «Hoy» suben escalonadas cuando la tira asoma.
 
 **Movimiento pequeño** (v2), en `css/movimiento.css` y `js/movimiento.js`. Todo va dentro de `prefers-reduced-motion: no-preference`, el estado de reposo es el final y ningún texto se revela con opacity:
 - **Transiciones entre páginas.** View Transitions: la cabecera se queda quieta y la foto de una noticia viaja del listado al artículo.
@@ -73,7 +73,7 @@ El RD 1112/2018 obliga a cumplir WCAG 2.1 AA. Por eso esta plantilla **rompe a p
 
 | Página | Qué tiene |
 |---|---|
-| `index.html` | Franja urgente (si la hay; en móvil, una línea). Hero con el arco, el buscador de trámites, los botones y el panel «Hoy en Ribera». Los trámites más pedidos (4 atajos con icono) y por temas. Tablón con filtros y la fecha en bloque (los 6 últimos), en banda blanca. «Lo que viene y lo que pasó» (Hoy arriba; lo que viene en 60 días y las últimas noticias) con el listín corto. «El año en Ribera» en banda oscura. «¿Quién se ocupa de qué?» en banda tenue. Franja de sede y pie |
+| `index.html` | Banda de propuesta y franja del aviso destacado en un solo bloque (rojo si es urgente, ámbar si es programado). Hero con el arco (la foto cambia en cada visita), el buscador de trámites y los botones, entero en 1280 × 720. Debajo, la tira «Hoy en Ribera»: cuatro fichas (Ayuntamiento, farmacia, agenda, último aviso) y «Más hoy». Los trámites más pedidos (4 atajos con icono) y por temas. Tablón con filtros y la fecha en bloque (los 6 últimos), en banda blanca. «Lo que viene y lo que pasó» (Hoy arriba; lo que viene en 60 días y las últimas noticias) con el listín corto. «El año en Ribera» en banda oscura. «¿Quién se ocupa de qué?» en banda tenue. Franja de sede y pie |
 | `tramites.html` | Buscador, «Por momentos», por temas y «Todos los trámites (115)» con filtro |
 | `ayuntamiento.html` | Alcaldía (retrato como hueco diseñado y saluda de ejemplo). Quién se ocupa de qué (asunto, persona, cargo, delegación oficial y grupo, en una sola lista). El pleno en hemiciclo (color, trama y rótulo). Horario y contacto. Enlace a las grabaciones de pleno |
 | `avisos.html` | Avisos propios y el tablón completo con filtros |
@@ -123,7 +123,7 @@ Cada paso funciona igual que en la veterinaria:
 | Qué | Cómo | Quién |
 |---|---|---|
 | **Avisos, agenda y noticias** | `contenido/*.json` o una **hoja de Google** publicada (ver abajo). La web pinta primero lo que trae y luego fusiona lo de la hoja | El Ayuntamiento, desde la hoja |
-| **Aviso urgente** | Un aviso con `"urgente": true` y `"caduca": "AAAA-MM-DD"`. Sale en una franja roja en todas las páginas y se quita solo al caducar | El Ayuntamiento |
+| **Aviso destacado** | Un aviso con `"gravedad": "urgente"` (franja roja) o `"programado"` (franja ámbar) y `"caduca": "AAAA-MM-DD"`. Sale arriba en todas las páginas y se quita solo al caducar | El Ayuntamiento |
 | **Tablón oficial** | `node scripts/tablon.mjs` lee `/board` de la sede, quita lo que lleva datos personales y conserva el `titulo_claro` que haya puesto una persona. La web refresca `contenido/tablon.json` al cargar | Una tarea diaria (ver abajo) + una persona para el lenguaje claro |
 | **Fiestas** | `municipio.json → pueblo.fiestas`. Las de `fecha_fija` entran solas en la agenda | Una vez al año |
 | **Abierto ahora, «hoy», mes actual** | Se calculan en el navegador con la hora de Madrid | Nadie |

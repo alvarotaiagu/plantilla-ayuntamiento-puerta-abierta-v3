@@ -122,35 +122,55 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .nota-fuente { font-size: 1rem; color: var(--apagado); margin-top: 1.25rem; }
 
 /* ═══════════════ CABECERA ═══════════════ */
+/* Las bandas de arriba en un solo bloque: la de propuesta (tinta) y la franja del aviso destacado
+   (rojo si es urgente; ámbar si es programado o informativo). En escritorio comparten UNA fila
+   (la propuesta, corta, a la izquierda); en móvil se apilan: la propuesta en una línea fina y el
+   aviso en dos líneas como mucho, sin puntos suspensivos (para eso está `titulo_corto`).
+   El contenido se alinea con el .contenedor de la página aunque la fila vaya a sangre */
+.bandas { container-type: inline-size; --sangre: max(var(--margen), calc((100cqw - var(--ancho)) / 2)); }
 .propuesta { background: var(--tinta); color: var(--papel); font-size: .9375rem; line-height: 1.4; }
-.propuesta p { margin: 0 auto; padding-block: .5rem; text-align: center; max-width: none; }
+.propuesta__texto { margin: 0; padding: .45rem var(--sangre); text-align: center; max-width: none; }
 .propuesta b { font-weight: 600; }
 
-.franja-urgente { background: var(--alerta); color: var(--sobre-alerta); }
-.franja-urgente__dentro {
-  display: flex; align-items: flex-start; gap: .6rem; min-height: 44px; padding-block: .55rem;
-  color: var(--sobre-alerta); text-decoration: none; line-height: 1.4;
+.franja-urgente__fondo { background: var(--alerta); color: var(--sobre-alerta); }
+.franja-urgente__fondo.es-programado, .franja-urgente__fondo.es-informativo { background: var(--aviso); color: var(--sobre-aviso); }
+.franja-urgente__enlace { display: block; color: inherit; text-decoration: none; line-height: 1.4; }
+.franja-urgente__enlace:hover { color: inherit; }
+.franja-urgente__enlace:focus-visible { outline-offset: -5px; }
+.franja-urgente__dentro { display: flex; align-items: center; gap: .6rem; min-height: 44px; padding-block: .45rem; font-size: 1rem; }
+.franja-urgente__enlace:hover .franja-urgente__ver-texto { text-decoration-thickness: 2px; }
+.franja-urgente .icono { width: 1.35rem; height: 1.35rem; }
+.franja-urgente__texto { flex: 1 1 auto; min-width: 0; }
+.franja-urgente__texto b { font-weight: 600; }
+.franja-urgente__ver { flex: none; display: inline-flex; align-items: center; gap: .3rem; font-weight: 600; white-space: nowrap; }
+.franja-urgente__ver-texto { text-decoration: underline; text-underline-offset: .18em; }
+.franja-urgente__ver .icono { width: 1.1rem; height: 1.1rem; }
+.franja-urgente .ejemplo { border-color: currentColor; background: transparent; color: inherit; margin: 0 0 0 .35rem; vertical-align: .1em; }
+@media (min-width: 64em) {
+  /* una fila: la propuesta, a la izquierda y corta; el aviso ocupa el resto */
+  .bandas:has(.franja-urgente:not([hidden])) { display: flex; align-items: stretch; }
+  .bandas:has(.franja-urgente:not([hidden])) .propuesta { flex: none; display: flex; align-items: center; }
+  .bandas:has(.franja-urgente:not([hidden])) .propuesta__texto { padding-right: 1.25rem; text-align: left; }
+  .bandas:has(.franja-urgente:not([hidden])) .propuesta__largo { display: none; }
+  .bandas:has(.franja-urgente:not([hidden])) .franja-urgente { flex: 1 1 auto; min-width: 0; display: flex; }
+  .bandas:has(.franja-urgente:not([hidden])) .franja-urgente__fondo { flex: 1 1 auto; display: flex; }
+  .bandas:has(.franja-urgente:not([hidden])) .franja-urgente__enlace { flex: 1 1 auto; display: flex; }
+  .bandas:has(.franja-urgente:not([hidden])) .franja-urgente__dentro { max-width: none; margin: 0; padding-inline: 1.25rem var(--sangre); }
+  .bandas:not(.con-propuesta) .franja-urgente__dentro { padding-left: var(--sangre); }
 }
-.franja-urgente__dentro:hover { color: var(--sobre-alerta); }
-.franja-urgente__dentro:hover .franja-urgente__ver { text-decoration-thickness: 2px; }
-.franja-urgente .icono { width: 1.35rem; height: 1.35rem; margin-top: .05rem; }
-.franja-urgente__ver { font-weight: 600; text-decoration: underline; text-underline-offset: .18em; white-space: nowrap; margin-left: .35rem; }
-.franja-urgente .ejemplo { border-color: var(--sobre-alerta); flex: none; margin: .1rem 0 0; }
-.franja-urgente__texto { min-width: 0; }
-/* móvil: menos cromo arriba. La banda de propuesta, corta y en una línea; la franja urgente, en
-   UNA línea con el texto recortado y «Ver aviso» siempre a la vista (el texto entero sigue en el
-   enlace para el lector de pantalla y en la página del aviso) */
-@media (max-width: 47.99em) {
-  .propuesta { font-size: .875rem; }
-  .propuesta p { padding-block: .35rem; }
+/* móvil y tableta: apiladas. La propuesta en una línea fina; el aviso en dos líneas: la palabra
+   («Urgente», «Aviso programado») la oye el lector y la dicen el icono y el color, y de «Ver aviso»
+   queda la flecha (el enlace es la franja entera) */
+@media (max-width: 63.99em) {
+  .propuesta { font-size: .8125rem; line-height: 1.3; }
+  .propuesta__texto { padding-block: .3rem; }
   .propuesta__largo { display: none; }
-  .franja-urgente__dentro { align-items: center; gap: .5rem; padding-block: .3rem; }
-  .franja-urgente .icono { margin-top: 0; }
-  .franja-urgente .ejemplo { margin: 0; padding: .15rem .35rem; }
-  /* el icono ya dice «aviso»: la palabra la oye el lector y el sitio se lo queda el texto */
-  .franja-urgente__texto b { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .franja-urgente__texto { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .franja-urgente__ver { flex: none; margin-left: 0; }
+  .franja-urgente__dentro { gap: .5rem; padding-block: .35rem; font-size: .9375rem; line-height: 1.35; }
+  .franja-urgente .icono { width: 1.2rem; height: 1.2rem; }
+  .franja-urgente__texto b,
+  .franja-urgente__ver-texto { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .franja-urgente .ejemplo { padding: .1rem .3rem; font-size: .6875rem; }
+  .franja-urgente__ver .icono { width: 1.35rem; height: 1.35rem; }
 }
 
 .cabecera__barra { background: var(--papel); border-bottom: 3px solid var(--oro); }
@@ -284,9 +304,12 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .resultados .icono { grid-row: 1 / span 2; grid-column: 2; color: var(--marca); }
 .resultados mark { background: var(--marca-tenue); color: inherit; border-radius: 2px; }
 
-/* ═══════════════ PORTADA: HERO «HOY» ═══════════════ */
-.hero { padding-block: clamp(1rem, 2.5vw, 2.75rem) clamp(2.5rem, 5vw, 4.5rem); }
-.hero__rejilla { display: grid; gap: 1.25rem; align-items: start; }
+/* ═══════════════ PORTADA: HERO ═══════════════
+   El arco con la foto, el nombre, el lema, el buscador y los botones. Nada más: «Hoy» va en su
+   tira, debajo. En escritorio, el arco tiene el alto del texto de al lado (4:5, centrados) y
+   nunca más del que deja la pantalla: el hero entero cabe en 1280 × 720 y en 1366 × 768 */
+.hero { padding-block: clamp(1rem, 2.5vw, 2rem) clamp(1.75rem, 3.5vw, 2.75rem); }
+.hero__rejilla { display: grid; gap: 1.25rem; align-items: center; }
 .puerta { position: relative; width: 100%; max-width: 22rem; margin-inline: auto; }
 .arco {
   display: block; margin: 0; overflow: hidden;
@@ -300,8 +323,11 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .puerta__arco { aspect-ratio: 5 / 3; width: 100%; }   /* alto ≥ ancho/2: medio punto entero */
 .puerta__umbral { display: block; height: 6px; margin-inline: -5%; background: var(--oro); border-radius: 2px; }
 .hero__titulo { font-size: clamp(2rem, 1.35rem + 3.4vw, 4.5rem); margin: 0; }
+/* cada palabra del nombre en su caja y sin partir: la entrada del hero las sube una a una
+   (memoria «char-reveal parte palabras»). Igual con movimiento o sin él: el corte de línea no cambia */
+.hero__palabra { display: inline-block; white-space: nowrap; }
 .hero__lema { margin: .35rem 0 0; font: italic 600 1.25rem/1.3 var(--f-titulo); color: var(--apagado); }
-/* buscador de trámites a la vista: lo primero que se puede hacer, por encima del panel «Hoy» */
+/* buscador de trámites a la vista: lo primero que se puede hacer */
 .hero__buscador { margin: 1.1rem 0 0; max-width: 36rem; }
 .hero__etiqueta { display: block; margin-bottom: .35rem; font-size: 1.125rem; }
 .hero__fila { display: flex; gap: .5rem; }
@@ -315,50 +341,109 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .hero__resultados li:last-child a { border-bottom: 0; }
 .hero__botones { list-style: none; padding: 0; margin: 1rem 0 0; display: flex; flex-wrap: wrap; gap: .65rem; }
 /* móvil: la ayuda del buscador solo la oye el lector de pantalla (el ejemplo ya está en el campo),
-   para que el buscador y «Hacer un trámite» quepan en la primera pantalla */
+   para que el buscador quepa en la primera pantalla aun con el aviso de cookies */
 @media (max-width: 47.99em) {
   .hero__ayuda { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .hero__buscador { margin-top: .9rem; }
+  .hero__buscador { margin-top: .8rem; }
+  .hero__lema { font-size: 1.125rem; }
 }
-/* pantallas bajas (375 × 667): el arco cede para que el buscador y el botón principal no bajen */
-@media (max-width: 55.99em) and (max-height: 760px) { .puerta { max-width: 15rem; } .hero { padding-top: .75rem; } .hero__rejilla { gap: 1rem; } }
+/* móvil estrecho: «Buscar» se queda en la lupa (el nombre lo oye el lector) y el campo gana sitio */
+@media (max-width: 29.99em) {
+  .hero__buscar { padding-inline: .85rem; }
+  .hero__buscar-texto { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+/* pantallas bajas (375 × 667): el arco cede para que el buscador no baje */
+@media (max-width: 55.99em) and (max-height: 760px) { .puerta { max-width: 14rem; } .hero { padding-top: .6rem; } .hero__rejilla { gap: .85rem; } }
 @media (min-width: 56em) {
-  .hero__rejilla { grid-template-columns: minmax(15rem, 5fr) 7fr; gap: clamp(2.5rem, 5vw, 5rem); }
-  /* el arco arranca a la altura de las mayúsculas del nombre, y algo más alto que antes */
-  .puerta { max-width: 28rem; margin-top: var(--arco-ajuste, .7rem); }
-  .puerta__arco { aspect-ratio: 3 / 4; }
+  .hero__rejilla { grid-template-columns: auto minmax(0, 1fr); gap: clamp(2.5rem, 5vw, 5rem); }
+  .puerta { width: clamp(15rem, min(26vw, (100svh - 17.5rem) * .8), 23rem); max-width: none; margin: 0; }
+  .puerta__arco { aspect-ratio: 4 / 5; }
   .puerta__umbral { margin-inline: -8%; }
 }
 
+/* ═══════════════ PORTADA: «HOY EN …» ═══════════════
+   Una tira a todo lo ancho bajo el hero que se lee como un tablero: cuatro fichas en fila en
+   escritorio (2 × 2 en móvil), cada una con su icono, lo que es y el dato grande; «Más hoy»
+   debajo, en líneas cortas. Las rayas entre fichas son el fondo de la lista asomando por el gap
+   de 1 px: una ficha que falta no deja hueco ni raya suelta */
+.hoy-tira { padding-block: 0 clamp(2.25rem, 4vw, 3.25rem); }
 .hoy {
-  margin-top: 1.5rem; background: var(--superficie);
+  background: var(--superficie);
   border: 1px solid var(--linea); border-top: 3px solid var(--oro); border-radius: var(--radio);
-  padding: 1rem 1.25rem .25rem;
 }
-.hoy__titulo { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .75rem; font-size: 1.375rem; margin: 0 0 .5rem; }
+.hoy__titulo {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .75rem;
+  margin: 0; padding: .85rem 1.25rem .8rem; border-bottom: 1px solid var(--linea); font-size: 1.375rem;
+}
 .hoy__fecha { font: 400 1rem/1.4 var(--f-texto); color: var(--apagado); }
-.hoy__lista { list-style: none; margin: 0; padding: 0; }
-.hoy__fila { display: grid; grid-template-columns: 1.4rem 1fr; gap: .75rem; padding: .8rem 0; border-top: 1px solid var(--linea); }
-.hoy__fila > .icono { margin-top: .2rem; color: var(--marca); width: 1.4rem; height: 1.4rem; }
-.hoy__fila p { margin: 0; }
-.hoy__etiqueta { font: 600 .8125rem/1.4 var(--f-texto); letter-spacing: .07em; text-transform: uppercase; color: var(--apagado); }
-.hoy__nota, .hoy__cuando { display: block; color: var(--apagado); font-size: 1rem; }
-.hoy__eventos { list-style: none; margin: 0; padding: 0; }
-.hoy__evento + .hoy__evento { margin-top: .5rem; }
-.hoy a { font-weight: 600; }
-/* «Más hoy»: el tiempo, el próximo pleno y la recogida, en líneas cortas */
-.hoy__breves { list-style: none; margin: .15rem 0 0; padding: 0; display: grid; gap: .5rem; }
-.hoy__breve b { font-weight: 600; }
-.hoy a[href^="tel:"] { white-space: nowrap; }   /* «900 000 / 003» partido no se lee como teléfono */
-.hoy__breve .ejemplo { margin-inline-start: .35rem; }
-/* el canal de avisos, al pie del panel */
-.hoy__canal {
-  display: flex; align-items: flex-start; gap: .75rem; margin: 0 -1.25rem -.25rem; padding: .8rem 1.25rem;
-  background: var(--marca-tenue); border-top: 1px solid var(--linea); border-radius: 0 0 var(--radio) var(--radio);
+.hoy__lista { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; background: var(--linea); }
+.hoy__fila { min-width: 0; max-width: none; padding: .95rem 1.25rem 1.1rem; background: var(--superficie); overflow-wrap: break-word; }
+.hoy__fila p { margin: 0; max-width: none; }
+.hoy__etiqueta {
+  display: flex; align-items: center; gap: .55rem; margin: 0 0 .6rem;
+  font: 600 .8125rem/1.3 var(--f-texto); letter-spacing: .07em; text-transform: uppercase; color: var(--apagado);
 }
-.hoy__canal { max-width: none; }
-.hoy__canal > span { max-width: 34em; }
-.hoy__canal .icono { flex: none; width: 1.4rem; height: 1.4rem; margin-top: .15rem; color: var(--marca); }
+.hoy__fila .hoy__etiqueta { margin-bottom: .6rem; }
+.hoy__icono { flex: none; display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--marca-tenue); color: var(--marca); }
+.hoy__icono .icono { width: 1.2rem; height: 1.2rem; vertical-align: 0; }
+.hoy__etiqueta-texto { min-width: 0; }
+.hoy__etiqueta-texto { overflow-wrap: normal; }
+.hoy__gravedad { margin: -.15rem 0 .45rem; }
+.hoy__gravedad .chip { font-size: .8125rem; }
+.hoy__valor { font: 700 1.25rem/1.25 var(--f-titulo); color: var(--tinta); }
+.hoy__valor b { font-weight: 700; }
+.hoy__valor--enlace { font-size: 1.125rem; line-height: 1.3; }
+.hoy__valor .ejemplo { vertical-align: .2em; }
+.hoy__fila .hoy__nota, .hoy__fila .hoy__cuando { margin-top: .3rem; }
+.hoy__nota, .hoy__cuando { display: block; color: var(--apagado); font-size: 1rem; line-height: 1.4; }
+.hoy__detalle { font: 400 1rem/1.4 var(--f-texto); color: var(--apagado); }
+/* cerrado no es una alarma: un aro en vez del punto rojo (el rojo, solo para lo urgente) */
+.hoy .esta-cerrado .estado__punto { background: transparent; box-shadow: inset 0 0 0 2px var(--apagado); }
+.hoy__eventos { list-style: none; margin: 0; padding: 0; }
+.hoy__evento { max-width: none; }
+.hoy__evento + .hoy__evento { margin-top: .65rem; }
+.hoy a { font-weight: 600; }
+.hoy__valor a { font-weight: 700; }
+.hoy a[href^="tel:"] { white-space: nowrap; }   /* «900 000 / 003» partido no se lee como teléfono */
+/* 2 × 2 en cuanto caben dos (360 px); la última, si queda sola, a todo lo ancho */
+@media (min-width: 22.5em) {
+  .hoy__lista { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hoy__fila:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+@media (max-width: 47.99em) {
+  .hoy__titulo { padding-inline: 1rem; font-size: 1.25rem; }
+  .hoy__fila { padding: .8rem .85rem .95rem; }
+  .hoy__etiqueta { gap: .4rem; font-size: .75rem; letter-spacing: .02em; }
+  .hoy__icono { width: 1.6rem; height: 1.6rem; }
+  .hoy__icono .icono { width: 1.05rem; height: 1.05rem; }
+  .hoy__valor { font-size: 1.125rem; }
+  .hoy__valor--enlace { font-size: 1.0625rem; }
+  .hoy__nota, .hoy__cuando, .hoy__detalle { font-size: .9375rem; }
+}
+/* escritorio: todas en una fila, del mismo ancho, sean cuatro, tres o dos */
+@media (min-width: 64em) {
+  .hoy__lista { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+  .hoy__fila:last-child:nth-child(odd) { grid-column: auto; }
+  .hoy__fila { padding: 1.1rem 1.35rem 1.25rem; }
+}
+/* «Más hoy»: el tiempo, el próximo pleno y la recogida, en líneas cortas */
+.hoy__pie { border-top: 1px solid var(--linea); }
+.hoy__mas-hoy { display: grid; gap: .55rem 1.75rem; padding: .9rem 1.25rem 1rem; }
+.hoy__etiqueta--mas { margin: 0; }
+.hoy__etiqueta--mas .icono { color: var(--marca); width: 1.3rem; height: 1.3rem; }
+.hoy__breves { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem 2rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
+.hoy__breve { max-width: none; font-size: 1rem; line-height: 1.45; }
+.hoy__breve b { font-weight: 600; }
+.hoy__breve .hoy__nota { margin-top: .15rem; font-size: .9375rem; }
+.hoy__breve .ejemplo { margin-inline-start: .35rem; }
+@media (min-width: 64em) { .hoy__mas-hoy { grid-template-columns: auto minmax(0, 1fr); align-items: start; } .hoy__etiqueta--mas { padding-top: .1rem; } }
+/* el dato de la sede (solo en la sobria) y el canal de avisos, al pie */
+.hoy__sede, .hoy__canal { display: flex; align-items: flex-start; gap: .75rem; max-width: none; margin: 0; padding: .8rem 1.25rem; border-top: 1px solid var(--linea); }
+.hoy__pie > :first-child { border-top: 0; }
+.hoy__canal { background: var(--marca-tenue); border-radius: 0 0 var(--radio) var(--radio); }
+.hoy__sede > span, .hoy__canal > span { max-width: 40em; }
+.hoy__sede .icono, .hoy__canal .icono { flex: none; width: 1.4rem; height: 1.4rem; margin-top: .15rem; color: var(--marca); }
+.chip--programado, .chip--informativo { background: var(--aviso); color: var(--sobre-aviso); }
 /* «Añadir a mi calendario» dentro de una frase: un botón (eventos de la hoja) que parece enlace */
 .enlace-ics { font-weight: 600; }
 button.enlace-ics, button.evento__ics {
@@ -643,17 +728,23 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 .pie__propuesta { color: var(--tinta); font-weight: 600; }
 
 /* ── aviso de cookies: :not([hidden]) o el botón «no hace nada» ── */
+/* compacto: una o dos líneas con el botón al lado, también en escritorio, para no tapar el
+   buscador del hero (a 375 × 667 el campo se ve entero con el aviso puesto: verificar → v3pliegue) */
 .cookies {
-  position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 80;
-  max-width: 46rem; margin-inline: auto; padding: 1rem 1.25rem;
+  position: fixed; left: .75rem; right: .75rem; bottom: .75rem; z-index: 80;
+  max-width: 40rem; margin-inline: auto; padding: .5rem .5rem .5rem 1.1rem;
   background: var(--superficie); border: 1px solid var(--linea-fuerte); border-radius: var(--radio);
   box-shadow: var(--sombra-alta);
 }
-.cookies:not([hidden]) { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; }
-.cookies__texto { flex: 1 1 20rem; font-size: 1rem; }
-.cookies__texto p { margin: 0; }
-.cookies__texto p + p { margin-top: .35rem; color: var(--apagado); }
-@media (max-width: 36em) { .cookies { left: .5rem; right: .5rem; bottom: .5rem; padding: .85rem 1rem; } .cookies__texto { font-size: .9375rem; } }
+.cookies:not([hidden]) { display: flex; align-items: center; gap: .5rem 1rem; }
+.cookies__texto { flex: 1 1 auto; min-width: 0; font-size: .9375rem; line-height: 1.4; }
+.cookies__texto p { margin: 0; max-width: none; }
+.cookies__texto p + p { margin-top: .25rem; color: var(--apagado); }
+.cookies .boton { flex: none; min-height: 44px; padding: .45rem 1rem; }
+@media (max-width: 36em) {
+  .cookies { left: .5rem; right: .5rem; bottom: .5rem; padding: .4rem .4rem .4rem .8rem; gap: .6rem; }
+  .cookies .boton { padding-inline: .8rem; font-size: 1rem; }
+}
 
 /* ═══════════════ PÁGINAS INTERIORES ═══════════════ */
 /* Cabecera de página: migas, h1 y entradilla con la puerta a la derecha.

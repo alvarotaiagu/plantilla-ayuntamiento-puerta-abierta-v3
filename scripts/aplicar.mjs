@@ -360,7 +360,13 @@ const quienAyto = [
 
 /* ───────────────────────── contenido ───────────────────────── */
 const avisosOrden = C.avisos.filter(a => !a.oculto).slice().sort((a, b) => b.fecha.localeCompare(a.fecha))
-  .map(a => ({ ...a, fecha_texto: fechaTexto(a.fecha), urgente: !!a.urgente, ejemplo: !!a.ejemplo, enlace: a.enlace || null }));
+  .map(a => ({ ...a, fecha_texto: fechaTexto(a.fecha), urgente: Vivo.gravedad(a) === 'urgente', ejemplo: !!a.ejemplo, enlace: a.enlace || null }));
+/* gravedad de los avisos: «urgente» (rojo), «programado» o «informativo» (ámbar; el de por defecto).
+   En la franja de arriba, en móvil, el título tiene que caber en dos líneas: si es largo, `titulo_corto` */
+for (const a of C.avisos) {
+  if (a.gravedad != null && !['urgente', 'programado', 'informativo'].includes(String(a.gravedad).toLowerCase().trim())) errores.push('avisos «' + a.id + '»: «gravedad» es "urgente", "programado" o "informativo"');
+  if (a.caduca && Vivo.gravedad(a) !== 'informativo' && !a.titulo_corto && String(a.titulo).length > 70) avisos.push('aviso «' + a.id + '»: el título pasa de 70 caracteres; en la franja del móvil no cabe en dos líneas. Ponle «titulo_corto»');
+}
 const noticias = C.noticias.filter(n => !n.oculto).slice().sort((a, b) => b.fecha.localeCompare(a.fecha)).map(n => {
   const f = n.imagen ? foto(n.imagen, n.imagen_alt, 'noticia: ' + n.titulo) : null;
   return { ...n, fecha_texto: fechaTexto(n.fecha), imagen: f ? n.imagen : null, imagen_ancho: f ? f.ancho : null, imagen_alto: f ? f.alto : null,
@@ -441,7 +447,7 @@ const conIcs = e => ({ ...e, ics: 'ics/' + Vivo.archivoIcs(e) });
 const D = {
   slug: marcaConf.slug, nombre: M.nombre, nombre_corto: M.nombre_corto, zona: 'Europe/Madrid',
   horario: { texto: M.horario.texto, tramos: M.horario.tramos || [], ejemplo: !!M.horario.ejemplo },
-  avisos: C.avisos.map(a => ({ id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, urgente: !!a.urgente, caduca: a.caduca || null, ejemplo: !!a.ejemplo, oculto: !!a.oculto })),
+  avisos: C.avisos.map(a => ({ id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, titulo_corto: a.titulo_corto || null, urgente: !!a.urgente, gravedad: a.gravedad ? String(a.gravedad).toLowerCase().trim() : null, caduca: a.caduca || null, ejemplo: !!a.ejemplo, oculto: !!a.oculto })),
   agenda: [...C.agenda.map(e => ({ id: e.id, fecha: e.fecha, hora: e.hora || null, hora_fin: e.hora_fin || null, titulo: e.titulo, lugar: e.lugar || null, nota: e.nota || null, ejemplo: !!e.ejemplo, oculto: !!e.oculto,
     tipo: e.tipo ? String(e.tipo).toLowerCase() : null, convocatoria: e.convocatoria || null, convocatoria_sr: e.convocatoria ? srDe(e.convocatoria) : null,
     grabacion: e.grabacion || null, grabacion_sr: e.grabacion ? srDe(e.grabacion) : null })), ...agendaFiestas, ...plenosAgenda].map(conIcs),
@@ -465,8 +471,21 @@ gruposListin.forEach(g => g.items.forEach(i => { if (i.clave) i.estado = pintar(
 
 /* ───────────────────────── el pueblo y las fotos ───────────────────────── */
 const P = M.pueblo || {};
-const heroFoto = M.fotos && M.fotos.hero ? foto(M.fotos.hero.archivo, M.fotos.hero.alt, 'portada') : null;
-if (heroFoto) heroFoto.posicion = M.fotos.hero.posicion || '50% 50%';
+/* la foto del arco: una (fotos.hero) o varias (fotos.hero_fotos) que se turnan al azar en cada
+   visita. La primera de la lista es la que sale sin JavaScript y la de la imagen para compartir */
+const listaHero = ((M.fotos && Array.isArray(M.fotos.hero_fotos) && M.fotos.hero_fotos.length) ? M.fotos.hero_fotos : (M.fotos && M.fotos.hero ? [M.fotos.hero] : []))
+  .map((h, i) => {
+    if (!h || !h.archivo) { errores.push('fotos.hero_fotos: cada foto lleva «archivo», «alt» y «posicion»'); return null; }
+    if (!h.alt) avisos.push('fotos.hero' + (M.fotos.hero_fotos ? '_fotos[' + i + ']' : '') + ' «' + h.archivo + '»: falta «alt» (la foto de la portada no es decorativa)');
+    const f = foto(h.archivo, h.alt, 'portada');
+    return f ? { ...f, posicion: h.posicion || '50% 50%' } : null;
+  }).filter(Boolean);
+const heroFoto = listaHero[0] || null;
+const HERO_SIZES = '(min-width: 56em) 30vw, 92vw';
+/* para el <head> (se elige y se precarga antes del primer pintado) y el <figure> (la pinta) */
+const heroVarias = listaHero.length > 1 ? jsonEnScript(listaHero.map(f => ({ src: 'media/' + f.archivo + '.jpg', srcset: 'media/' + f.archivo + '-800.jpg 800w, media/' + f.archivo + '.jpg ' + f.ancho + 'w',
+  ancho: f.ancho, alto: f.alto, alt: f.alt, pos: f.posicion }))) : null;
+if (heroFoto) { heroFoto.sizes = HERO_SIZES; heroFoto.varias = !!heroVarias; }
 const pueblo = {
   ...P,
   lugares: (P.lugares || []).map(l => { const f = foto(l.foto, l.alt, l.nombre); return { nombre: l.nombre, texto: l.texto, foto: f ? l.foto : null, ancho: f ? f.ancho : null, alto: f ? f.alto : null, alt: l.alt || '', credito: f ? f.credito : null }; }),
@@ -636,7 +655,9 @@ const comun = {
   pleno, quien_ayto: quienAyto, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },
-  pueblo, creditos, hay_creditos_fotos: creditos.length > 0, hero_foto: heroFoto,
+  pueblo, creditos, hay_creditos_fotos: creditos.length > 0, hero_foto: heroFoto, hero_varias: heroVarias,
+  /* el nombre del pueblo, palabra a palabra (cada una en inline-block y sin partir: la entrada del hero) */
+  nombre_palabras: M.nombre.trim().split(/\s+/).map((p, i) => ({ palabra: p, n: i })),
   mapa_embed_url: 'https://www.google.com/maps?q=' + encodeURIComponent(M.contacto.mapa_consulta || `Ayuntamiento de ${N}, ${M.contacto.direccion}, ${M.contacto.cp} ${N}`) + '&output=embed',
   como_llegar_url: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(M.contacto.mapa_consulta || `Ayuntamiento de ${N}`),
   web_actual: webActual, web_actual_texto: webActual ? webActual.replace(/^https?:\/\//, '').replace(/\/$/, '') : null,
