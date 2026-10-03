@@ -289,6 +289,49 @@ const tramites = {
   lista, total: lista.length, en_sede: tramitesSede, impresos: lista.filter(t => t.formato).length,
   letras: letrasTramites, az: indiceAZ
 };
+/* ── v3b · F10. Lectura fácil (facil.html): los trámites más pedidos explicados fácil, desde
+   contenido/facil.json (opcional; sin él no hay página). Cada uno va con un atajo (`atajo`, el nombre
+   exacto) o con «Avisar de un problema» (`pagina: "incidencia"`, solo si hay incidencias). Los
+   marcadores {telefono}, {direccion} y {nombre} salen de municipio.json; la dirección, sin
+   abreviaturas («C/» → «la calle»), y el teléfono, enlazado. Un pictograma por paso, de
+   fuente/_pictos_facil.html ── */
+const FACIL = leerJSON('contenido/facil.json', null);
+const PICTOS_FACIL = new Set([...leer('fuente/_pictos_facil.html').matchAll(/id="f-([\w-]+)"/g)].map(m => m[1]));
+const escHtml = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const direccionFacil = String(M.contacto.direccion).replace(/^C\/\s*/i, 'la calle ').replace(/^Avda?\.\s*/i, 'la avenida ').replace(/^Pza?\.\s*/i, 'la plaza ')
+  .replace(/\s*n\.?\s*º\s*/gi, ' ').replace(/,\s*(\d+)\b/, ', número $1');
+/* una idea por línea: las frases de un mismo paso van cada una en su línea */
+const lineasFacil = h => h.split(/(?<=[.!?:])\s+(?=[A-ZÁÉÍÓÚÑ¿¡])/).map(f => '<span class="facil__linea">' + f + '</span>').join(' ');
+const textoFacil = t => escHtml(String(t).replace(/\{direccion\}/g, direccionFacil).replace(/\{nombre\}/g, M.nombre))
+  .replace(/\{telefono\}/g, `<a href="${telHref(M.contacto.telefono)}">${M.contacto.telefono}</a>`);
+let facil = null;
+if (FACIL && (FACIL.tramites || []).length) {
+  const pictoOk = (pk, donde) => { if (!PICTOS_FACIL.has(pk)) errores.push('contenido/facil.json «' + donde + '»: no hay pictograma «' + pk + '» en fuente/_pictos_facil.html'); return pk; };
+  const items = FACIL.tramites.map(t => {
+    let href = null, sr = '', clave = t.atajo || t.pagina;
+    if (t.atajo) {
+      const a = tramites.atajos.find(x => x.nombre === t.atajo);
+      if (!a) { errores.push('contenido/facil.json: «' + t.atajo + '» no es un atajo de tramites.atajos'); return null; }
+      href = a.href; sr = (a.sr || '') + (a.destino ? '. ' + a.destino : '');
+    } else if (t.pagina === 'incidencia') {
+      if (!incidencias) return null;
+      href = 'incidencia.html';
+    } else { errores.push('contenido/facil.json: cada trámite lleva «atajo» o «pagina»: "incidencia"'); return null; }
+    if (!t.titulo || !(t.pasos || []).length) errores.push('contenido/facil.json «' + clave + '»: lleva «titulo» y «pasos»');
+    return {
+      id: 'facil-' + slugDe(clave), clave, titulo: t.titulo, picto: pictoOk(t.picto || 'documento', clave), href, sr, boton: t.boton || 'Ir al trámite',
+      que_es: (t.que_es || []).map(x => ({ html: textoFacil(x) })),
+      pasos: (t.pasos || []).map((x, i) => ({ n: i + 1, html: lineasFacil(textoFacil(x.texto)), picto: pictoOk(x.picto || 'documento', clave) })),
+      sin_internet: (t.sin_internet || []).map(x => ({ html: lineasFacil(textoFacil(x.texto)), picto: pictoOk(x.picto || 'documento', clave) }))
+    };
+  }).filter(Boolean);
+  if (items.length) facil = { items, n: items.length, nota: FACIL.nota || 'Texto adaptado a lectura fácil. Pendiente de validar con personas usuarias.' };
+}
+/* cada atajo (y el momento de la incidencia) enlaza su «Explicado fácil»; null explícito si no hay */
+const facilDe = clave => { const it = facil && facil.items.find(x => x.clave === clave); return it ? 'facil.html#' + it.id : null; };
+tramites.atajos.forEach(a => { a.facil = facilDe(a.nombre); });
+tramites.momentos.forEach(m => { m.facil = m.incidencia ? facilDe('incidencia') : null; });
+
 /* nombres en lenguaje claro para el buscador: los de atajos, temas y momentos */
 const claros = new Map();
 const anotar = (href, n) => { if (!href) return; if (!claros.has(href)) claros.set(href, new Set()); claros.get(href).add(n); };
@@ -699,6 +742,10 @@ const PAGINAS = [
   ...(incidencias ? [{ archivo: 'incidencia.html', id: 'incidencia', titulo: 'Avisar de un problema', migas: [{ href: 'tramites.html', texto: 'Trámites' }],
     entradilla: 'Una farola apagada, una fuga de agua, un bache… Cuéntenos qué pasa y le preparamos el correo para el Ayuntamiento.',
     descripcion: `Avise al Ayuntamiento de ${N} de un problema en la calle: alumbrado, agua, limpieza, baches o ruidos.` }] : []),
+  /* v3b · F10: solo con contenido/facil.json */
+  ...(facil ? [{ archivo: 'facil.html', id: 'facil', titulo: 'Trámites explicados fácil', migas: [{ href: 'tramites.html', texto: 'Trámites' }],
+    entradilla: 'Los trámites que más se piden, explicados con palabras fáciles y paso a paso.',
+    descripcion: `Trámites del Ayuntamiento de ${N} explicados en lectura fácil.` }] : []),
   ...noticias.map(n => ({ archivo: `noticia-${n.id}.html`, fuente: '_noticia.html', id: 'noticia', nav: 'noticias', titulo: n.titulo,
     migas: [{ href: 'noticias.html', texto: 'Noticias' }], descripcion: n.resumen || n.titulo, noticia: n }))
 ];
@@ -776,7 +823,7 @@ const comun = {
   paletas: paletas.map((p, i) => ({ clave: p.clave, nombre: nombreMatiz(p.col.marca), pulsado: i === 0 ? 'true' : 'false' })),
   tramites, listin_corto: listinCorto, listin_grupos: gruposListin,
   quien, quien_portada: quien.filter(q => q.portada), fiestas,
-  incidencias,
+  incidencias, facil,
   pleno, quien_ayto: quienAyto, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },
@@ -797,7 +844,7 @@ const conParciales = (src, n = 0) => {
 /* v3 · índice lateral de las páginas largas. Fuera: la portada, la 404, Trámites (tiene su índice
    A–Z y su buscador), Noticias (sus h2 son las tarjetas) y las páginas de otras zonas de la v3
    (El Ayuntamiento y Teléfonos): para dárselo, quitarlas de aquí */
-const SIN_INDICE = new Set(['inicio', 'error', 'tramites', 'noticias', 'ayuntamiento', 'telefonos']);
+const SIN_INDICE = new Set(['inicio', 'error', 'tramites', 'noticias', 'ayuntamiento', 'telefonos', 'facil']);   /* v3b: «Explicado fácil» lleva su propia lista con pictogramas */
 const textoPlano = h => h.replace(/<span class="sr">[\s\S]*?<\/span>/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
   .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 const cuerpoMain = html => { const i = html.indexOf('<main'), f = html.lastIndexOf('</main>'); return i < 0 || f < 0 ? null : [i, f]; };

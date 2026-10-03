@@ -1482,6 +1482,52 @@ body {
 /* «Por momentos» → «Ha pasado algo en mi calle»: el enlace al formulario */
 .momento__accion { margin: .25rem 0 .9rem; display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; }
 
+/* ═══════════════ v3b · INTERIORES: lectura fácil (F10) ═══════════════
+   Pautas de Lectura Fácil (UNE 153101 EX): letra grande (1,25 rem, más que el texto base),
+   interlineado amplio, una frase por línea, alineado a la izquierda, sin cursivas ni mayúsculas
+   seguidas, pasos numerados con su número grande y su pictograma, y mucho aire entre bloques */
+.facil { max-width: calc(44rem + 2 * var(--margen)); margin-inline: 0; font-size: 1.25rem; line-height: 1.65; }
+.facil__frase { margin: 0 0 .7rem; max-width: 40rem; }
+.facil-lista { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: .75rem; }
+.facil-lista__enlace {
+  display: flex; align-items: center; gap: 1rem; min-height: 64px; padding: .7rem 1rem;
+  background: var(--superficie); border: 2px solid var(--linea-fuerte); border-radius: var(--radio);
+  font-weight: 600; text-decoration: none; color: var(--marca);
+}
+.facil-lista__enlace:hover { border-color: var(--marca); background: var(--marca-tenue); text-decoration: underline; }
+.facil-lista__picto { width: 2.25rem; height: 2.25rem; color: var(--marca); }
+.facil-tramite { border-top: 1px solid var(--linea); }
+.facil__titulo { display: flex; align-items: center; gap: 1rem; font-size: clamp(1.6rem, 1.3rem + 1.5vw, 2.1rem); margin: 0 0 1.25rem; }
+.facil__picto-grande { width: 3.5rem; height: 3.5rem; flex: none; padding: .55rem; color: var(--marca); background: var(--marca-tenue); border-radius: 50%; stroke-width: 1.5; }
+.facil__subtitulo { font-size: 1.4rem; margin: 2rem 0 .8rem; }
+.facil__pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.facil__paso {
+  display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 1rem; align-items: center;
+  padding: .9rem 1rem; background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio);
+}
+.facil__pasos--sin .facil__paso { grid-template-columns: auto minmax(0, 1fr); }
+.facil__paso .facil__frase { margin: 0; }
+.facil__linea { display: block; }
+.facil__numero {
+  display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%;
+  background: var(--marca); color: var(--sobre-marca); font: 700 1.4rem/1 var(--f-titulo);
+}
+.facil__picto { width: 2.75rem; height: 2.75rem; color: var(--tinta); stroke-width: 1.5; }
+@media (max-width: 30em) {
+  .facil__paso { grid-template-columns: auto minmax(0, 1fr); }
+  .facil__paso .facil__picto { grid-row: 1; grid-column: 2; justify-self: start; }
+  .facil__paso .facil__frase { grid-column: 1 / -1; }
+  .facil__pasos--sin .facil__paso .facil__picto { grid-column: 1; }
+}
+.facil__accion { margin: 1.5rem 0 0; }
+.facil__boton { font-size: 1.15rem; min-height: 56px; }
+.facil__arriba { margin: 1.5rem 0 0; font-size: 1.0625rem; }
+.facil__nota { margin: 0; padding: 1rem 1.25rem; border-left: 4px solid var(--oro); background: var(--superficie); font-size: 1.125rem; }
+/* «Los más pedidos» en Trámites: bajo cada atajo, su «Explicado fácil» */
+.atajos--facil > li { display: grid; grid-template-rows: 1fr auto; gap: .35rem; }
+.atajo__facil { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; padding: .2rem .25rem; font-weight: 600; }
+.atajo__facil .icono { width: 1.2rem; height: 1.2rem; }
+
 /* ═══════════════ CORTINA (solo portada) ═══════════════
    La capa no tiene fondo. El velo es un div provisional hasta que cortina.js
    pinta el muro: un trazado SVG con fill-rule evenodd (todo el rectángulo

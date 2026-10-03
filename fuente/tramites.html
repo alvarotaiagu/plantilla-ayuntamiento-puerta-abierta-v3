@@ -15,6 +15,22 @@
   </div>
 </section>
 
+<!-- v3b · F10: los más pedidos (tramites.atajos), cada uno con su «Explicado fácil» si lo tiene -->
+{{#tramites.atajos.length}}<section class="seccion" aria-labelledby="t-pedidos">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-pedidos">Los más pedidos</h2>
+    <ul class="atajos atajos--facil" style="--atajos-columnas: {{tramites.atajos_columnas}}">
+      {{#tramites.atajos}}<li><a class="atajo" href="{{href}}">
+        <svg class="icono atajo__icono" aria-hidden="true"><use href="#i-{{icono}}"/></svg>
+        <svg class="icono atajo__flecha" aria-hidden="true"><use href="#i-{{#destino}}documento{{/destino}}{{^destino}}salida{{/destino}}"/></svg>
+        <span class="atajo__nombre">{{nombre}}<span class="sr">{{sr}}{{#destino}}. {{destino}}{{/destino}}</span></span>
+        <span class="atajo__nota">{{nota}}</span>
+      </a>{{#facil}}<a class="atajo__facil" href="{{facil}}"><svg class="icono" aria-hidden="true"><use href="#i-ojo"/></svg>Explicado fácil<span class="sr">: {{nombre}}</span></a>{{/facil}}</li>
+      {{/tramites.atajos}}
+    </ul>
+  </div>
+</section>{{/tramites.atajos.length}}
+
 <section class="seccion" aria-labelledby="t-momentos">
   <div class="contenedor">
     <h2 class="seccion__titulo" id="t-momentos">Por momentos</h2>
@@ -27,7 +43,7 @@
           {{#pasos}}<li>{{#href}}<a href="{{href}}">{{texto}}<span class="sr">{{sr}}</span></a>{{/href}}{{^href}}{{texto}}{{/href}}</li>
           {{/pasos}}
         </ol>
-        {{#incidencia}}<p class="momento__accion"><a class="boton boton--marca" href="incidencia.html"><svg class="icono" aria-hidden="true"><use href="#i-incidencia"/></svg>Avisar de un problema</a></p>{{/incidencia}}
+        {{#incidencia}}<p class="momento__accion"><a class="boton boton--marca" href="incidencia.html"><svg class="icono" aria-hidden="true"><use href="#i-incidencia"/></svg>Avisar de un problema</a>{{#facil}}<a class="atajo__facil" href="{{facil}}"><svg class="icono" aria-hidden="true"><use href="#i-ojo"/></svg>Explicado fácil<span class="sr">: avisar de un problema</span></a>{{/facil}}</p>{{/incidencia}}
       </li>
       {{/tramites.momentos}}
     </ul>
