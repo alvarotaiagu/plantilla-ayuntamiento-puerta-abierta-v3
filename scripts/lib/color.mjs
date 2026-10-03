@@ -146,6 +146,12 @@ export function derivarTokens(col) {
   t['--oro'] = col.oro;
   t['--alerta'] = oscurecerHasta(col.alerta, [BLANCO], 5.6);
   t['--sobre-alerta'] = BLANCO;
+  /* avisos programados o informativos (un corte de agua anunciado): el oro del escudo llevado al
+     ámbar (matiz 70 en OKLCH, con su luminosidad y su croma) y oscurecido hasta AA con texto
+     blanco. El rojo queda solo para lo urgente: un corte anunciado no puede parecer una alarma */
+  const oroOk = hexAOklch(col.oro);
+  t['--aviso'] = oscurecerHasta(oklchAHex({ L: oroOk.L, C: oroOk.C, H: 70 }), [BLANCO], 4.8);
+  t['--sobre-aviso'] = BLANCO;
   t['--foco'] = t['--marca'];
   t['--foco-claro'] = BLANCO;
   t['--cortina'] = mezclar(papel, tinta, 0.05);           /* cal en sombra: nunca el color de lo que destapa */
@@ -172,6 +178,9 @@ export function derivarTokens(col) {
     ['botón', '--sobre-marca', '--marca-fuerte', 4.5],
     ['banda', '--sobre-marca-apagado', '--marca', 4.5],
     ['alerta', '--sobre-alerta', '--alerta', 4.5],
+    ['aviso', '--sobre-aviso', '--aviso', 4.5],
+    ['aviso', '--aviso', '--papel', 3],
+    ['foco', '--foco-claro', '--aviso', 3],
     ['borde', '--linea-fuerte', '--papel', 3],
     ['borde', '--linea-fuerte', '--superficie', 3],
     ['foco', '--foco', '--papel', 3],
