@@ -2,7 +2,7 @@
 
 Noche del 3 de octubre de 2026. Parte de `v3`; 6 mejoras, en el orden de prioridad del encargo. Cada mejora va en su commit; los archivos generados por `aplicar.mjs` no se suben (al unir, `node scripts/aplicar.mjs`).
 
-**Resultado: `node scripts/verificar.mjs` → ✓ 142 de 142 comprobaciones** en 579 s (las 135 de antes, que siguen pasando con 4 ajustadas, más las 7 nuevas). **** (antes de empezar, 135 de 135 en este mismo entorno).
+**Resultado: `node scripts/verificar.mjs` → ✓ 142 de 142 comprobaciones** en 579 s: las 135 de antes siguen pasando (4 ajustadas al buscador por grupos y a los plazos de ejemplo) y se suman las 7 nuevas. Antes de empezar, 135 de 135 en este mismo entorno.
 
 ## Qué se hizo
 
