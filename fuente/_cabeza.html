@@ -17,6 +17,7 @@
 {{/precargar}}<link rel="stylesheet" href="{{raiz}}css/fuentes.css?v={{v.fuentes}}">
 <link rel="stylesheet" href="{{raiz}}css/marca.css?v={{v.marca}}">
 <link rel="stylesheet" href="{{raiz}}css/base.css?v={{v.base}}">
+<link rel="stylesheet" href="{{raiz}}css/movimiento.css?v={{v.movimiento}}">
 <script>
 /* Bloqueante a propósito: lo que cambia el aspecto se decide antes del primer
    pintado, o la página arranca de una forma y salta a otra. */
@@ -35,6 +36,8 @@
       window.__cortinaSeguro = setTimeout(function () { h.classList.remove('con-cortina'); }, 2600);
     }
   } catch (e) {}
+  /* con cortina no hay transición de página (css/movimiento.css): la cortina ya es la entrada */
+  window.addEventListener('pagereveal', function (ev) { if (ev.viewTransition && h.classList.contains('con-cortina')) ev.viewTransition.skipTransition(); });
 {{/pagina.cortina}}
   /* [MANDO DE MAQUETA] inicio */
   /* Solo con ?revision: lo guardado no cuenta fuera de la reunión, o un móvil

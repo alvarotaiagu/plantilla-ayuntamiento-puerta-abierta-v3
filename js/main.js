@@ -59,7 +59,11 @@
       grupo.__montado = true;
       grupo.addEventListener('click', function (ev) {
         var b = ev.target.closest('.filtro');
-        if (b) aplicar(b.getAttribute('data-tema'));
+        if (!b) return;
+        var tema = b.getAttribute('data-tema');
+        /* con js/movimiento.js, las filas se recolocan con una View Transition; sin él, igual que siempre */
+        if (window.Movimiento && window.Movimiento.transicion) window.Movimiento.transicion(function () { aplicar(tema); }, caja);
+        else aplicar(tema);
       });
     }
     var existe = !activo || $$('.filtro', grupo).some(function (b) { return b.getAttribute('data-tema') === activo; });
