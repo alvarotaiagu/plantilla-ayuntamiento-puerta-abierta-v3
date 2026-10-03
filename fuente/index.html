@@ -36,12 +36,25 @@
         </figure>{{/hero_foto}}
         {{^hero_foto}}<div class="arco puerta__arco arco--vacio" id="arco-hero"><img src="marca/escudo-480.png" width="{{escudo.ancho480}}" height="480" alt=""></div>{{/hero_foto}}
         <span class="puerta__umbral" aria-hidden="true"></span>
+        <!-- v3b · el pie de la foto: el lugar que sale, enlazado a su sitio en «El pueblo». Va sobre el
+             pie del arco (absoluto: no mueve nada). Con varias fotos, este script lo cambia por el de
+             la foto elegida en el <head>, antes del primer pintado. Sin lugar, vacío y sin verse -->
+        {{#hero_foto}}<p class="puerta__pie" id="pie-hero">{{#pie_href}}<a href="{{pie_href}}"><span class="sr">Foto: </span>{{pie}}</a>{{/pie_href}}{{^pie_href}}{{#pie}}<span class="sr">Foto: </span>{{pie}}{{/pie}}{{/pie_href}}</p>{{#varias}}<script>(function (p) {
+          var F = window.__heroFotos, f = F && F[window.__heroFoto || 0];
+          if (!f) return;
+          p.textContent = '';
+          if (!f.pie) return;
+          var dentro = f.pie_href ? document.createElement('a') : p, sr = document.createElement('span');
+          sr.className = 'sr'; sr.textContent = 'Foto: ';
+          dentro.appendChild(sr); dentro.appendChild(document.createTextNode(f.pie));
+          if (f.pie_href) { dentro.href = f.pie_href; p.appendChild(dentro); }
+        })(document.currentScript.previousElementSibling);</script>{{/varias}}{{/hero_foto}}
       </div>
       <div class="hero__texto">
         <!-- «Ayuntamiento de» ya está en la cabecera: aquí solo lo oye el lector de pantalla.
              Cada palabra del nombre va en su caja sin partir: la entrada del hero las sube una a una -->
         <h1 class="hero__titulo" id="titulo-pagina"><span class="sr">Ayuntamiento de </span>{{#nombre_palabras}}<span class="hero__palabra" style="--n: {{n}}">{{palabra}}</span>{{^@ultimo}} {{/@ultimo}}{{/nombre_palabras}}</h1>
-        {{#lema}}<p class="hero__lema">{{lema}}</p>{{/lema}}
+        {{#lema}}<p class="hero__lema"><span class="hero__lema-raya" aria-hidden="true"></span>{{lema}}</p>{{/lema}}
         <!-- Buscador de trámites a la vista. Sin JavaScript, el formulario lleva a la página de
              trámites con lo escrito (?q=…#buscar); con él, los resultados salen aquí debajo -->
         <form class="hero__buscador" action="tramites.html#buscar" method="get" role="search" aria-label="Trámites" data-buscador-pagina data-buscador-max="5">

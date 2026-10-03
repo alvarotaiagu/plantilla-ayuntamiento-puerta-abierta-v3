@@ -388,7 +388,7 @@
     return '<h2 class="plazos__titulo" id="t-plazos">Plazos abiertos</h2><ul class="plazos__lista">' + lista.map(function (x) {
       var f = x.f;
       return '<li class="plazos__item plazos__item--' + x.p.estado + '">' + chipPlazo(f, ahora, f.clave) +
-        '<a class="plazos__enlace" href="' + esc(f.href) + '">' + esc(f.titulo) + (f.oficial ? SEDE : '') + '</a>' +
+        '<p class="plazos__nombre"><a class="plazos__enlace" href="' + esc(f.href) + '">' + esc(f.titulo) + (f.oficial ? SEDE : '') + '</a></p>' +
         '<p class="plazos__nota">' + (x.p.fecha ? 'Hasta el ' + esc(fechaLarga(x.p.fecha, ahora)) + ' · ' : '') + (f.oficial ? 'Tablón oficial' : 'Ayuntamiento') + '</p></li>';
     }).join('') + '</ul>';
   }

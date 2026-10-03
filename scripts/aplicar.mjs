@@ -516,18 +516,25 @@ gruposListin.forEach(g => g.items.forEach(i => { if (i.clave) i.estado = pintar(
 const P = M.pueblo || {};
 /* la foto del arco: una (fotos.hero) o varias (fotos.hero_fotos) que se turnan al azar en cada
    visita. La primera de la lista es la que sale sin JavaScript y la de la imagen para compartir */
+const P0 = M.pueblo || {};
 const listaHero = ((M.fotos && Array.isArray(M.fotos.hero_fotos) && M.fotos.hero_fotos.length) ? M.fotos.hero_fotos : (M.fotos && M.fotos.hero ? [M.fotos.hero] : []))
   .map((h, i) => {
     if (!h || !h.archivo) { errores.push('fotos.hero_fotos: cada foto lleva «archivo», «alt» y «posicion»'); return null; }
     if (!h.alt) avisos.push('fotos.hero' + (M.fotos.hero_fotos ? '_fotos[' + i + ']' : '') + ' «' + h.archivo + '»: falta «alt» (la foto de la portada no es decorativa)');
     const f = foto(h.archivo, h.alt, 'portada');
-    return f ? { ...f, posicion: h.posicion || '50% 50%' } : null;
+    /* v3b · el pie de la foto: el lugar de «El pueblo» que sale en ella (el que tiene la misma foto,
+       o el que diga `lugar`), enlazado a su sitio en pueblo.html; si no es un lugar, `pie` en texto;
+       `lugar: null` lo quita. Sin nada, no hay pie */
+    const lugar = h.lugar === null ? null : ((P0.lugares || []).find(l => (h.lugar ? l.nombre === h.lugar : l.foto === h.archivo)) || null);
+    if (h.lugar && !lugar) errores.push('fotos.hero_fotos «' + h.archivo + '»: «lugar» «' + h.lugar + '» no está en pueblo.lugares');
+    const pie = lugar ? lugar.nombre : (h.pie || null), pie_href = lugar ? 'pueblo.html#lugar-' + slugDe(lugar.nombre) : null;
+    return f ? { ...f, posicion: h.posicion || '50% 50%', pie, pie_href } : null;
   }).filter(Boolean);
 const heroFoto = listaHero[0] || null;
 const HERO_SIZES = '(min-width: 56em) 30vw, 92vw';
 /* para el <head> (se elige y se precarga antes del primer pintado) y el <figure> (la pinta) */
 const heroVarias = listaHero.length > 1 ? jsonEnScript(listaHero.map(f => ({ src: 'media/' + f.archivo + '.jpg', srcset: 'media/' + f.archivo + '-800.jpg 800w, media/' + f.archivo + '.jpg ' + f.ancho + 'w',
-  ancho: f.ancho, alto: f.alto, alt: f.alt, pos: f.posicion }))) : null;
+  ancho: f.ancho, alto: f.alto, alt: f.alt, pos: f.posicion, pie: f.pie, pie_href: f.pie_href }))) : null;
 if (heroFoto) { heroFoto.sizes = HERO_SIZES; heroFoto.varias = !!heroVarias; }
 const pueblo = {
   ...P,
