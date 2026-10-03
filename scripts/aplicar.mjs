@@ -393,7 +393,7 @@ function hemiciclo() {
   const cuenta = g => miembros.filter(m => m.grupo === g.sigla).length;
   const enumerar = gs => gs.map(g => `${g.sigla} (${cuenta(g)})`).join(', ').replace(/, ([^,]*)$/, ' y $1');
   const descripcion = `Pleno de ${N} concejales. ` + (gob.length ? `Gobierno: ${enumerar(gob)}. ` : '') + (opo.length ? `Oposición: ${enumerar(opo)}.` : '');
-  const svg = `<svg class="hemiciclo" viewBox="28 28 244 140" role="img" aria-labelledby="hemiciclo-t hemiciclo-d"><title id="hemiciclo-t">Reparto del pleno</title><desc id="hemiciclo-d">${descripcion}</desc>` +
+  const svg = `<svg class="hemiciclo" viewBox="28 28 244 140" data-centro="150 150" role="img" aria-labelledby="hemiciclo-t hemiciclo-d"><title id="hemiciclo-t">Reparto del pleno</title><desc id="hemiciclo-d">${descripcion}</desc>` +
     `<defs>${grupos.map(trama).join('')}</defs>` +
     /* data-grupo: js/identidad.js resalta los escaños de un grupo al pasar por su leyenda */
     puntos.map((p, i) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${rAs}" fill="url(#trama-${slugDe(asientos[i].sigla)})" stroke="${asientos[i].color}" stroke-width="1.5" data-grupo="${slugDe(asientos[i].sigla)}"/>`).join('') +

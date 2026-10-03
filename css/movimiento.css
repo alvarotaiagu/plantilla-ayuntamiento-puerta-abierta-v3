@@ -367,6 +367,9 @@
 
   /* ═══ v3. Hemiciclo: los escaños de los demás grupos se atenúan en 180 ms ═══
      (con movimiento reducido el resaltado sigue, sin transición: es información) */
-  .hemiciclo circle { transition: opacity .18s ease-out; }
+  .hemiciclo circle { transition: opacity .18s ease-out, translate .24s var(--curva-salida); }
+  /* v3b · M11: los escaños del grupo pulsado saltan 7 unidades hacia el centro (js/identidad.js pone
+     el vector) y vuelven al soltarlo. Con movimiento reducido no hay salto: solo el atenuado */
+  .hemiciclo circle.es-saltado { translate: var(--salto-x, 0) var(--salto-y, 0); }
   .pleno__boton { transition: background-color .15s, border-color .15s, box-shadow .15s; }
 }
