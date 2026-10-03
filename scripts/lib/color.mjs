@@ -98,8 +98,11 @@ export function apagadoMaximo(tinta, fondos, objetivo = 4.6) {
 
 /* Nombre de matiz para los botones del mando de paleta. */
 export function nombreMatiz(hex) {
-  const { H, C } = hexAOklch(hex);
+  const { L, H, C } = hexAOklch(hex);
   if (C < 0.03) return 'Gris';
+  /* el púrpura heráldico se pinta apagado (el león de Segura de León, #90546E): por matiz caería
+     en carmín. La misma regla que scripts/marca-desde-escudo.py */
+  if (C < 0.12 && L < 0.62 && (H >= 320 || H < 15)) return 'Púrpura';
   if (H < 20 || H >= 350) return 'Carmín';
   if (H < 45) return 'Bermellón';
   if (H < 75) return 'Almagre';
