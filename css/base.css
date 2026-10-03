@@ -397,29 +397,52 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
 }
 
 /* ── atajos y temas de trámites ── */
-.atajos { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15.5rem), 1fr)); }
-/* cada atajo con su icono y la flecha de salida en la esquina (el destino lo dice el texto oculto) */
+/* v3: atajos compactos y todos del mismo alto (la rejilla estira cada fila). Dos columnas en móvil
+   y, en escritorio, las que calcula aplicar.mjs (--atajos-columnas: 4 como mucho, sin dejar una fila
+   casi vacía). En móvil, si sobra uno, ocupa la fila entera */
+.atajos { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.atajos > li { max-width: none; min-width: 0; }
+@media (max-width: 63.99em) { .atajos > li:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+@media (min-width: 64em) { .atajos { grid-template-columns: repeat(var(--atajos-columnas, 4), minmax(0, 1fr)); } }
+/* icono a la izquierda; nombre y nota a su lado (el nombre deja sitio a la esquina; la nota usa
+   todo el ancho). En la esquina, la flecha de salida o, si el
+   destino no es la sede, un documento; el destino entero lo dice el texto oculto */
 .atajo {
-  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; height: 100%;
-  padding: 1.15rem 3rem 1.15rem 1.2rem; color: var(--tinta); text-decoration: none;
+  position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: center; align-items: center;
+  column-gap: .85rem; row-gap: .1rem; height: 100%; min-height: 6rem;
+  padding: .75rem .9rem; color: var(--tinta); text-decoration: none;
   transition: border-color .15s, background-color .15s;
 }
 .atajo:hover { border-color: var(--marca); background: var(--marca-tenue); color: var(--tinta); }
 .atajo__icono {
-  box-sizing: content-box; width: 1.7rem; height: 1.7rem; padding: .55rem; margin-bottom: .45rem;
+  grid-row: 1 / span 2; align-self: center;
+  box-sizing: content-box; width: 1.45rem; height: 1.45rem; padding: .55rem;
   border-radius: 50%; background: var(--marca-tenue); color: var(--marca); stroke-width: 1.6;
 }
 .atajo:hover .atajo__icono { background: var(--superficie); }
-.atajo__flecha { position: absolute; top: 1.1rem; right: 1.1rem; width: 1.3rem; height: 1.3rem; color: var(--marca); }
-.atajo__nombre { font: 700 1.3rem/1.2 var(--f-titulo); color: var(--marca); }
+.atajo__flecha { position: absolute; top: .75rem; right: .75rem; width: 1.1rem; height: 1.1rem; color: var(--marca); }
+.atajo__nombre { grid-column: 2; align-self: end; padding-right: 1.5rem; font: 700 1.1rem/1.2 var(--f-titulo); color: var(--marca); overflow-wrap: break-word; hyphens: auto; }
 .atajo:hover .atajo__nombre { text-decoration: underline; }
-.atajo__nota { color: var(--apagado); font-size: 1rem; line-height: 1.45; }
-.atajo__destino { margin-top: auto; padding-top: .6rem; font-size: .875rem; font-weight: 600; color: var(--apagado); }
+.atajo__nota { grid-column: 2; align-self: start; color: var(--apagado); font-size: .9375rem; line-height: 1.35; }
+/* pantallas estrechas: dos atajos por fila sin sitio para el icono al lado; va encima, más pequeño */
+@media (max-width: 29.99em) {
+  .atajo { grid-template-columns: minmax(0, 1fr); align-content: start; padding: .8rem .8rem .9rem; }
+  .atajo__icono { grid-row: auto; width: 1.3rem; height: 1.3rem; padding: .5rem; margin-bottom: .4rem; justify-self: start; }
+  .atajo__nombre, .atajo__nota { grid-column: 1; align-self: start; }
+  .atajo__nombre { font-size: 1rem; padding-right: 0; }
+}
 
 /* temas: dos columnas que se apilan cada una por su cuenta. Todos cerrados de entrada; al abrir
-   uno, solo baja su columna (con una rejilla de filas, la columna de al lado quedaba con un hueco) */
+   uno, solo baja su columna (con una rejilla de filas, la columna de al lado quedaba con un hueco).
+   v3: con un número impar, el último va debajo a todo el ancho (aplicar.mjs → temas_columnas), así
+   no queda un hueco al final de una columna; abierto, sus trámites van en dos columnas */
 .temas { display: grid; gap: .75rem; align-items: start; }
-@media (min-width: 64em) { .temas { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 64em) {
+  .temas { grid-template-columns: 1fr 1fr; }
+  .temas__columna--ancha { grid-column: 1 / -1; }
+  .temas__columna--ancha .tema__lista { columns: 2; column-gap: 2.5rem; }
+  .temas__columna--ancha .tema__lista li { break-inside: avoid; }
+}
 .temas__columna { display: grid; gap: .75rem; align-content: start; min-width: 0; }
 .tema__resumen {
   display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center;
@@ -455,7 +478,34 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
 .tablon__cuenta { margin: 0 0 .5rem; color: var(--apagado); font-size: 1rem; }
 .tablon__lista { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--linea); }
 .tablon__fila { border-bottom: 1px solid var(--linea); max-width: none; }
-.seccion--tablon .tablon { max-width: 56rem; }
+/* v3: en la portada, el tablón a dos tercios con el canal de avisos y el próximo pleno al lado.
+   Sin ninguno (el bloque vacío no se ve), el tablón ocupa el ancho y, si cabe, en dos columnas */
+.tablon-rejilla { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem 3rem; align-items: start; }
+.tablon-lado:empty { display: none; }
+@media (min-width: 64em) {
+  .tablon-rejilla:has(> .tablon-lado:not(:empty)) { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  /* acompaña al tablón mientras se lee (la sección no recorta: nada de overflow que lo rompa) */
+  .tablon-lado { position: sticky; top: 1.5rem; }
+}
+@media (min-width: 80em) {
+  .tablon-rejilla:not(:has(> .tablon-lado:not(:empty))) .tablon__lista { columns: 2; column-gap: 3rem; border-top: 0; }
+  .tablon-rejilla:not(:has(> .tablon-lado:not(:empty))) .tablon__fila { break-inside: avoid; border-top: 1px solid var(--linea); border-bottom: 0; }
+}
+.tablon-lado { display: grid; gap: 1rem; }
+.lado__bloque {
+  display: grid; grid-template-columns: 1.4rem minmax(0, 1fr); column-gap: .75rem; align-items: start;
+  padding: 1.1rem 1.25rem .35rem; background: var(--papel); border: 1px solid var(--linea); border-top: 3px solid var(--oro); border-radius: var(--radio);
+}
+.lado__bloque > .icono { grid-row: 1; margin-top: .15rem; width: 1.4rem; height: 1.4rem; color: var(--marca); }
+.lado__bloque > :not(.icono) { grid-column: 2; }
+.lado__titulo { font-size: 1.2rem; margin: 0 0 .45rem; }
+.lado__texto, .lado__fecha { font-size: 1rem; line-height: 1.5; margin: 0 0 .6rem; }
+.lado__fecha { font-weight: 600; font-size: 1.125rem; }
+.lado__fecha .ejemplo { margin-inline-start: .35rem; }
+.lado__subtitulo { margin: .2rem 0 .3rem; font: 600 .8125rem/1.4 var(--f-texto); letter-spacing: .07em; text-transform: uppercase; color: var(--apagado); }
+.lado__pasos { margin: 0 0 .75rem; padding-left: 1.2rem; font-size: 1rem; line-height: 1.45; }
+.lado__pasos li + li { margin-top: .3rem; }
+.lado__accion { margin: -.35rem 0 .3rem; }
 .tablon__enlace {
   display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .3rem 1rem; align-items: center;
   padding: .95rem .25rem; color: var(--tinta); text-decoration: none;
@@ -498,6 +548,12 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
   background: var(--papel); border: 2px solid var(--marca);
 }
 .linea__item--noticia::before { background: var(--linea-fuerte); border-color: var(--linea-fuerte); }
+/* v3: «Más adelante», lo que la agenda tiene pasado el plazo, cuando en él hay poco: la línea sigue,
+   discontinua, y los puntos van huecos */
+.linea__despues { position: relative; margin: .25rem 0 0; padding-left: 2.6rem; font: 600 .8125rem/1.4 var(--f-texto); letter-spacing: .07em; text-transform: uppercase; color: var(--apagado); }
+.linea--despues { margin-top: .6rem; }
+.linea--despues::before { background: none; border-left: 2px dashed var(--linea-fuerte); width: 0; }
+.linea--despues .linea__item::before { border-color: var(--linea-fuerte); }
 .linea__cuando { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; margin: 0 0 .45rem; color: var(--apagado); font-size: 1rem; }
 .linea__cuando time { font-weight: 600; color: var(--tinta); }
 .chip--noticia { background: var(--superficie-2); color: var(--tinta); }
@@ -547,6 +603,19 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
   display: grid; place-items: center; background: var(--marca-tenue); color: var(--marca); font-weight: 600; font-size: 1rem;
 }
 .quien__cargo { display: block; color: var(--apagado); font-size: 1rem; line-height: 1.4; }
+/* v3, portada: una cuadrícula de fichas que llena el ancho (2 × 2 en escritorio, una columna en
+   móvil). Con un número impar, la última ocupa la fila entera */
+.quien--portada { display: grid; gap: .75rem; grid-template-columns: minmax(0, 1fr); border-top: 0; }
+@media (min-width: 48em) {
+  .quien--portada { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+  .quien--portada > .quien__fila:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+.quien--portada .quien__fila {
+  grid-template-columns: minmax(0, 1fr); align-content: start; gap: .75rem; max-width: none;
+  padding: 1.1rem 1.25rem 1.2rem; background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio);
+}
+.quien--portada .quien__tema { padding-bottom: .7rem; border-bottom: 1px solid var(--linea); }
+.banda--tenue .quien--portada .quien__iniciales { background: var(--marca-tenue); }
 
 /* ── el año ── */
 /* Una tira de 12 meses. En móvil, una fila por mes (los vacíos, finos); en escritorio, dos tiras
@@ -581,8 +650,37 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
   .mes.es-vacio .mes__nombre { margin: 0; }
   .mes.es-vacio:not(.es-mes-actual) .mes__largo { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .mes.es-vacio:not(.es-mes-actual) .mes__corto { display: block; text-transform: capitalize; }
-  .mes.es-vacio.es-mes-actual { flex: 1.3 1 9rem; align-items: flex-start; text-align: left; padding-inline: calc(1rem - 2px); }
+  .mes.es-vacio.es-mes-actual { flex: 1.6 1 11rem; align-items: flex-start; text-align: left; padding-inline: calc(1rem - 2px); }
   .mes.es-mes-actual { padding-block: calc(.85rem - 2px); }
+}
+/* v3: el mes en curso sin fiestas dice cuál es la siguiente («Lo siguiente: …, noviembre»); el
+   «Sin fiestas señaladas» queda para el lector de pantalla */
+.mes__siguiente { margin: 0; font-size: .9375rem; line-height: 1.4; max-width: none; }
+.mes__siguiente b { font-weight: 600; }
+.mes.es-mes-actual:has(.mes__siguiente) .mes__vacio-texto { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.mes.es-vacio.es-mes-actual { position: relative; }
+@media (min-width: 64em) {
+  .mes.es-vacio.es-mes-actual { gap: .35rem; }
+}
+/* v3, portada en móvil y tableta: una tira que se desliza de lado, con un mes por parada, que
+   llega colocada en el mes en curso (lo hace el script de debajo de la lista, antes de pintar).
+   Recorrible con el teclado (main.js le da tabindex si desborda) y con el lector de pantalla:
+   sigue siendo la lista ordenada de 12 meses */
+@media (max-width: 63.99em) {
+  .anio--tira {
+    /* relative: el texto oculto de los meses (position: absolute) tiene que quedarse DENTRO del
+       carril; si no, su caja contenedora es la banda y alarga la página a lo ancho */
+    position: relative; display: flex; gap: .5rem; align-items: flex-start;
+    overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory;
+    margin-inline: calc(-1 * var(--margen)); padding: .25rem var(--margen) 1rem; scroll-padding-inline: var(--margen);
+  }
+  .anio--tira .mes { flex: 0 0 min(15rem, 70vw); display: block; scroll-snap-align: start; padding: .85rem 1rem; }
+  .anio--tira .mes__nombre { margin-bottom: .45rem; }
+  .anio--tira .mes.es-vacio:not(.es-mes-actual) { flex-basis: 5.25rem; display: flex; flex-direction: column; align-items: center; gap: .6rem; padding: .85rem .25rem; text-align: center; }
+  .anio--tira .mes.es-vacio:not(.es-mes-actual) .mes__nombre { margin: 0; }
+  .anio--tira .mes.es-vacio:not(.es-mes-actual) .mes__largo { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .anio--tira .mes.es-vacio:not(.es-mes-actual) .mes__corto { display: block; text-transform: capitalize; }
+  .anio--tira .mes.es-mes-actual { padding: calc(.85rem - 2px) calc(1rem - 2px); }
 }
 
 /* ═══════════════ BANDAS DE LA PORTADA ═══════════════
@@ -606,6 +704,54 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
 .banda--oscura .chip--mayor, .banda--oscura .mes__ahora { background: var(--oro); color: var(--tinta); }
 /* respiro: sin «Quién se ocupa» detrás, la banda oscura no se pega a la franja verde de la sede */
 main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
+/* v3: el cambio de banda entra por una puerta. Sobre el borde de arriba de la banda asoma un arco
+   de medio punto de su mismo color, alineado con el borde del texto (donde empieza la raya de oro
+   del título). Mide 0,7 del relleno de abajo de la sección anterior: nunca pisa su contenido.
+   Es un pseudo-elemento: no lo lee nadie. Quieto, está arriba del todo; css/movimiento.css lo hace
+   subir al llegar con el scroll. Una puerta por banda, en dos bandas: nunca una arcada */
+.banda--puerta { position: relative; isolation: isolate; }
+.banda--puerta::before {
+  content: ""; position: absolute; z-index: -1; bottom: 100%;
+  left: max(var(--margen), calc((100% - var(--ancho)) / 2));
+  width: calc(var(--seccion) * 1.4); height: calc(var(--seccion) * .7);
+  border-radius: 9999px 9999px 0 0; background-color: inherit;
+  pointer-events: none;
+}
+.densidad-sobria .banda--puerta::before { display: none; }
+
+/* ═══════════════ «CONOCER …» (portada) ═══════════════
+   De 3 a 5 lugares de «Qué ver» en arco. En escritorio, en fila y el primero más grande: los arcos
+   de distinto tamaño, de pie sobre la misma línea, como puertas de una calle (no una arcada de
+   arcos iguales). Rejilla con subgrid para que fotos, nombres y créditos vayan alineados.
+   En móvil, un carril que se desliza con el siguiente asomando (y en el DOM, en orden). */
+.conocer__carril { min-width: 0; }
+.conocer__lista { list-style: none; margin: 0; padding: 0; }
+.conocer__lugar { max-width: none; min-width: 0; }
+.conocer__enlace { display: block; color: var(--tinta); text-decoration: none; }
+.conocer__marco { display: block; aspect-ratio: 3 / 4; overflow: hidden; background: var(--superficie-2); }
+.conocer__marco img { width: 100%; height: 100%; object-fit: cover; }
+.conocer__nombre { display: block; margin-top: .8rem; font: 700 1.15rem/1.3 var(--f-titulo); color: var(--marca); text-wrap: balance; }
+.conocer__enlace:hover .conocer__nombre { text-decoration: underline; }
+.conocer__enlace:hover .conocer__marco { border-color: var(--marca-fuerte); }
+.conocer__credito { margin-top: .25rem; font-size: .8125rem; line-height: 1.4; }
+@media (max-width: 55.99em) {
+  .conocer__carril {
+    position: relative; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory;
+    margin-inline: calc(-1 * var(--margen)); padding: .25rem var(--margen) 1rem; scroll-padding-inline: var(--margen);
+  }
+  .conocer__lista { display: flex; gap: 1rem; width: max-content; }
+  .conocer__lugar { width: min(15rem, 68vw); scroll-snap-align: start; }
+}
+@media (min-width: 56em) {
+  .conocer__lista {
+    display: grid; grid-auto-flow: column; grid-template-columns: 1.45fr; grid-auto-columns: 1fr;
+    grid-template-rows: auto auto auto; column-gap: clamp(1rem, 2.2vw, 2rem);
+  }
+  .conocer__lugar { grid-row: 1 / span 3; display: grid; grid-template-rows: subgrid; }
+  .conocer__enlace { grid-row: 1 / span 2; display: grid; grid-template-rows: subgrid; }
+  .conocer__marco { align-self: end; }
+  .conocer__credito { grid-row: 3; }
+}
 
 /* ═══════════════ PIE ═══════════════ */
 .sede-franja { background: var(--marca); color: var(--sobre-marca); padding-block: clamp(2.25rem, 5vw, 3.5rem); }
