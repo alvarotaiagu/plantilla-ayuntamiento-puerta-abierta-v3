@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import vm from 'node:vm';
+import { createHash } from 'node:crypto';   /* v3b · servicio: la huella de los archivos de sw.js */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { cargarPlaywright } from './og.mjs';
@@ -2610,6 +2611,206 @@ async function v3Identidad() {
   }
 }
 
+/* ═════════════ v3b · servicio: lo que vende la maqueta y el mantenimiento ═════════════
+   «La propuesta» (para el alcalde: noindex, fuera del menú y del pie, comparador con teclado, el
+   precio solo con ?revision), suscribirse sin redes (feed.xml y agenda.ics), el listín sin
+   cobertura (sw.js), los datos estructurados (JSON-LD) y el comprobador de la hoja de cálculo */
+async function v3bServicio() {
+  const malos = [];
+  /* 1. «La propuesta» */
+  if (M.propuesta !== false) {
+    const html = leer(RAIZ, 'propuesta.html');
+    if (!/<meta name="robots" content="noindex, nofollow">/.test(html)) malos.push('propuesta.html sin noindex');
+    const enlazan = PAGINAS.filter(p => p !== 'propuesta.html' && /href="(\.\/)?propuesta\.html/.test(leer(RAIZ, p)));
+    if (enlazan.length) malos.push('enlazan a propuesta.html: ' + enlazan.join(', '));
+    if (/class="menu__lista"[\s\S]*?propuesta\.html[\s\S]*?<\/ul>/.test(html) || /<footer[\s\S]*propuesta\.html[\s\S]*<\/footer>/.test(html)) malos.push('propuesta.html sale en su propio menú o pie');
+    if (!/PENDIENTE: captura de la web actual|<img src="[^"]+" [^>]*alt="[^"]+"[^>]*>\s*<\/div>\s*<div class="comparador__lado comparador__despues/.test(html)) malos.push('el «antes» no es ni una captura ni el hueco PENDIENTE');
+    if (!fs.existsSync(path.join(RAIZ, 'assets/propuesta-portada.jpg')) || !html.includes('assets/propuesta-portada.jpg?v=')) malos.push('falta la captura de la portada nueva (assets/propuesta-portada.jpg)');
+    const { ctx, page, errores } = await nueva();
+    await ir(page, 'propuesta.html');
+    /* el comparador con el teclado: flechas, Inicio y Fin mueven la línea y el recorte */
+    await page.focus('#comparador-rango');
+    const leerC = () => page.evaluate(() => {
+      const r = document.querySelector('#comparador-rango'), d = document.querySelector('.comparador__despues');
+      return { v: r.value, txt: r.getAttribute('aria-valuetext'), corte: document.querySelector('.comparador__marco').style.getPropertyValue('--corte'), clip: getComputedStyle(d).clipPath,
+        foco: document.activeElement === r && getComputedStyle(r).outlineStyle !== 'none', visible: !r.closest('[hidden]') && r.getBoundingClientRect().height >= 44 };
+    });
+    const c0 = await leerC();
+    for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowRight');
+    const c1 = await leerC();
+    await page.keyboard.press('End'); const c2 = await leerC();
+    await page.keyboard.press('Home'); const c3 = await leerC();
+    if (!(c0.v === '50' && c0.visible && c0.foco)) malos.push('comparador al llegar: ' + JSON.stringify(c0));
+    if (!(c1.v === '55' && c1.corte === '55%' && /55%/.test(c1.clip) && c1.txt !== c0.txt)) malos.push('flechas: ' + JSON.stringify(c1));
+    if (!(c2.v === '100' && c2.txt === 'Solo la web actual' && c3.v === '0' && c3.txt === 'Solo la propuesta')) malos.push('Inicio/Fin: ' + JSON.stringify([c2, c3]));
+    /* el precio, solo con ?revision */
+    const precio = async () => page.evaluate(() => { const b = document.querySelector('[data-solo-revision]'); return b ? { vis: b.checkVisibility(), txt: b.textContent } : null; });
+    const p0 = await precio();
+    await ir(page, 'propuesta.html', '?revision');
+    const p1 = await precio();
+    if (!p0 || p0.vis || !p1 || !p1.vis || !/\[PRECIO: lo pone Álvaro\]/.test(p1.txt)) malos.push('precio: sin ?revision ' + JSON.stringify(p0) + ', con ?revision ' + JSON.stringify(p1));
+    if (/\d+\s*(€|euros)/i.test(html.replace(/<!-- \[MANDO DE MAQUETA\] inicio -->[\s\S]*?<!-- \[MANDO DE MAQUETA\] fin -->/, ''))) malos.push('propuesta.html enseña una cifra de precio');
+    /* axe, con y sin ?revision, en las dos páginas nuevas */
+    for (const [pg, extra] of [['propuesta.html', ''], ['propuesta.html', '?revision'], ['suscribirse.html', '']]) {
+      await ir(page, pg, extra);
+      const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+      r.violations.forEach(v => malos.push(`axe ${pg}${extra}: ${v.id} ${v.nodes[0].target.join(' ')}`));
+    }
+    if (errores.length) malos.push('consola: ' + [...new Set(errores)].slice(0, 3).join(' | '));
+    await ctx.close();
+    /* sin JavaScript: las dos capturas una debajo de otra y sin control */
+    const sj = await navegador.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+    const ps = await sj.newPage();
+    await ps.goto(BASE + 'propuesta.html', { waitUntil: 'networkidle' });
+    const s = await ps.evaluate(() => { const a = document.querySelector('.comparador__antes').getBoundingClientRect(), d = document.querySelector('.comparador__despues').getBoundingClientRect(); return { control: document.querySelector('#comparador-rango').checkVisibility(), apiladas: d.top >= a.bottom - 1 }; });
+    await sj.close();
+    if (s.control || !s.apiladas) malos.push('sin JS: ' + JSON.stringify(s));
+  }
+  comprobar(!malos.length, '«La propuesta»: noindex, sin enlaces desde menú, pie ni otras páginas, comparador antes/después con input range (flechas, Inicio y Fin; aria-valuetext; 44 px; foco visible), apilado sin JavaScript, el precio solo con ?revision y 0 violaciones de axe' + (malos.length ? ' → ' + malos.slice(0, 5).join(' | ') : ''));
+
+  /* 2. feed.xml y agenda.ics, con su <link rel="alternate"> en todas las páginas */
+  const malF = [];
+  const sinAlt = PAGINAS.filter(p => { const h = leer(RAIZ, p).split('</head>')[0]; return !/<link rel="alternate" type="application\/atom\+xml"[^>]+href="feed\.xml">/.test(h) || !/<link rel="alternate" type="text\/calendar"[^>]+href="agenda\.ics">/.test(h); });
+  if (sinAlt.length) malF.push('sin <link rel="alternate">: ' + sinAlt.join(', '));
+  const feed = leer(RAIZ, 'feed.xml');
+  const avisosJ = contenido('avisos').avisos.filter(a => !a.oculto), noticiasJ = contenido('noticias').noticias.filter(n => !n.oculto);
+  {
+    const { ctx, page } = await nueva();
+    await ir(page, 'index.html');
+    const f = await page.evaluate(txt => {
+      const d = new DOMParser().parseFromString(txt, 'application/xml'), NS = 'http://www.w3.org/2005/Atom';
+      if (d.getElementsByTagName('parsererror').length) return { error: d.getElementsByTagName('parsererror')[0].textContent.slice(0, 120) };
+      const raiz = d.documentElement, hijo = (el, n) => [...el.children].find(x => x.localName === n && x.namespaceURI === NS);
+      const iso = s => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)$/.test(s || '');
+      const entradas = [...raiz.children].filter(x => x.localName === 'entry');
+      return { raiz: raiz.localName, ns: raiz.namespaceURI, cab: ['id', 'title', 'updated', 'author'].every(n => hijo(raiz, n)) && iso(hijo(raiz, 'updated').textContent),
+        n: entradas.length, bien: entradas.filter(e => hijo(e, 'id') && hijo(e, 'title') && iso((hijo(e, 'updated') || {}).textContent) && hijo(e, 'link')).length,
+        ids: new Set(entradas.map(e => hijo(e, 'id').textContent)).size, ejemplo: entradas.filter(e => /^EJEMPLO: /.test(hijo(e, 'title').textContent)).length };
+    }, feed);
+    await ctx.close();
+    const esperadas = Math.min(40, avisosJ.length + noticiasJ.length), ejemplos = [...avisosJ, ...noticiasJ].filter(x => x.ejemplo).length;
+    if (f.error || f.raiz !== 'feed' || f.ns !== 'http://www.w3.org/2005/Atom' || !f.cab || f.n !== esperadas || f.bien !== f.n || f.ids !== f.n || f.ejemplo !== ejemplos)
+      malF.push('feed.xml: ' + JSON.stringify(f) + ` (esperadas ${esperadas}, de ejemplo ${ejemplos})`);
+  }
+  const ics = fs.readFileSync(path.join(RAIZ, 'agenda.ics'), 'utf8');
+  const t = icsValido(ics);
+  const eventos = t.desplegado.filter(l => l === 'BEGIN:VEVENT').length, uids = t.desplegado.filter(l => /^UID:/.test(l));
+  const enVevent = [];
+  let dentro = null;
+  for (const l of t.desplegado) { if (l === 'BEGIN:VEVENT') dentro = []; else if (l === 'END:VEVENT') { enVevent.push(dentro); dentro = null; } else if (dentro) dentro.push(l); }
+  const incompletos = enVevent.filter(ev => !['UID:', 'DTSTAMP:', 'DTSTART', 'SUMMARY:'].every(k => ev.some(l => l.startsWith(k))));
+  const esperados = new Set((await (async () => { const h = leer(RAIZ, 'agenda.html'); return [...h.matchAll(/href="ics\/([^"]+\.ics)"/g)].map(m => m[1]); })()));
+  const sueltos = fs.readdirSync(path.join(RAIZ, 'ics')).filter(f => f.endsWith('.ics')).length;
+  if (!t.ok || eventos !== sueltos || new Set(uids).size !== uids.length || incompletos.length || t.desplegado.filter(l => l === 'BEGIN:VTIMEZONE').length !== 1 || !t.desplegado.some(l => /^X-WR-CALNAME:/.test(l)))
+    malF.push(`agenda.ics: ${t.mal.join(', ')} · ${eventos} VEVENT (ics/ tiene ${sueltos}), ${uids.length} UID, ${incompletos.length} incompletos`);
+  if (esperados.size === 0) malF.push('agenda.html no enlaza ningún .ics');
+  /* el mismo UID que el .ics suelto de cada evento: el calendario no duplica el acto */
+  const uidSuelto = fs.readdirSync(path.join(RAIZ, 'ics')).filter(f => f.endsWith('.ics')).map(f => icsValido(fs.readFileSync(path.join(RAIZ, 'ics', f), 'utf8')).uid);
+  if (uidSuelto.some(u => !uids.includes(u))) malF.push('agenda.ics no lleva los UID de ics/');
+  const sus = leer(RAIZ, 'suscribirse.html');
+  if (M.url && !sus.includes('href="' + M.url.replace(/^https?:\/\//, 'webcal://').replace(/\/?$/, '/') + 'agenda.ics"')) malF.push('suscribirse.html sin el enlace webcal://');
+  comprobar(!malF.length, `suscribirse sin redes: feed.xml es Atom bien formado (parseo XML; ${Math.min(40, avisosJ.length + noticiasJ.length)} entradas con id, título, fecha ISO y enlace; lo de ejemplo, con «EJEMPLO:»), agenda.ics válido (RFC 5545: CRLF, ≤ 75 octetos, un VTIMEZONE, un VEVENT por acto con el UID de su .ics suelto), <link rel="alternate"> en las ${PAGINAS.length} páginas y webcal:// en «Avisos y agenda en su móvil»` + (malF.length ? ' → ' + malF.join(' | ') : ''));
+
+  /* 3. sw.js: el listín sin cobertura */
+  const malS = [];
+  const sw = leer(RAIZ, 'sw.js');
+  const rutas = JSON.parse((sw.match(/var RUTAS = (\[[^\n]*\]);/) || [, '[]'])[1]);
+  const huellaDe = rel => createHash('md5').update(fs.readFileSync(path.join(RAIZ, rel))).digest('hex').slice(0, 8);
+  if (!rutas.includes('telefonos.html') || !rutas.some(u => /^css\/base\.css\?v=/.test(u)) || !rutas.some(u => /^fonts\/.+\.woff2$/.test(u)) || !rutas.some(u => /^marca\/escudo/.test(u))) malS.push('RUTAS incompletas: ' + rutas.join(', '));
+  for (const u of rutas) {
+    const [rel, q] = u.split('?');
+    if (!fs.existsSync(path.join(RAIZ, rel))) malS.push('no existe ' + rel);
+    else if (q && q !== 'v=' + huellaDe(rel)) malS.push(u + ' no es la huella actual');
+  }
+  if (!/register\('sw\.js'\)/.test(leer(RAIZ, 'index.html'))) malS.push('la portada no registra sw.js');
+  {
+    const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce', serviceWorkers: 'allow' });
+    await ctx.addInitScript(s => { try { localStorage.setItem(s + '-cookies', 'ok'); sessionStorage.setItem(s + '-cortina', '1'); } catch (e) {} }, SLUG);
+    const page = await ctx.newPage();
+    const errores = [];
+    page.on('pageerror', e => errores.push(e.message));
+    page.on('console', m => { if (m.type() === 'error') errores.push(m.text() + ' ' + ((m.location() || {}).url || '')); });
+    page.on('requestfailed', r => errores.push('caída ' + r.url()));
+    /* la primera visita, a la portada: el listín se precarga sin haberlo abierto */
+    await page.goto(BASE + 'index.html', { waitUntil: 'networkidle' });
+    const listo = await page.evaluate(() => navigator.serviceWorker.ready.then(r => !!r.active).catch(() => false));
+    await page.evaluate(() => new Promise(r => { const sw = navigator.serviceWorker.controller; if (sw) return r(); const t = setTimeout(r, 3000); navigator.serviceWorker.ready.then(reg => { const a = reg.active; if (a.state === 'activated') { clearTimeout(t); r(); } else a.addEventListener('statechange', () => { if (a.state === 'activated') { clearTimeout(t); r(); } }); }); }));
+    /* online, el resto de páginas, igual que siempre (con el service worker activo) */
+    for (const p of ['avisos.html', 'agenda.html', 'tramites.html']) await page.goto(BASE + p, { waitUntil: 'networkidle' });
+    await ctx.setOffline(true);
+    let off = null;
+    try {
+      await page.goto(BASE + 'telefonos.html', { waitUntil: 'load', timeout: 8000 });
+      off = await page.evaluate(() => {
+        const urg = document.querySelector('.listin__fila--urgente .listin__numero');
+        return { urg: urg ? urg.textContent.replace(/\s+/g, ' ').trim() : null, vis: urg ? urg.checkVisibility() : false, css: getComputedStyle(document.querySelector('.listin')).listStyleType === 'none',
+          letra: document.fonts.check('16px ' + getComputedStyle(document.body).fontFamily.split(',')[0]) };
+      });
+    } catch (e) { off = { error: e.message.split('\n')[0] }; }
+    await ctx.setOffline(false);
+    await ctx.close();
+    if (!listo) malS.push('el service worker no se activa');
+    if (!off || off.error || !/112/.test(off.urg || '') || !off.vis || !off.css) malS.push('sin red, telefonos.html: ' + JSON.stringify(off));
+    /* sin red, la recarga del tablón (contenido/tablon.json) falla y se queda el de la página: es lo previsto */
+    const errSw = errores.filter(e => !/contenido\/tablon\.json/.test(e));
+    if (errSw.length) malS.push('consola: ' + [...new Set(errSw)].slice(0, 3).join(' | '));
+    /* sin service worker (bloqueado), el listín carga igual */
+    const sb = await navegador.newContext({ serviceWorkers: 'block' });
+    const pb = await sb.newPage();
+    await pb.goto(BASE + 'telefonos.html', { waitUntil: 'networkidle' });
+    if (!(await pb.evaluate(() => /112/.test(document.body.textContent)))) malS.push('sin service worker, telefonos.html no carga');
+    await sb.close();
+  }
+  comprobar(!malS.length, `sw.js: precarga telefonos.html y sus ${rutas.length - 1} recursos (CSS, JS, letras y escudo con la huella de este build); registrado desde la portada, sin red el listín carga con estilos y el 112 a la vista, online el resto de páginas va igual, y sin service worker todo sigue` + (malS.length ? ' → ' + malS.join(' | ') : ''));
+
+  /* 4. JSON-LD: JSON estricto, tipos de schema.org y fechas ISO */
+  const malJ = [];
+  const ISOD = /^\d{4}-\d{2}-\d{2}$/, ISODT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}([+-]\d{2}:\d{2}|Z)$/;
+  const TIPOS = new Set(['GovernmentOrganization', 'Event', 'NewsArticle', 'BreadcrumbList']);
+  /* lo de ejemplo, por fecha y título (un pleno real y uno de ejemplo pueden llamarse igual) */
+  const ejemplos = new Set([...contenido('agenda').eventos.filter(e => e.ejemplo).map(e => e.fecha + '|' + e.titulo), ...(M.plenos || []).filter(p => p.ejemplo).map(p => p.fecha + '|' + (p.titulo || 'Pleno' + (p.tipo ? ' ' + p.tipo.toLowerCase() : '')))]);
+  const noticiaReal = noticiasJ.find(n => !n.ejemplo);
+  const vistos = {};
+  for (const p of PAGINAS) {
+    const bloques = [...leer(RAIZ, p).matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map(m => m[1]);
+    if (bloques.length > 1) malJ.push(p + ': más de un bloque');
+    for (const b of bloques) {
+      let j;
+      try { j = JSON.parse(b); } catch (e) { malJ.push(p + ': JSON roto (' + e.message + ')'); continue; }
+      if (j['@context'] !== 'https://schema.org' || !Array.isArray(j['@graph'])) { malJ.push(p + ': sin @context o @graph'); continue; }
+      for (const n of j['@graph']) {
+        if (!TIPOS.has(n['@type'])) malJ.push(p + ': tipo ' + n['@type']);
+        (vistos[p] = vistos[p] || new Set()).add(n['@type']);
+        if (n['@type'] === 'GovernmentOrganization' && (!n.name || !n.address || n.address['@type'] !== 'PostalAddress' || !/^\+\d{9,12}$/.test(n.telephone || '') || (M.horario.ejemplo && n.location))) malJ.push(p + ': organización ' + JSON.stringify(n).slice(0, 120));
+        if (n['@type'] === 'Event') {
+          if (!n.name || !(ISOD.test(n.startDate) || ISODT.test(n.startDate)) || (n.endDate && !ISODT.test(n.endDate)) || !n.location) malJ.push(p + ': evento ' + JSON.stringify(n).slice(0, 120));
+          if (ejemplos.has(String(n.startDate).slice(0, 10) + '|' + n.name)) malJ.push(p + ': un evento de ejemplo como dato estructurado («' + n.name + '»)');
+        }
+        if (n['@type'] === 'NewsArticle' && (!n.headline || !ISOD.test(n.datePublished))) malJ.push(p + ': noticia ' + JSON.stringify(n).slice(0, 120));
+        if (n['@type'] === 'BreadcrumbList' && (!n.itemListElement.length || n.itemListElement.some((it, i) => it.position !== i + 1 || !it.name || !it.item))) malJ.push(p + ': migas');
+      }
+    }
+  }
+  const tiene = (p, tp) => vistos[p] && vistos[p].has(tp);
+  if (!tiene('index.html', 'GovernmentOrganization')) malJ.push('la portada sin GovernmentOrganization');
+  if (!tiene('agenda.html', 'Event')) malJ.push('agenda.html sin Event');
+  if (noticiaReal && !tiene('noticia-' + noticiaReal.id + '.html', 'NewsArticle')) malJ.push('noticia-' + noticiaReal.id + '.html sin NewsArticle');
+  const sinMigas = INTERIORES.filter(p => p !== '404.html' && !tiene(p, 'BreadcrumbList'));
+  if (sinMigas.length) malJ.push('sin BreadcrumbList: ' + sinMigas.join(', '));
+  comprobar(!malJ.length, `JSON-LD: JSON estricto con @context de schema.org; GovernmentOrganization en la portada (dirección, teléfono E.164 y, mientras el horario sea de ejemplo, sin horario), un Event por acto real de la agenda (fechas ISO), NewsArticle en las noticias y BreadcrumbList en las ${INTERIORES.length - 1} interiores; nada de lo marcado «ejemplo»` + (malJ.length ? ' → ' + malJ.slice(0, 5).join(' | ') : ''));
+
+  /* 5. el comprobador de la hoja: acepta las plantillas y rechaza una rota diciendo qué fila */
+  const malH = [];
+  for (const f of ['plantillas-hoja/avisos.csv', 'plantillas-hoja/agenda.csv']) {
+    const r = spawnSync('node', [path.join(RAIZ, 'scripts/comprobar-hoja.mjs'), path.join(RAIZ, f)], { encoding: 'utf8' });
+    if (r.status !== 0) malH.push(f + ' rechazada: ' + r.stdout.slice(-200));
+  }
+  const roto = spawnSync('node', [path.join(RAIZ, 'scripts/comprobar-hoja.mjs'), path.join(RAIZ, 'pruebas/hoja/avisos-roto.csv')], { encoding: 'utf8' });
+  for (const esperado of [/Fila 2 .*31\/09\/2026/, /Fila 3: falta el título/, /Fila 4 .*gravedad/, /Fila 5 .*caduca/, /Fila 7 .*fila 6/]) if (!esperado.test(roto.stdout)) malH.push('no dice ' + esperado);
+  if (roto.status !== 1) malH.push('la hoja rota sale con ' + roto.status);
+  comprobar(!malH.length, 'comprobar-hoja.mjs: acepta las plantillas de avisos y agenda y rechaza una exportación rota diciendo la fila y el porqué (fecha imposible, sin título, gravedad mal escrita, caduca antes de empezar, fila repetida)' + (malH.length ? ' → ' + malH.join(' | ') : ''));
+}
+
 /* ═════════════ orden ═════════════ */
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
@@ -2620,6 +2821,7 @@ for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', pa
   ['v3cuerpo', v3Cuerpo],
   ['v3interiores', v3Interiores],
   ['v3identidad', v3Identidad],
+  ['v3bservicio', v3bServicio],
   ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();
