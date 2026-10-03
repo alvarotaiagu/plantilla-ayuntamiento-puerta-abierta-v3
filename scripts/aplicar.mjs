@@ -66,7 +66,8 @@ for (const f of ['marca/escudo-160.png', 'marca/escudo-480.png', 'marca/favicon-
 if (!existe('css/fuentes.css')) errores.push('Falta css/fuentes.css: ejecuta node scripts/fuentes.mjs');
 
 const TEL = /^(\d{3} \d{3} \d{3}|\d{3})$/;
-const telefonos = [M.contacto.telefono, ...(M.servicios || []).map(s => s.telefono), ...(M.urgencias || []).map(s => s.telefono)].filter(Boolean);
+const telefonos = [M.contacto.telefono, ...(M.servicios || []).map(s => s.telefono), ...(M.urgencias || []).map(s => s.telefono),
+  ...((M.pueblo && M.pueblo.visitas) || []).map(v => v.telefono)].filter(Boolean);
 for (const t of telefonos) if (!TEL.test(t)) errores.push('Teléfono «' + t + '»: escríbelo como «924 536 011»');
 const HORA = /^\d{2}:\d{2}$/;
 const tramosOk = tr => (tr || []).every(t => Array.isArray(t.dias) && t.dias.every(d => d >= 1 && d <= 7) && HORA.test(t.de) && HORA.test(t.a));
@@ -102,7 +103,9 @@ if (M.sede.tipo === 'gestiona') {
   S = { inicio: '', tablon: '', transparencia: '', perfil: '', tramite: () => '', patron: /^$/ };
 }
 const enSede = href => S.patron.test(href);
-const srDe = (href, tipo) => (tipo === 'pdf' ? ', impreso en PDF' : enSede(href) ? ', se abre la sede electrónica' : ', se abre otra web');
+/* impresos que se descargan: el vecino tiene que saber qué va a abrir antes de pulsar */
+const FORMATOS = { pdf: { etiqueta: 'PDF', sr: ', documento en PDF' }, doc: { etiqueta: 'Word', sr: ', documento de Word' } };
+const srDe = (href, tipo) => (FORMATOS[tipo] ? FORMATOS[tipo].sr : enSede(href) ? ', se abre la sede electrónica' : ', se abre otra web');
 const sede = {
   inicio: S.inicio, tablon: S.tablon, transparencia: S.transparencia, perfil: S.perfil,
   instancia: S.tramite({ id: M.sede.instancia_general }),
@@ -207,14 +210,14 @@ for (const t of todos) {
 }
 const conHref = t => { const href = S.tramite(t); return { ...t, href, sr: srDe(href, t.tipo) }; };
 const lista = todos.map(conHref).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-  .map(t => ({ ...t, pdf: t.tipo === 'pdf', texto_busqueda: normal(t.nombre) }));
+  .map(t => ({ ...t, formato: FORMATOS[t.tipo] ? FORMATOS[t.tipo].etiqueta : null, texto_busqueda: normal(t.nombre) }));
 const tramitesSede = lista.filter(t => enSede(t.href)).length;
-const DESTINO = { pdf: 'Impreso en PDF', documento: 'Documento en el tablón de la sede' };
+const DESTINO = { pdf: 'Impreso en PDF', doc: 'Impreso en Word', documento: 'Documento en el tablón de la sede' };
 const tramites = {
   atajos: (M.tramites.atajos || []).map(conHref).map(t => ({ ...t, destino: DESTINO[t.tipo] || (enSede(t.href) ? 'Se abre la sede electrónica' : 'Se abre otra web') })),
   temas: (M.tramites.temas || []).map(tm => ({ ...tm, tramites: tm.tramites.map(conHref) })),
   momentos: (M.tramites.momentos || []).map(m => ({ ...m, pasos: m.pasos.map(p => (p.id || p.url ? conHref(p) : { ...p, href: null, sr: '' })) })),
-  lista, total: lista.length, en_sede: tramitesSede, impresos: lista.filter(t => t.pdf).length
+  lista, total: lista.length, en_sede: tramitesSede, impresos: lista.filter(t => t.formato).length
 };
 /* nombres en lenguaje claro para el buscador: los de atajos, temas y momentos */
 const claros = new Map();
@@ -290,6 +293,17 @@ function hemiciclo() {
 }
 const pleno = hemiciclo();
 const concejalias = miembros.filter(m => m.delegacion).map(m => ({ ...m }));
+
+/* normativa y documentos: lo que su web vieja tenía colgado (ordenanzas, actas, decretos) y no
+   es un trámite. Cada grupo es un desplegable; vacío, la sección no sale */
+const documentos = (M.documentos || []).map(g => {
+  if (!g.grupo || !(g.items || []).length) errores.push('documentos: cada grupo lleva «grupo» e «items»');
+  const items = (g.items || []).map(d => {
+    if (!d.titulo || !d.url) errores.push('documentos «' + g.grupo + '»: cada documento lleva «titulo» y «url»');
+    return { titulo: d.titulo, href: d.url, fecha: d.fecha || null, formato: FORMATOS[d.tipo] ? FORMATOS[d.tipo].etiqueta : null, sr: srDe(d.url, d.tipo) };
+  });
+  return { grupo: g.grupo, nota: g.nota || null, items, cuenta: items.length + (items.length === 1 ? ' documento' : ' documentos') };
+});
 const quien = (M.quien || []).map(q => ({ ...q, iniciales: iniciales(q.nombre) }));
 
 /* ───────────────────────── contenido ───────────────────────── */
@@ -337,7 +351,14 @@ const pueblo = {
   lugares: (P.lugares || []).map(l => { const f = foto(l.foto, l.alt, l.nombre); return { nombre: l.nombre, texto: l.texto, foto: f ? l.foto : null, ancho: f ? f.ancho : null, alto: f ? f.alto : null, alt: l.alt || '', credito: f ? f.credito : null }; }),
   placa: P.placa ? { titulo: P.placa.titulo || 'Un lugar con nombre propio', lineas: P.placa.lineas, pie: P.placa.pie, texto: P.placa.texto || null } : null,
   gastronomia: P.gastronomia ? { ...P.gastronomia, foto_datos: P.gastronomia.foto ? foto(P.gastronomia.foto, P.gastronomia.alt, 'gastronomía') : null } : null,
-  historia: P.historia || [], patrimonio: P.patrimonio || [], personajes: P.personajes || [], rutas: P.rutas || []
+  historia: P.historia || [], patrimonio: P.patrimonio || [], personajes: P.personajes || [], rutas: P.rutas || [],
+  /* lo que se puede visitar por dentro: con horario y entrada solo si constan; si no, cómo preguntarlo */
+  visitas: (P.visitas || []).map(v => {
+    if (!v.nombre) errores.push('pueblo.visitas: cada visita lleva «nombre»');
+    const datos = [['Dirección', v.direccion], ['Horario', v.horario], ['Entrada', v.precio]].filter(([, x]) => x).map(([dt, dd]) => ({ dt, dd }));
+    return { nombre: v.nombre, texto: v.texto || null, datos, telefono: v.telefono || null, tel_href: v.telefono ? telHref(v.telefono) : null,
+      nota: v.nota || null, url: v.url || null, url_texto: v.url_texto || 'Más información' };
+  })
 };
 const creditos = [...usadas.values()];
 
@@ -437,7 +458,7 @@ const comun = {
   paletas: paletas.map((p, i) => ({ clave: p.clave, nombre: nombreMatiz(p.col.marca), pulsado: i === 0 ? 'true' : 'false' })),
   tramites, listin_corto: listinCorto, listin_grupos: gruposListin,
   quien, quien_portada: quien.filter(q => q.portada), fiestas,
-  pleno, concejalias, alcalde, alcaldia: M.alcaldia || {},
+  pleno, concejalias, alcalde, alcaldia: M.alcaldia || {}, documentos,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },
   pueblo, creditos, hay_creditos_fotos: creditos.length > 0, hero_foto: heroFoto,

@@ -680,6 +680,13 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .ruta__nombre { font-size: 1.15rem; margin-bottom: .25rem; }
 .ruta p { font-size: 1rem; margin-bottom: .3rem; }
 .ruta a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; }
+.visitas { grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); }
+.visita { display: flex; flex-direction: column; padding-bottom: .6rem; }
+.visita__texto, .visita__nota { font-size: 1rem; line-height: 1.5; }
+.visita__nota { color: var(--apagado); }
+.visita__datos { margin: .25rem 0 .75rem; gap: .55rem; }
+.visita__enlace { margin: 0; }
+.visita__enlace a { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; font-weight: 600; }
 .creditos { font-size: 1rem; padding-left: 1.1rem; }
 .creditos li { margin-bottom: .4rem; }
 

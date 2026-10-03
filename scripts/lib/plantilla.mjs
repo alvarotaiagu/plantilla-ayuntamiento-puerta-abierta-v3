@@ -26,7 +26,9 @@ function buscar(pila, ruta, estricto) {
   return undefined;
 }
 
-const vacio = v => v === undefined || v === null || v === false || v === '' || (Array.isArray(v) && v.length === 0);
+/* el 0 cuenta como vacío: las fuentes abren secciones con {{#lista.length}}, y una lista sin
+   elementos tiene que quitar la sección entera, no dejar el título solo */
+const vacio = v => v === undefined || v === null || v === false || v === '' || v === 0 || (Array.isArray(v) && v.length === 0);
 
 function trocear(src) {
   const re = /\{\{(\{|#|\^|\/|!)?\s*([^}]*?)\s*\}?\}\}/g;

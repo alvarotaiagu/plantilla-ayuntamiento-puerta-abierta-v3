@@ -67,6 +67,9 @@ export function motivoPersonal(e) {
   for (const [re, motivo] of PATRONES_PERSONALES) if (re.test(texto)) return motivo;
   /* un «acta» de un procedimiento de selección de personal lleva nombres casi siempre */
   if (/\bacta\b/i.test(e.titulo + ' ' + e.descripcion) && ES_SELECCION.test(texto)) return 'acta de selección';
+  /* y una lista también, aunque el título no diga de qué: en Fuente de Cantos «08 ANUNCIO LISTA
+     DEFINITIVA» y «Anuncio lista definitva» (sic) solo se reconocen por el procedimiento */
+  if (/\b(lista(do)?s?|relaci[oó]n)\b/i.test(e.titulo + ' ' + e.descripcion) && ES_SELECCION.test(texto)) return 'lista de un proceso de selección';
   return null;
 }
 
@@ -113,6 +116,9 @@ export const CASOS_PRUEBA = [
   [{ titulo: 'Lista de candidatos a Jurado' }, 'lista de jurados'],
   [{ titulo: 'Anuncio notificación final del expediente' }, 'notificación a una persona'],
   [{ titulo: 'Relación de solicitantes', descripcion: 'Interesado con DNI 12345678Z' }, 'contiene un DNI o NIE'],
+  [{ titulo: '08 ANUNCIO LISTA DEFINITIVA', descripcion: 'ANUNCIO LISTA DEFINITIVA DEL PROCESO DE ADMINISTRATIVO', procedimiento: 'Selecciones de Personal y Provisiones de Puestos', categoria: 'Anuncios' }, 'lista de un proceso de selección'],
+  [{ titulo: 'Anuncio lista definitva', descripcion: 'Lista definitiva bolsa CONDUCTORES', procedimiento: 'Selecciones de Personal y Provisiones de Puestos', categoria: 'Anuncios' }, 'lista de un proceso de selección'],
+  [{ titulo: 'Anuncio de la convocatoria', descripcion: 'CONVOCATORIA DE PLENO DE SEPTIEMBRE', procedimiento: 'Convocatoria de El Pleno', categoria: 'Anuncios' }, null],
   [{ titulo: 'CONVOCATORIA AYUDA NATALIDAD CORRECTA 2026' }, null],
   [{ titulo: 'ANUNCIO COBRANZA IAE 2026' }, null],
   [{ titulo: 'Anuncio celebración sesión Ordinaria Pleno 30 de septiembre de 2026' }, null],

@@ -1,0 +1,41 @@
+{
+  "_leeme": "Datos de muestra, sin ningún municipio real, para que scripts/verificar.mjs pruebe las secciones opcionales que el municipio de la plantilla no usa: «Para visitar» (pueblo.visitas), «Normativa y documentos» (documentos) e impresos en Word (tramites.todos con tipo «doc»). Se mezclan en una copia; nunca se publican.",
+  "pueblo": {
+    "visitas": [
+      {
+        "nombre": "Museo de prueba",
+        "texto": "Una casa del siglo XVIII convertida en museo, con seis salas y un patio.",
+        "direccion": "C/ Mayor, 1",
+        "horario": "Martes a domingo, de 10:00 a 14:00",
+        "precio": "Gratuita",
+        "telefono": "900 000 000",
+        "url": "https://example.org/museo",
+        "url_texto": "Ficha del museo"
+      },
+      {
+        "nombre": "Ermita de prueba",
+        "texto": "Solo abre en sus fiestas.",
+        "nota": "Para visitarla fuera de esas fechas, pregunte en el Ayuntamiento."
+      }
+    ]
+  },
+  "documentos": [
+    {
+      "grupo": "Ordenanzas fiscales",
+      "nota": "Impuestos y tasas",
+      "items": [
+        { "titulo": "Ordenanza de prueba del impuesto de bienes inmuebles", "url": "https://example.org/ordenanza-1.pdf", "tipo": "pdf", "fecha": "2024" },
+        { "titulo": "Ordenanza de prueba de la tasa de basuras", "url": "https://example.org/ordenanza-2.pdf", "tipo": "pdf" }
+      ]
+    },
+    {
+      "grupo": "Actas de los plenos",
+      "items": [
+        { "titulo": "Carpeta de actas de prueba", "url": "https://example.org/actas" }
+      ]
+    }
+  ],
+  "tramites_extra": [
+    { "nombre": "Impreso de prueba en Word", "url": "https://example.org/impreso.doc", "tipo": "doc" }
+  ]
+}

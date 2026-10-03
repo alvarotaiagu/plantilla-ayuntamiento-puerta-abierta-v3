@@ -17,6 +17,23 @@
   </div>
 </section>{{/pueblo.lugares.length}}
 
+{{#pueblo.visitas.length}}<section class="seccion{{^pueblo.lugares.length}} seccion--primera{{/pueblo.lugares.length}}" aria-labelledby="t-visitas">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-visitas">Para visitar</h2>
+    <ul class="fichas visitas">
+      {{#pueblo.visitas}}<li class="ficha visita">
+        <h3 class="ficha__titulo">{{nombre}}</h3>
+        {{#texto}}<p class="visita__texto">{{texto}}</p>{{/texto}}
+        {{#datos.length}}<dl class="datos visita__datos">{{#datos}}<div><dt>{{dt}}</dt><dd>{{dd}}</dd></div>{{/datos}}</dl>{{/datos.length}}
+        {{#nota}}<p class="visita__nota">{{nota}}</p>{{/nota}}
+        {{#telefono}}<p class="visita__enlace"><a href="{{tel_href}}"><svg class="icono" aria-hidden="true"><use href="#i-telefono"/></svg><span class="sr">Llamar a {{nombre}}: </span>{{telefono}}</a></p>{{/telefono}}
+        {{#url}}<p class="visita__enlace"><a href="{{url}}">{{url_texto}}<span class="sr">: {{nombre}}, se abre otra web</span></a></p>{{/url}}
+      </li>
+      {{/pueblo.visitas}}
+    </ul>
+  </div>
+</section>{{/pueblo.visitas.length}}
+
 {{#pueblo.placa}}<section class="seccion seccion--placa" aria-labelledby="t-placa">
   <div class="contenedor placa-rejilla">
     <h2 class="seccion__titulo" id="t-placa">{{pueblo.placa.titulo}}</h2>

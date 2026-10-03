@@ -248,6 +248,7 @@ Los datos de cada página tienen su fuente en **[DATOS.md](DATOS.md)**.
   - la hoja de cálculo se prueba en los dos sentidos;
   - la sede caída no rompe nada.
 - **Reskin** a Segura de León sin restos de Ribera, y la banda de propuesta que se apaga con `"propuesta": false`.
+- **Secciones opcionales** que Ribera no usa («Para visitar», «Normativa y documentos» e impresos en Word, añadidas para Fuente de Cantos): se prueban en una copia con los datos de muestra de `pruebas/opcionales.json`, con axe y a 320 px.
 - **Contenido**:
   - «Ejemplo» exactamente en los 5 datos marcados;
   - banda y `noindex` en todas las páginas;

@@ -531,7 +531,7 @@ async function interaccion() {
     await espera(250);
     const r = await page.evaluate(() => [...document.querySelectorAll('#buscador [data-buscador-resultados] a')].map(a => ({ t: a.textContent, h: a.getAttribute('href') })));
     if (!r.length || !re.test(r[0].t)) malos.push(`«${q}» → ${r.length} resultados, el primero «${r[0] ? r[0].t.slice(0, 40) : '-'}»`);
-    if (r.some(x => !patronSede.test(x.h) && !/\.pdf$/.test(x.h) && !/^https:\/\//.test(x.h))) malos.push(`«${q}»: enlace raro`);
+    if (r.some(x => !patronSede.test(x.h) && !/\.(pdf|docx?)$/.test(x.h) && !/^https:\/\//.test(x.h))) malos.push(`«${q}»: enlace raro`);
   }
   await page.keyboard.press('Escape');
   const cerrado = await page.evaluate(() => !document.getElementById('buscador').open);
@@ -666,6 +666,66 @@ async function reskin() {
   } finally { fs.rmSync(dest2, { recursive: true, force: true }); }
 }
 
+/* ── secciones opcionales que este municipio no usa: se prueban con datos de muestra ──
+   Sin esto, «Para visitar», «Normativa y documentos» y los impresos en Word solo se verían
+   en el municipio que los necesitó, y un cambio de la plantilla podría romperlos sin avisar. */
+async function opcionales() {
+  const muestra = path.join(RAIZ, 'pruebas', 'opcionales.json');
+  if (!fs.existsSync(muestra)) { comprobar(false, 'opcionales: falta pruebas/opcionales.json'); return; }
+  const O = JSON.parse(fs.readFileSync(muestra, 'utf8'));
+  const propio = { visitas: ((M.pueblo || {}).visitas || []).length, documentos: (M.documentos || []).length };
+  /* en la web real: cada sección sale solo si el municipio tiene datos */
+  const ayto = leer(RAIZ, 'ayuntamiento.html'), pue = leer(RAIZ, 'pueblo.html');
+  comprobar(/id="t-documentos"/.test(ayto) === propio.documentos > 0 && /id="t-visitas"/.test(pue) === propio.visitas > 0,
+    `opcionales: «Normativa y documentos» y «Para visitar» salen solo con datos (aquí ${propio.documentos} grupos de documentos y ${propio.visitas} visitas)`);
+  const dest = copiar();
+  try {
+    const m = JSON.parse(fs.readFileSync(path.join(dest, 'municipio.json'), 'utf8'));
+    m.pueblo = { ...(m.pueblo || {}), visitas: O.pueblo.visitas };
+    m.documentos = O.documentos;
+    m.tramites.todos = [...m.tramites.todos, ...O.tramites_extra];
+    fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(m, null, 2));
+    const ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
+    if (ap.status !== 0) { comprobar(false, 'opcionales: aplicar.mjs falla con los datos de muestra → ' + (ap.stderr || ap.stdout).slice(-400)); return; }
+    const srv = crearServidor(dest, null);
+    await new Promise(r => srv.listen(0, '127.0.0.1', r));
+    const b = 'http://127.0.0.1:' + srv.address().port + '/';
+    const malos = [], viol = [], desb = [];
+    for (const [w, h] of [[320, 640], [1440, 900]]) {
+      const ctx = await navegador.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
+      await ctx.addInitScript(s => { try { localStorage.setItem(s + '-cookies', 'ok'); sessionStorage.setItem(s + '-cortina', '1'); } catch (e) {} }, SLUG);
+      const page = await ctx.newPage();
+      await page.goto(b + 'ayuntamiento.html', { waitUntil: 'networkidle' });
+      const doc = await page.evaluate(() => {
+        const s = document.getElementById('documentos');
+        if (!s) return null;
+        s.querySelectorAll('details').forEach(d => { d.open = true; });
+        return { grupos: s.querySelectorAll('details').length, enlaces: [...s.querySelectorAll('.tema__lista a')].map(a => ({ h: a.getAttribute('href'), sr: a.querySelector('.sr').textContent, vis: a.getBoundingClientRect().height > 0 })) };
+      });
+      const total = O.documentos.reduce((n, g) => n + g.items.length, 0);
+      if (!doc || doc.grupos !== O.documentos.length || doc.enlaces.length !== total || doc.enlaces.some(e => !e.vis)) malos.push(`${w} px: documentos ${JSON.stringify(doc && { grupos: doc.grupos, enlaces: doc.enlaces.length })}`);
+      else if (!doc.enlaces.filter(e => /\.pdf$/.test(e.h)).every(e => /PDF/.test(e.sr)) || !doc.enlaces.filter(e => !/\.pdf$/.test(e.h)).every(e => /otra web/.test(e.sr))) malos.push('documentos: el texto oculto no dice qué se abre');
+      viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => 'ayuntamiento.html: ' + v.id));
+      if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) desb.push(w + ' ayuntamiento.html');
+      await page.goto(b + 'pueblo.html', { waitUntil: 'networkidle' });
+      const vis = await page.evaluate(() => [...document.querySelectorAll('.visita')].map(v => ({ titulo: v.querySelector('h3').textContent, datos: v.querySelectorAll('dt').length, tel: !!v.querySelector('a[href^="tel:"]') })));
+      const esperadas = O.pueblo.visitas.map(v => ({ titulo: v.nombre, datos: ['direccion', 'horario', 'precio'].filter(k => v[k]).length, tel: !!v.telefono }));
+      if (JSON.stringify(vis) !== JSON.stringify(esperadas)) malos.push(`${w} px: visitas ${JSON.stringify(vis)}`);
+      viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => 'pueblo.html: ' + v.id));
+      if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) desb.push(w + ' pueblo.html');
+      if (CAPTURAS && w === 320) await page.screenshot({ path: captura('opcionales-visitas-m.png'), fullPage: true });
+      await page.goto(b + 'tramites.html', { waitUntil: 'networkidle' });
+      const word = await page.evaluate(() => { const a = [...document.querySelectorAll('#todos-lista a')].find(x => /\.doc$/.test(x.getAttribute('href'))); return a ? { etiqueta: a.querySelector('.etiqueta-pdf').textContent, sr: a.querySelector('.sr').textContent } : null; });
+      if (!word || word.etiqueta !== 'Word' || !/Word/.test(word.sr)) malos.push('impreso en Word: ' + JSON.stringify(word));
+      await ctx.close();
+    }
+    srv.close();
+    comprobar(!malos.length && !viol.length && !desb.length,
+      'opcionales con datos de muestra: «Normativa y documentos» (desplegables, cada enlace dice qué abre), «Para visitar» (dirección, horario, entrada y teléfono solo si constan) e impresos en Word; 0 violaciones de axe y sin scroll horizontal a 320 y 1440 px' +
+      (malos.length ? ' → ' + malos.join(' | ') : '') + (viol.length ? ' → axe: ' + [...new Set(viol)].join(', ') : '') + (desb.length ? ' → desborda ' + desb.join(', ') : ''));
+  } finally { fs.rmSync(dest, { recursive: true, force: true }); }
+}
+
 /* ── capturas para mirarlas ── */
 async function capturas() {
   for (const [w, h, suf] of [[1440, 900, 'escritorio'], [390, 844, 'movil']]) {
@@ -700,7 +760,7 @@ const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
 if (!SOLO || SOLO.includes('estaticas')) estaticas();
 for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['cortina', cortina], ['contenido', contenidoEjemplo], ['interaccion', interaccion],
-  ['estructura', estructura], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
+  ['estructura', estructura], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();
   try { await fn(); } catch (e) { comprobar(false, nombre + ': la prueba se rompió → ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')); }

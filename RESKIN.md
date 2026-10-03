@@ -66,10 +66,12 @@ Fuentes que funcionaron en Ribera y Segura:
 | `servicios` | sí | Nombre, teléfono, dirección, horario, `tramos`, `nota` y `grupo`. El grupo ordena el listín |
 | `urgencias` | no | El 112 va el primero, en rojo |
 | `listin_corto` | no | 4 nombres de `servicios` o `urgencias` para la portada |
-| `tramites.atajos`, `temas`, `momentos` | sí | Cada trámite con `id` (Gestiona), `url` u `opc` (Diputación). `tipo: "pdf"` o `"documento"` cambia el aviso «se abre la sede» |
-| `tramites.todos` | sí | Todo el catálogo. `vigente: false` lo oculta sin borrarlo |
+| `tramites.atajos`, `temas`, `momentos` | sí | Cada trámite con `id` (Gestiona), `url` u `opc` (Diputación). `tipo: "pdf"`, `"doc"` (impreso en Word) o `"documento"` cambia el aviso «se abre la sede» |
+| `tramites.todos` | sí | Todo el catálogo. `vigente: false` lo oculta sin borrarlo. Los impresos de su web van aquí con `url` y `tipo: "pdf"` o `"doc"`: salen con la etiqueta PDF o Word |
 | `tramites.sinonimos` | no | Palabras del vecino que llevan al nombre oficial: `"boda": ["matrimonio"]` |
-| `pueblo.*` | no | Entradilla, historia, lugares (con foto), placa, patrimonio, fiestas (`mes`, `fecha_fija: "MM-DD"` y `mayor`), gastronomía, personajes y rutas. Cada bloque vacío desaparece |
+| `pueblo.*` | no | Entradilla, historia, lugares (con foto), visitas (ver abajo), placa, patrimonio, fiestas (`mes`, `fecha_fija: "MM-DD"` y `mayor`), gastronomía, personajes y rutas. Cada bloque vacío desaparece |
+| `pueblo.visitas` | no | Lo que se visita por dentro (museo, casa natal, centro de interpretación): `nombre`, `texto`, `direccion`, `horario`, `precio`, `telefono`, `nota`, `url` y `url_texto`. Sale en «El pueblo → Para visitar». Cada dato solo aparece si está: **si el horario no está confirmado, no se pone**; se dice en `nota` cómo preguntarlo |
+| `documentos` | no | Lo que su web tenía colgado y no es un trámite: ordenanzas, actas, decretos. Lista de `{grupo, nota, items: [{titulo, url, tipo: "pdf"\|"doc", fecha}]}`. Sale en «El Ayuntamiento → Normativa y documentos», un desplegable por grupo |
 | `fotos.hero` | no | `archivo`, `alt` y `posicion` (CSS). Sin foto, el arco queda como hueco diseñado con el escudo apagado |
 
 ## 4. La sede: dos familias

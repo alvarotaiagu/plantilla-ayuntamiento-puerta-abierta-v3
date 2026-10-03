@@ -50,7 +50,7 @@
       <p class="buscador__cuenta" role="status" data-filtro-cuenta></p>
     </div>
     <ul class="todos" id="todos-lista">
-      {{#tramites.lista}}<li data-texto="{{texto_busqueda}}"><a class="enlace-tramite" href="{{href}}">{{nombre}}<span class="sr">{{sr}}</span>{{#pdf}}<span class="etiqueta-pdf">PDF</span>{{/pdf}}<svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+      {{#tramites.lista}}<li data-texto="{{texto_busqueda}}"><a class="enlace-tramite" href="{{href}}">{{nombre}}<span class="sr">{{sr}}</span>{{#formato}}<span class="etiqueta-pdf" aria-hidden="true">{{formato}}</span>{{/formato}}<svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
       {{/tramites.lista}}
     </ul>
   </div>
