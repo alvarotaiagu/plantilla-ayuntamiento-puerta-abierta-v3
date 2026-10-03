@@ -1,11 +1,11 @@
 {{> documento_arriba}}
-{{#pueblo.lugares.length}}<section class="seccion seccion--primera" aria-labelledby="t-lugares">
+{{#pueblo.lugares.length}}<section class="seccion seccion--primera con-paralaje" aria-labelledby="t-lugares">
   <div class="contenedor">
     <h2 class="seccion__titulo" id="t-lugares">Qué ver</h2>
     <div class="carril" data-desborda role="group" aria-labelledby="t-lugares">
       <ul class="carril__lista">
-        {{#pueblo.lugares}}<li class="lugar">
-          {{#foto}}<figure class="lugar__foto arco-opcional"><img src="media/{{foto}}-800.jpg" width="{{ancho}}" height="{{alto}}" alt="{{alt}}" loading="lazy" decoding="async"></figure>{{/foto}}
+        {{#pueblo.lugares}}<li class="lugar" id="{{ancla}}">
+          {{#foto}}<figure class="lugar__foto arco-opcional paralaje"><img src="media/{{foto}}-800.jpg" width="{{ancho}}" height="{{alto}}" alt="{{alt}}" loading="lazy" decoding="async"></figure>{{/foto}}
           {{^foto}}<div class="lugar__foto lugar__foto--vacia arco-opcional"><img src="marca/escudo-160.png" width="{{escudo.ancho160}}" height="160" alt=""></div>{{/foto}}
           <h3 class="lugar__nombre">{{nombre}}</h3>
           <p class="lugar__texto">{{texto}}</p>

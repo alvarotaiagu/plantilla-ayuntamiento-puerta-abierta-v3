@@ -179,7 +179,7 @@ async function desborde() {
       const r = await page.evaluate(() => {
         const W = document.documentElement.clientWidth, fuera = [];
         for (const el of document.querySelectorAll('body *')) {
-          if (el.closest('.carril, .tabla-envoltorio, .sprite, dialog, .sr, .cortina')) continue;
+          if (el.closest('.carril, [data-desborda], .tabla-envoltorio, .sprite, dialog, .sr, .cortina')) continue;   /* lo de dentro de un carril con scroll propio (v3: «Conocer» y la tira del año) */
           const b = el.getBoundingClientRect();
           if (b.width && b.right > W + 0.5) fuera.push(el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''));
         }
@@ -695,12 +695,15 @@ async function panelHoy() {
   const lineaAg = (miercoles.match(/Lo próximo en la agenda.*?<\/li><\/ul>/) || [''])[0];
   const malM = [];
   if (!/Más hoy/.test(miercoles) || !/id06999/.test(miercoles)) malM.push('el tiempo');
-  if (!/Próximo pleno:.*Jueves 29 de octubre, 20:00/.test(miercoles) || !/href="ics\/pleno-2026-10-29\.ics"/.test(miercoles) || /Pleno ordinario/.test(lineaAg)) malM.push('pleno (sale en «Más hoy» con su .ics y no repetido en la agenda)');
+  /* v3: el próximo pleno y el canal, con su detalle, van en el lado del tablón; en «Hoy», el pleno solo el mismo día */
+  const ladoDe = (x, iso) => V.pintar('lado', { ...base, ...x }, en(iso || '2026-10-14T10:00:00+02:00'));
+  const ladoMie = ladoDe(extra), elDia = hoyDe(extra, '2026-10-29T10:00:00+02:00');
+  if (/Próximo pleno/.test(miercoles) || !/Próximo pleno:/.test(elDia) || !/Próximo pleno.*Jueves 29 de octubre, 20:00/.test(ladoMie) || !/href="ics\/pleno-2026-10-29\.ics"/.test(ladoMie) || /Pleno ordinario/.test(lineaAg)) malM.push('pleno (en el lado con su .ics; en «Más hoy» solo el mismo día; no repetido en la agenda)');
   if (!/Recogida de enseres:<\/b> toca hoy/.test(miercoles) || !/Recogida de enseres:<\/b> la próxima, mañana/.test(martes)) malM.push('recogida: «toca hoy» el miércoles y «la próxima, mañana» el martes');
-  if (!/class="hoy__canal".*Canal de prueba.*avisos\.html#t-canal/.test(miercoles)) malM.push('canal de avisos al pie del panel');
-  const pasado = hoyDe({ ...extra, agenda: [{ ...extra.agenda[0], fecha: '2026-10-01' }] });
-  if (/Próximo pleno/.test(pasado)) malM.push('un pleno ya celebrado sale como próximo');
-  comprobar(!malM.length, 'panel «Hoy» → «Más hoy»: el enlace de AEMET, el próximo pleno (con «Añadir a mi calendario» y sin repetirse en la agenda), la recogida («toca hoy» / «la próxima, mañana») y el canal de avisos con «Cómo apuntarse»' + (malM.length ? ' → ' + malM.join(' | ') : ''));
+  if (/hoy__canal/.test(miercoles) || !/lado__bloque--canal.*Canal de prueba.*avisos\.html#t-canal/.test(ladoMie)) malM.push('canal de avisos en el lado (y no repetido en el panel)');
+  const pasado = { ...extra, agenda: [{ ...extra.agenda[0], fecha: '2026-10-01' }] };
+  if (/Próximo pleno/.test(hoyDe(pasado)) || /Próximo pleno/.test(ladoDe(pasado))) malM.push('un pleno ya celebrado sale como próximo');
+  comprobar(!malM.length, 'panel «Hoy» → «Más hoy»: el enlace de AEMET, la recogida («toca hoy» / «la próxima, mañana») y el pleno solo el mismo día; el próximo pleno (con «Añadir a mi calendario» y sin repetirse en la agenda) y el canal de avisos con «Cómo apuntarse», en el lado del tablón' + (malM.length ? ' → ' + malM.join(' | ') : ''));
 
   /* 4. .ics: el generador con un título que hay que escapar y doblar, y todos los archivos escritos */
   const largo = { id: 'feria, de; prueba', fecha: '2026-12-31', hora: '23:30', titulo: 'Feria, mercado; y baile \\ con tildes: «Ñandú» áéíóú '.repeat(3).trim(), lugar: 'Plaza, 1', nota: 'Línea uno\nLínea dos' };
@@ -726,7 +729,7 @@ async function panelHoy() {
   const index = leer(RAIZ, 'index.html');
   const tieneCanal = !!(M.canal_avisos && M.canal_avisos.url);
   const malW = [];
-  if (/class="hoy__canal"/.test(index) !== tieneCanal || /class="pie__canal"/.test(index) !== tieneCanal) malW.push('canal de avisos ' + (tieneCanal ? 'falta' : 'sobra') + ' en el panel o en el pie');
+  if (/lado__bloque--canal/.test(index) !== tieneCanal || /class="pie__canal"/.test(index) !== tieneCanal || /class="hoy__canal"/.test(index)) malW.push('canal de avisos ' + (tieneCanal ? 'falta' : 'sobra') + ' en el lado del tablón o en el pie (o se repite en el panel)');
   if (M.ine && !index.includes('-id' + M.ine + '"')) malW.push('el enlace de AEMET no lleva el INE ' + M.ine);
   if (!M.ine && /aemet\.es/.test(index)) malW.push('sale AEMET sin INE');
   const dir3 = /^L01(\d{5})\d$/.exec((M.legal && M.legal.dir3) || '');
@@ -1248,9 +1251,11 @@ async function opcionales() {
       /* portada: farmacia con teléfono, «Más hoy» (tiempo, pleno y recogidas) y el canal en el panel y en el pie */
       await page.goto(b + 'index.html', { waitUntil: 'networkidle' });
       const hoyO = await page.evaluate(() => { const h = document.querySelector('.hoy'); return { farmacia: !!h.querySelector('.hoy__fila--farmacia a[href^="tel:"]'), breves: h.querySelectorAll('.hoy__breve').length,
-        canal: [...h.querySelectorAll('.hoy__canal a')].map(a => a.getAttribute('href')), pie: [...document.querySelectorAll('.pie__canal a')].map(a => a.getAttribute('href')), ics: !!h.querySelector('.hoy__breve a.enlace-ics[href$=".ics"]') }; });
-      const brevesEsperados = (m.ine ? 1 : 0) + 1 + Math.min(2, O.recogida.length);
-      if (!hoyO.farmacia || hoyO.breves !== brevesEsperados || !hoyO.ics || hoyO.canal[0] !== O.canal_avisos.url || !/avisos\.html#t-canal$/.test(hoyO.canal[1] || '') || hoyO.pie[0] !== O.canal_avisos.url)
+        enPanel: !!h.querySelector('.hoy__canal'), canal: [...document.querySelectorAll('.lado__bloque--canal a')].map(a => a.getAttribute('href')), pasos: document.querySelectorAll('.lado__bloque--canal .lado__pasos li').length,
+        pie: [...document.querySelectorAll('.pie__canal a')].map(a => a.getAttribute('href')), ics: !!document.querySelector('.lado__bloque--pleno [href$=".ics"], .lado__bloque--pleno [data-ics]') }; });
+      /* v3: en «Más hoy», el tiempo y las recogidas (el pleno solo el mismo día); el pleno y el canal, en el lado del tablón */
+      const brevesEsperados = (m.ine ? 1 : 0) + Math.min(2, O.recogida.length);
+      if (!hoyO.farmacia || hoyO.breves < brevesEsperados || hoyO.breves > brevesEsperados + 1 || !hoyO.ics || hoyO.enPanel || hoyO.canal[0] !== O.canal_avisos.url || hoyO.pasos !== O.canal_avisos.pasos.length || hoyO.pie[0] !== O.canal_avisos.url)
         malos.push(`${w} px: panel «Hoy» ${JSON.stringify(hoyO)} (esperaba ${brevesEsperados} líneas en «Más hoy»)`);
       viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => 'index.html: ' + v.id));
       if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) desb.push(w + ' index.html');
@@ -1661,6 +1666,299 @@ async function v3Pliegue() {
   }
 }
 
+/* ═════════════ v3 · cuerpo de la portada (de los trámites al final del <main>) ═════════════
+   Banda «Conocer …» (V2) con paralaje dentro del arco (M3), tablón con su lado y «Quién» en
+   cuadrícula (V4), «Más adelante» en «Lo que viene», atajos compactos y temas sin huecos (V5),
+   «El año» con «Lo siguiente» y su tira móvil colocada en el mes en curso (V6), el borde de oro que
+   se dibuja (M6) y el arco que sube por el borde de las bandas (M7). Con el municipio real y con
+   dos copias con otros datos (menos fotos, sin pleno ni canal, 4 temas; y canal, pleno, 7 temas y
+   6 atajos), como hace opcionales(). */
+async function v3Cuerpo() {
+  const V = cargarVivo();
+  const enV = iso => V.ahoraEn('Europe/Madrid', new Date(iso));
+  const conFoto = ((M.pueblo || {}).lugares || []).filter(l => l.foto && fs.existsSync(path.join(RAIZ, 'media', l.foto + '.jpg')));
+  const esperadosConocer = conFoto.length >= 3 ? Math.min(5, ((M.pueblo || {}).portada_lugares || conFoto).length) : 0;
+
+  /* ── lo que se mide en una portada (la real o una copia) a 1440 px ── */
+  const medirPortada = page => page.evaluate(() => {
+    const caja = e => e.getBoundingClientRect();
+    const banda = document.querySelector('section[aria-labelledby="t-conocer"]');
+    const lugares = banda ? [...banda.querySelectorAll('.conocer__lugar')].map(li => {
+      const a = li.querySelector('a'), m = li.querySelector('.conocer__marco'), r = caja(m);
+      return { href: a.getAttribute('href'), nombre: li.querySelector('.conocer__nombre').textContent.trim(), credito: !!li.querySelector('.credito'), w: r.width, h: r.height, bottom: r.bottom,
+        radio: parseFloat(getComputedStyle(m).borderTopLeftRadius) };
+    }) : null;
+    const lado = document.querySelector('.tablon-lado'), tablon = document.querySelector('.tablon-rejilla > .tablon');
+    const temas = document.querySelector('.temas');
+    const cols = temas ? [...temas.querySelectorAll(':scope > .temas__columna')].map(c => ({ ancha: c.classList.contains('temas__columna--ancha'), n: c.querySelectorAll('.tema').length, w: caja(c).width, bottom: caja(c).bottom })) : [];
+    const atajos = [...document.querySelectorAll('.atajo')].map(a => { const r = caja(a); return { h: Math.round(r.height), top: Math.round(r.top), w: Math.round(r.width), corta: [...a.querySelectorAll('.atajo__nombre, .atajo__nota')].some(t => t.scrollWidth > t.clientWidth + 1) }; });
+    const quien = [...document.querySelectorAll('.quien--portada > .quien__fila')].map(f => ({ w: caja(f).width, left: caja(f).left }));
+    const cont = document.querySelector('.seccion .contenedor'), cc = getComputedStyle(cont);
+    return {
+      lugares, contenedor: caja(cont).width - parseFloat(cc.paddingLeft) - parseFloat(cc.paddingRight),
+      lado: lado ? { visible: lado.checkVisibility(), w: caja(lado).width, canal: !!lado.querySelector('.lado__bloque--canal'), pasos: lado.querySelectorAll('.lado__pasos li').length,
+        pleno: !!lado.querySelector('.lado__bloque--pleno'), ics: (lado.querySelector('.lado__bloque--pleno .evento__ics') || {}).getAttribute ? lado.querySelector('.lado__bloque--pleno .evento__ics').getAttribute('href') || 'boton' : null } : null,
+      tablonW: tablon ? caja(tablon).width : 0, temasW: temas ? caja(temas).width : 0, cols, atajos,
+      quien, quienW: document.querySelector('.quien--portada') ? caja(document.querySelector('.quien--portada')).width : 0
+    };
+  });
+  const juzgar = (r, nombre, op) => {
+    const mal = [];
+    /* V2: la banda sale con 3 a 5 fotos y no sale con menos de 3; cada una enlaza a su sitio en pueblo.html */
+    if (op.conocer) {
+      if (!r.lugares || r.lugares.length !== op.conocer) mal.push(`«Conocer»: ${r.lugares ? r.lugares.length : 'sin banda'} lugares (esperaba ${op.conocer})`);
+      else {
+        const pueblo = op.pueblo;
+        r.lugares.forEach(l => { const id = (l.href.match(/^pueblo\.html#(lugar-[a-z0-9-]+)$/) || [])[1]; if (!id || !pueblo.includes(`id="${id}"`)) mal.push('«Conocer»: ' + l.nombre + ' enlaza a ' + l.href + ', que no existe'); });
+        if (r.lugares.some(l => !l.credito)) mal.push('«Conocer»: una foto sin crédito');
+        if (r.lugares.some(l => l.h < l.w / 2 - 1 || l.radio < l.w / 2 - 1)) mal.push('«Conocer»: un arco que no es de medio punto');
+        if (!(r.lugares[0].w > r.lugares[1].w * 1.2)) mal.push('«Conocer»: el primero no es más grande');
+        if (Math.max(...r.lugares.map(l => l.bottom)) - Math.min(...r.lugares.map(l => l.bottom)) > 1.5) mal.push('«Conocer»: los arcos no están de pie sobre la misma línea');
+      }
+    } else if (r.lugares) mal.push('«Conocer» sale con menos de 3 fotos');
+    /* V4: el lado del tablón según los datos */
+    if (op.lado) {
+      if (!r.lado || !r.lado.visible || r.lado.canal !== op.lado.canal || r.lado.pleno !== op.lado.pleno || (op.lado.pasos != null && r.lado.pasos !== op.lado.pasos) || (op.lado.pleno && !r.lado.ics)) mal.push('lado del tablón ' + JSON.stringify(r.lado));
+      else if (Math.abs(r.tablonW / r.contenedor - 2 / 3) > .06) mal.push(`el tablón no va a dos tercios (${Math.round(r.tablonW)} de ${Math.round(r.contenedor)})`);
+      if (r.lado && r.lado.ics && r.lado.ics !== 'boton' && !fs.existsSync(path.join(op.raiz, r.lado.ics))) mal.push('el .ics del próximo pleno no existe: ' + r.lado.ics);
+    } else {
+      if (r.lado && r.lado.visible) mal.push('sale el lado del tablón sin canal ni pleno');
+      if (r.tablonW < r.contenedor - 2) mal.push(`sin lado, el tablón no ocupa el ancho (${Math.round(r.tablonW)} de ${Math.round(r.contenedor)})`);
+    }
+    /* V5: atajos iguales, compactos y en filas llenas; temas sin huecos */
+    const altos = [...new Set(r.atajos.map(a => a.h))];
+    if (altos.length !== 1 || altos[0] > 120) mal.push('atajos de ' + altos.join(', ') + ' px de alto (iguales y ≤ 120)');
+    const filas = [...new Set(r.atajos.map(a => a.top))].map(t => r.atajos.filter(a => a.top === t).length);
+    if (op.columnasAtajos && filas[0] !== op.columnasAtajos) mal.push(`atajos: ${filas.join(' + ')} por fila (esperaba ${op.columnasAtajos} en la primera)`);
+    if (filas.length > 1 && filas[filas.length - 1] < filas[0] - 1) mal.push('atajos: la última fila queda casi vacía (' + filas.join(' + ') + ')');
+    if (r.atajos.some(a => a.corta)) mal.push('atajos: texto cortado');
+    const norm = r.cols.filter(c => !c.ancha), ancha = r.cols.find(c => c.ancha);
+    if (r.cols.reduce((n, c) => n + c.n, 0) !== op.temas) mal.push(`temas: ${r.cols.reduce((n, c) => n + c.n, 0)} de ${op.temas}`);
+    if (norm.length === 2 && norm[0].n !== norm[1].n) mal.push('temas: columnas desiguales ' + norm.map(c => c.n).join(' y '));
+    if (!!ancha !== (op.temas % 2 === 1) || (ancha && (ancha.n !== 1 || ancha.w < r.temasW - 1))) mal.push('temas: el último de un número impar no ocupa el ancho ' + JSON.stringify(r.cols));
+    if (norm.length === 2 && Math.abs(norm[0].bottom - norm[1].bottom) > 40) mal.push(`temas: hueco al pie de una columna (${Math.round(Math.abs(norm[0].bottom - norm[1].bottom))} px)`);
+    /* V4: «Quién» llena el ancho (2 × 2, y la última sola a todo el ancho si son impares) */
+    if (r.quien.length) {
+      const ok = r.quien.every((q, i) => (r.quien.length % 2 && i === r.quien.length - 1) ? q.w >= r.quienW - 1 : Math.abs(q.w - (r.quienW - 16) / 2) < 2);
+      if (!ok) mal.push('«Quién» no llena el ancho en dos columnas ' + JSON.stringify(r.quien.map(q => Math.round(q.w))));
+    }
+    return mal.map(m => nombre + ': ' + m);
+  };
+
+  /* 1. la web real, a 1440 px */
+  const malos = [];
+  let { ctx, page } = await nueva();
+  await ir(page, 'index.html');
+  const real = await medirPortada(page);
+  const plenoProx = V.proximoPleno(JSON.parse(leer(RAIZ, 'index.html').match(/id="datos-vivos">([\s\S]*?)<\/script>/)[1]), V.ahoraEn('Europe/Madrid', new Date()));
+  const canalReal = !!(M.canal_avisos && M.canal_avisos.url);
+  malos.push(...juzgar(real, M.nombre, { conocer: esperadosConocer, pueblo: leer(RAIZ, 'pueblo.html'), raiz: RAIZ,
+    lado: canalReal || plenoProx ? { canal: canalReal, pleno: !!plenoProx, pasos: canalReal ? (M.canal_avisos.pasos || []).length || 0 : null } : null,
+    temas: (M.tramites.temas || []).length }));
+  /* los temas de trámites.html (el mismo parcial) tampoco dejan hueco */
+  await ir(page, 'tramites.html');
+  const tt = await page.evaluate(() => [...document.querySelectorAll('.temas > .temas__columna')].map(c => ({ ancha: c.classList.contains('temas__columna--ancha'), n: c.querySelectorAll('.tema').length, w: c.getBoundingClientRect().width, tw: c.parentElement.getBoundingClientRect().width })));
+  if (tt.filter(c => !c.ancha).some((c, i, a) => c.n !== a[0].n) || tt.some(c => c.ancha && c.w < c.tw - 1)) malos.push('tramites.html: temas con hueco ' + JSON.stringify(tt));
+  await ctx.close();
+
+  /* 2. dos copias con otros datos */
+  const O = JSON.parse(leer(RAIZ, 'pruebas', 'opcionales.json'));
+  const enDias = n => new Date(Date.now() + n * 864e5).toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+  const variantes = [
+    ['A (2 fotos, sin pleno ni canal, 4 temas)', m => {
+      m.pueblo.lugares = m.pueblo.lugares.filter(l => l.foto).slice(0, 2);
+      delete m.pueblo.portada_lugares;
+      m.plenos = []; delete m.canal_avisos;
+      m.tramites.temas = m.tramites.temas.slice(0, 4);
+    }, dest => {
+      const f = path.join(dest, 'contenido', 'agenda.json'), a = JSON.parse(fs.readFileSync(f, 'utf8'));
+      a.eventos = a.eventos.filter(e => String(e.tipo || '').toLowerCase() !== 'pleno');
+      fs.writeFileSync(f, JSON.stringify(a, null, 2));
+    }, { conocer: 0, lado: null, temas: 4 }],
+    ['B (canal, pleno en 10 días, 7 temas y 6 atajos)', m => {
+      m.canal_avisos = O.canal_avisos;
+      m.plenos = [{ fecha: enDias(10), hora: '20:00', tipo: 'ordinario', lugar: 'Salón de plenos de prueba' }];
+      const t = m.tramites.temas;
+      m.tramites.temas = [...t, ...t.slice(0, 7 - t.length).map((x, i) => ({ ...x, nombre: 'Tema de prueba ' + (i + 1) }))].slice(0, 7);
+      const a = m.tramites.atajos;
+      m.tramites.atajos = [...a, ...a.slice(0, 6 - a.length).map((x, i) => ({ ...x, nombre: 'Atajo de prueba ' + (i + 1) }))].slice(0, 6);
+    }, null, { conocer: esperadosConocer, lado: { canal: true, pleno: true, pasos: O.canal_avisos.pasos.length }, temas: 7, columnasAtajos: 3 }]
+  ];
+  for (const [nombre, cambiar, extra, op] of variantes) {
+    const dest = copiar();
+    try {
+      const m = JSON.parse(fs.readFileSync(path.join(dest, 'municipio.json'), 'utf8'));
+      cambiar(m);
+      fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(m, null, 2));
+      if (extra) extra(dest);
+      const ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
+      if (ap.status !== 0) { malos.push(nombre + ': aplicar.mjs falla → ' + (ap.stderr || ap.stdout).slice(-300)); continue; }
+      const srv = crearServidor(dest, null);
+      await new Promise(r => srv.listen(0, '127.0.0.1', r));
+      const b = 'http://127.0.0.1:' + srv.address().port + '/';
+      const c = await navegador.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+      await c.addInitScript(s => { try { localStorage.setItem(s + '-cookies', 'ok'); sessionStorage.setItem(s + '-cortina', '1'); } catch (e) {} }, SLUG);
+      const p = await c.newPage();
+      await p.goto(b + 'index.html', { waitUntil: 'networkidle' });
+      malos.push(...juzgar(await medirPortada(p), 'copia ' + nombre, { ...op, pueblo: fs.readFileSync(path.join(dest, 'pueblo.html'), 'utf8'), raiz: dest }));
+      const viol = (await new AxeBuilder({ page: p }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => v.id);
+      if (viol.length) malos.push('copia ' + nombre + ': axe ' + viol.join(', '));
+      await p.setViewportSize({ width: 320, height: 640 });
+      if (await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) malos.push('copia ' + nombre + ': desborda a 320 px');
+      if (CAPTURAS) await p.screenshot({ path: captura('v3-copia-' + nombre[0] + '-320.png'), fullPage: true });
+      await c.close(); srv.close();
+    } finally { fs.rmSync(dest, { recursive: true, force: true }); }
+  }
+  comprobar(!malos.length, `v3 portada a 1440 px, en ${M.nombre} y en dos copias: «Conocer» con ${esperadosConocer} arcos de medio punto (el primero más grande, de pie en la misma línea, con crédito y enlace a su ancla de pueblo.html) y sin banda con 2 fotos; el lado del tablón solo con canal o pleno (a dos tercios; sin él, el tablón a todo el ancho); atajos iguales de ≤ 120 px en filas llenas; temas sin huecos con 4, 5 y 7 (también en tramites.html); «Quién» en dos columnas que llenan el ancho` + (malos.length ? ' → ' + malos.slice(0, 6).join(' | ') : ''));
+
+  /* 3. móvil: carril de «Conocer», atajos a 320 px y zoom, tira de meses colocada */
+  const malM = [];
+  ({ ctx, page } = await nueva({ viewport: { width: 390, height: 844 } }));
+  await ir(page, 'index.html');
+  if (esperadosConocer) {
+    const c0 = await page.evaluate(() => {
+      const c = document.querySelector('.conocer__carril'), lis = [...c.querySelectorAll('.conocer__lugar')];
+      return { desborda: c.scrollWidth > c.clientWidth, tab: c.getAttribute('tabindex'), scroll: getComputedStyle(c).overflowX, n: lis.length, anchos: lis.map(l => l.getBoundingClientRect().width),
+        asoma: lis[1] ? lis[1].getBoundingClientRect().left < innerWidth : false };
+    });
+    if (!c0.desborda || c0.tab !== '0' || c0.scroll !== 'auto' || !c0.asoma || c0.anchos.some(w => w < 100)) malM.push('carril de «Conocer» ' + JSON.stringify(c0));
+    /* con el Tabulador, cada lugar llega entero a la pantalla (nada recortado ni inalcanzable) */
+    await page.focus('.conocer__carril');
+    const vistos = [];
+    for (let i = 0; i < c0.n; i++) {
+      await page.keyboard.press('Tab'); await espera(120);
+      vistos.push(await page.evaluate(() => { const a = document.activeElement, r = a.getBoundingClientRect(), c = a.closest('.conocer__carril'); return c ? { l: r.left, r: r.right, w: innerWidth } : null; }));
+    }
+    if (vistos.some(v => !v || v.l < -1 || v.r > v.w + 1)) malM.push('con el Tabulador, un lugar del carril queda fuera ' + JSON.stringify(vistos));
+    await page.focus('.conocer__carril');
+    await page.evaluate(() => { document.querySelector('.conocer__carril').scrollLeft = 0; });
+    await page.keyboard.press('ArrowRight'); await espera(400);
+    if (!(await page.evaluate(() => document.querySelector('.conocer__carril').scrollLeft > 0))) malM.push('el carril de «Conocer» no se mueve con las flechas');
+  }
+  await ctx.close();
+  for (const [w, h, escala] of [[320, 640, 1], [640, 400, 2]]) {
+    const x = await nueva({ viewport: { width: w, height: h }, escala });
+    await ir(x.page, 'index.html');
+    const at = await x.page.evaluate(() => [...document.querySelectorAll('.atajo')].map(a => { const r = a.getBoundingClientRect(); return { top: Math.round(r.top), h: Math.round(r.height), r: r.right, corta: [...a.querySelectorAll('.atajo__nombre, .atajo__nota')].some(t => t.scrollWidth > t.clientWidth + 1 || t.getBoundingClientRect().right > r.right + 0.5) }; }));
+    const porFila = {};
+    at.forEach(a => { (porFila[a.top] = porFila[a.top] || []).push(a.h); });
+    if (at.some(a => a.corta || a.r > w + 0.5) || Object.values(porFila).some(f => new Set(f).size > 1) || Object.values(porFila)[0].length !== Math.min(2, at.length)) malM.push(`atajos a ${w * escala} px${escala > 1 ? ' con zoom' : ''}: ` + JSON.stringify(at));
+    await x.ctx.close();
+  }
+  /* «El año»: la tira llega colocada en el mes en curso, sin moverse después (sin salto ni animación) */
+  const fiestas = (M.pueblo || {}).fiestas || [];
+  if (fiestas.length) {
+    const fecha = '2026-09-20T12:00:00+02:00';
+    const x = await nueva({ viewport: { width: 390, height: 844 } });
+    await x.page.clock.setFixedTime(new Date(fecha));
+    await x.ctx.addInitScript(() => { document.addEventListener('DOMContentLoaded', () => { const o = document.querySelector('.anio--tira'); window.__tiraInicial = o ? o.scrollLeft : null; }); });
+    await ir(x.page, 'index.html');
+    await espera(300);
+    const t = await x.page.evaluate(() => {
+      const o = document.querySelector('.anio--tira'), lis = [...o.children], act = o.querySelector('.es-mes-actual');
+      return { inicial: window.__tiraInicial, final: o.scrollLeft, desborda: o.scrollWidth > o.clientWidth, tab: o.getAttribute('tabindex'), n: lis.length, actual: lis.indexOf(act) + 1,
+        izq: act.getBoundingClientRect().left - o.getBoundingClientRect().left, pad: parseFloat(getComputedStyle(o).paddingLeft),
+        orden: lis.map(l => l.querySelector('.mes__largo').textContent).join(','), dentro: act.getBoundingClientRect().right <= innerWidth + 1 };
+    });
+    await x.page.focus('.anio--tira');
+    await x.page.keyboard.press('ArrowRight'); await espera(400);
+    const tras = await x.page.evaluate(() => document.querySelector('.anio--tira').scrollLeft);
+    await x.ctx.close();
+    const orden = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'].join(',');
+    if (!t.desborda || t.tab !== '0' || t.n !== 12 || t.orden !== orden || t.actual !== 9 || t.inicial == null || Math.abs(t.inicial - t.final) > 1 || Math.abs(t.izq - t.pad) > 2 || !t.dentro || !(tras > t.final))
+      malM.push('tira de meses (reloj en septiembre) ' + JSON.stringify({ ...t, tras }));
+  }
+  comprobar(!malM.length, 'v3 en móvil: el carril de «Conocer» se desliza con el siguiente asomando, tiene tabindex y cada lugar llega entero con el Tabulador (y se mueve con las flechas); atajos de dos en dos sin texto cortado a 320 px ni con zoom al 200 %; la tira de «El año» son los 12 meses en orden, llega colocada en el mes en curso desde DOMContentLoaded (sin salto) y se recorre con el teclado' + (malM.length ? ' → ' + malM.join(' | ') : ''));
+
+  /* 4. lógica en Node: «Lo siguiente» en un mes vacío y «Más adelante» en «Lo que viene» */
+  const malL = [];
+  const Dpag = JSON.parse(leer(RAIZ, 'index.html').match(/id="datos-vivos">([\s\S]*?)<\/script>/)[1]);
+  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  for (let mes = 1; mes <= 12; mes++) {
+    const html = V.pintar('anio', Dpag, enV(`2026-${String(mes).padStart(2, '0')}-10T12:00:00+02:00`));
+    const actual = html.split('<li class="mes').find(x => / es-mes-actual"/.test(x)) || '';
+    const tiene = fiestas.some(f => f.mes === mes), sig = V.siguienteFiesta(Dpag, mes);
+    if (tiene && /Lo siguiente/.test(actual)) malL.push(meses[mes - 1] + ' tiene fiestas y dice «Lo siguiente»');
+    if (!tiene && sig && !actual.includes('Lo siguiente: <b>' + sig.fiesta.nombre.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') + '</b>, ' + meses[sig.mes - 1])) malL.push(meses[mes - 1] + ' vacío sin «Lo siguiente» bien: ' + actual.replace(/<[^>]+>/g, ' ').slice(0, 120));
+  }
+  const prueba = { ...Dpag, fiestas: [{ mes: 2, nombre: 'Fiesta de febrero', cuando: 'x' }, { mes: 6, nombre: 'Fiesta de junio', cuando: 'y' }] };
+  if (V.siguienteFiesta(prueba, 12).mes !== 2 || V.siguienteFiesta(prueba, 3).mes !== 6 || V.siguienteFiesta({ ...prueba, fiestas: [{ mes: 5, nombre: 'Sola', cuando: 'z' }] }, 5) !== null) malL.push('siguienteFiesta no da la vuelta al año o no se salta el propio mes');
+  const ag = (id, fecha) => ({ id, fecha, titulo: 'Evento ' + id });
+  const lineaDe = agenda => V.pintar('linea', { ...Dpag, agenda, noticias: [], horizonte_dias: 60 }, enV('2026-10-10T10:00:00+02:00'));
+  const l1 = lineaDe([ag('a', '2026-10-20'), ag('b', '2027-01-15'), ag('c', '2027-02-01'), ag('d', '2027-03-01')]);
+  const l3 = lineaDe([ag('a', '2026-10-20'), ag('b', '2026-10-25'), ag('c', '2026-11-01'), ag('d', '2027-03-01')]);
+  const l0 = lineaDe([ag('d', '2027-03-01')]);
+  const cuenta = (h, cl) => (h.match(new RegExp('class="linea linea--' + cl + '"[\\s\\S]*?</ol>')) || [''])[0].split('linea__item--evento').length - 1;
+  if (cuenta(l1, 'viene') !== 1 || cuenta(l1, 'despues') !== 2 || !/Más adelante/.test(l1) || /Evento d/.test(l1)) malL.push('«Más adelante» con 1 en el plazo: ' + cuenta(l1, 'viene') + ' + ' + cuenta(l1, 'despues'));
+  if (cuenta(l3, 'viene') !== 3 || /Más adelante/.test(l3)) malL.push('con 3 en el plazo sale «Más adelante»');
+  if (!/No hay nada anunciado/.test(l0) || /Más adelante/.test(l0)) malL.push('sin nada en el plazo no se dice');
+  comprobar(!malL.length, 'v3, «El año» y «Lo que viene» (vivo.js en Node, los 12 meses): el mes en curso sin fiestas dice «Lo siguiente: <fiesta>, <mes>» (dando la vuelta al año) y uno con fiestas no; con 1 o 2 eventos en el plazo, «Más adelante» completa hasta 3 con lo que ya tiene la agenda' + (malL.length ? ' → ' + malL.join(' | ') : ''));
+
+  /* 5. en el navegador: un mes vacío dice «Lo siguiente» en su celda resaltada */
+  const vacio = [...Array(12).keys()].map(i => i + 1).find(m => !fiestas.some(f => f.mes === m) && V.siguienteFiesta(Dpag, m));
+  if (vacio) {
+    const x = await nueva();
+    await x.page.clock.setFixedTime(new Date(`2027-${String(vacio).padStart(2, '0')}-10T12:00:00+01:00`));
+    await ir(x.page, 'index.html');
+    const r = await x.page.evaluate(() => { const a = document.querySelector('.anio .es-mes-actual'); const s = a && a.querySelector('.mes__siguiente'); return { mes: a ? a.querySelector('.mes__largo').textContent : null, texto: s && s.checkVisibility() ? s.textContent : null, borde: a ? getComputedStyle(a).borderTopColor : null }; });
+    await x.ctx.close();
+    const sig = V.siguienteFiesta(Dpag, vacio);
+    comprobar(r.mes && r.mes.toLowerCase() === meses[vacio - 1] && r.texto === `Lo siguiente: ${sig.fiesta.nombre}, ${meses[sig.mes - 1]}`,
+      `v3, «El año» en el navegador con el reloj en ${meses[vacio - 1]} (sin fiestas): su celda resaltada dice «${r.texto}»`);
+  }
+
+  /* 6. movimiento: reducido, nada se mueve; con movimiento, bajar hasta el final y que todo acabe */
+  const malMov = [];
+  let x = await nueva({ viewport: { width: 390, height: 844 } });
+  for (const p of ['index.html', 'pueblo.html']) {
+    await ir(x.page, p);
+    await x.page.mouse.wheel(0, 2500); await espera(300);
+    const r = await x.page.evaluate(() => {
+      const mal = [];
+      for (const i of document.querySelectorAll('.paralaje img')) { const cs = getComputedStyle(i); if (cs.translate !== 'none' || parseFloat(cs.marginTop) !== 0 || cs.animationName !== 'none') mal.push('foto con paralaje'); }
+      for (const b of document.querySelectorAll('.banda--puerta')) { const cs = getComputedStyle(b, '::before'); if (cs.translate !== 'none' || cs.animationName !== 'none') mal.push('arco de banda'); }
+      if (document.querySelector('.anio.mov-mes')) mal.push('borde del mes animado');
+      if (document.getAnimations().length) mal.push(document.getAnimations().length + ' animaciones');
+      return [...new Set(mal)];
+    });
+    r.forEach(m => malMov.push('reducido, ' + p + ': ' + m));
+  }
+  await x.ctx.close();
+  x = await nueva({ reducido: false });
+  await ir(x.page, 'index.html');
+  await x.page.mouse.move(720, 450);
+  const pasos = [];
+  if (esperadosConocer) {
+    /* a media banda la foto está desplazada y el marco no se mueve; al final, nada a medias */
+    await x.page.evaluate(() => { const s = document.querySelector('section[aria-labelledby="t-conocer"]'); scrollTo(0, s.getBoundingClientRect().top + scrollY - innerHeight * .9); });
+    await espera(200);
+    pasos.push(await x.page.evaluate(() => { const i = document.querySelector('.conocer .paralaje img'), m = i.parentElement; return { t: getComputedStyle(i).translate, alto: i.getBoundingClientRect().height - m.clientHeight, marco: getComputedStyle(m).translate + ' ' + getComputedStyle(m).transform }; }));
+    await x.page.evaluate(() => { const s = document.querySelector('section[aria-labelledby="t-conocer"]'); scrollTo(0, s.getBoundingClientRect().top + scrollY + s.offsetHeight * .5 - innerHeight * .5); });
+    await espera(200);
+    pasos.push(await x.page.evaluate(() => { const i = document.querySelector('.conocer .paralaje img'); return { t: getComputedStyle(i).translate }; }));
+    const dy = s => parseFloat((s.t.split(' ')[1]) || 0);
+    if (!(Math.abs(dy(pasos[0])) > 5 && Math.abs(dy(pasos[0])) <= 20.5 && Math.abs(dy(pasos[1])) < Math.abs(dy(pasos[0])) && Math.abs(pasos[0].alto - 40) < 1.5 && pasos[0].marco === 'none none'))
+      malMov.push('paralaje ' + JSON.stringify(pasos));
+  }
+  await x.page.evaluate(() => scrollTo(0, 0)); await espera(100);
+  for (let i = 0; i < 80; i++) {
+    await x.page.mouse.wheel(0, 500); await espera(40);
+    if (await x.page.evaluate(() => innerHeight + scrollY >= document.documentElement.scrollHeight - 2)) break;
+  }
+  await espera(1200);
+  const fin = await x.page.evaluate(() => ({
+    bandas: [...document.querySelectorAll('.banda--puerta')].map(b => getComputedStyle(b, '::before').translate),
+    mes: document.querySelector('.anio .es-mes-actual') ? { clase: !!document.querySelector('.anio.mov-mes'), giro: getComputedStyle(document.querySelector('.anio .es-mes-actual'), '::after').getPropertyValue('--mov-giro').trim(),
+      corriendo: document.getAnimations().filter(a => a.animationName === 'mov-borde' && a.playState !== 'finished').length } : null,
+    infinitas: document.getAnimations().filter(a => a.effect && a.effect.getComputedTiming().iterations > 3).length
+  }));
+  await x.ctx.close();
+  if (fin.bandas.some(t => !/^(none|0px 0(px|%)?)$/.test(t))) malMov.push('arco de banda a medias al final: ' + fin.bandas.join(', '));
+  if (fin.mes && (!fin.mes.clase || fin.mes.giro !== '360deg' || fin.mes.corriendo)) malMov.push('borde del mes en curso ' + JSON.stringify(fin.mes));
+  if (fin.infinitas) malMov.push('bucles');
+  comprobar(!malMov.length, `v3, movimiento: con movimiento reducido, las fotos del paralaje centradas, el arco de las bandas arriba y el borde del mes sin animar (portada y pueblo.html); con movimiento, la foto se desplaza dentro de su marco quieto (${pasos.map(p => p.t).join(' → ') || 'sin banda'}) y, tras bajar hasta el final, los ${fin.bandas.length} arcos de banda arriba del todo y el borde de oro del mes dibujado entero (una vez)` + (malMov.length ? ' → ' + malMov.join(' | ') : ''));
+}
+
 /* ═════════════ orden ═════════════ */
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
@@ -1668,6 +1966,7 @@ if (!SOLO || SOLO.includes('estaticas')) estaticas();
 for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', panelHoy], ['cortina', cortina], ['movimiento', movimiento], ['contenido', contenidoEjemplo], ['interaccion', interaccion],
   ['estructura', estructura], ['interiores', interiores], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ['primera', primeraPantalla],
   ['v3pliegue', v3Pliegue],
+  ['v3cuerpo', v3Cuerpo],
   ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();

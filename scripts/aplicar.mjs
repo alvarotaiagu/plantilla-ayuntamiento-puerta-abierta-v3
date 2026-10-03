@@ -226,7 +226,9 @@ const ICONOS = new Set([...leer('fuente/_iconos.html').matchAll(/id="i-([\w-]+)"
 const temasDatos = (M.tramites.temas || []).map(tm => ({ ...tm, tramites: tm.tramites.map(conHref) }));
 /* temas en dos columnas que se apilan (sin huecos al abrir un desplegable): la primera mitad a
    la izquierda, así el orden de lectura y de tabulación baja por cada columna */
-const mitadTemas = Math.ceil(temasDatos.length / 2);
+/* v3: con un número impar, el último va debajo a todo el ancho (sin hueco al final de una columna) */
+const mitadTemas = Math.floor(temasDatos.length / 2);
+const temaAncho = temasDatos.length % 2 ? temasDatos[temasDatos.length - 1] : null;
 const tramites = {
   /* atajos: icono (opcional, del sprite) y la flecha en la esquina. El destino solo se ve si no es
      la sede (un impreso, un documento); «se abre la sede» lo dice el texto oculto */
@@ -235,8 +237,12 @@ const tramites = {
     if (!ICONOS.has(icono)) errores.push('tramites.atajos «' + t.nombre + '»: no hay icono «' + icono + '» en fuente/_iconos.html');
     return { ...t, icono, destino: DESTINO[t.tipo] || null, sr: DESTINO[t.tipo] ? '' : t.sr };
   }),
+  /* v3: atajos en una rejilla de columnas iguales: 4 por fila como mucho, repartidos sin dejar
+     una fila casi vacía (5 → 3 + 2, 6 → 3 + 3, 7 → 4 + 3) */
+  atajos_columnas: (n => (n <= 4 ? Math.max(n, 1) : Math.ceil(n / Math.ceil(n / 4))))((M.tramites.atajos || []).length),
   temas: temasDatos,
-  temas_columnas: [temasDatos.slice(0, mitadTemas), temasDatos.slice(mitadTemas)].filter(c => c.length).map(temas => ({ temas })),
+  temas_columnas: [...[temasDatos.slice(0, mitadTemas), temasDatos.slice(mitadTemas, mitadTemas * 2)].filter(c => c.length).map(temas => ({ temas, ancha: false })),
+    ...(temaAncho ? [{ temas: [temaAncho], ancha: true }] : [])],
   momentos: (M.tramites.momentos || []).map(m => ({ ...m, pasos: m.pasos.map(p => (p.id || p.url ? conHref(p) : { ...p, href: null, sr: '' })) })),
   lista, total: lista.length, en_sede: tramitesSede, impresos: lista.filter(t => t.formato).length
 };
@@ -451,7 +457,7 @@ const D = {
   agenda: [...C.agenda.map(e => ({ id: e.id, fecha: e.fecha, hora: e.hora || null, hora_fin: e.hora_fin || null, titulo: e.titulo, lugar: e.lugar || null, nota: e.nota || null, ejemplo: !!e.ejemplo, oculto: !!e.oculto,
     tipo: e.tipo ? String(e.tipo).toLowerCase() : null, convocatoria: e.convocatoria || null, convocatoria_sr: e.convocatoria ? srDe(e.convocatoria) : null,
     grabacion: e.grabacion || null, grabacion_sr: e.grabacion ? srDe(e.grabacion) : null })), ...agendaFiestas, ...plenosAgenda].map(conIcs),
-  farmacias, tiempo, recogida, canal: canalAvisos ? { nombre: canalAvisos.nombre, url: canalAvisos.url } : null, web: M.url ? M.url.replace(/\/?$/, '/') : null,
+  farmacias, tiempo, recogida, canal: canalAvisos ? { nombre: canalAvisos.nombre, url: canalAvisos.url, pasos: canalAvisos.pasos } : null, web: M.url ? M.url.replace(/\/?$/, '/') : null,
   noticias: noticias.map(n => ({ id: n.id, fecha: n.fecha, titulo: n.titulo, resumen: n.resumen, imagen: n.imagen, imagen_alt: n.imagen_alt, ejemplo: n.ejemplo })),
   tablon: { actualizado: C.tablon.actualizado || null, entradas: (C.tablon.entradas || []).map(e => ({ fecha: e.fecha, tema: e.tema, titulo: e.titulo, titulo_claro: e.titulo_claro || '', url: e.url, oculto: !!e.oculto })) },
   fiestas, servicios: serviciosVivos, tramites_sede: tramitesSede,
@@ -465,7 +471,7 @@ for (const e of D.tablon.entradas) if (!enSede(e.url)) errores.push('tablon.json
 const pintar = (b, op) => Vivo.pintar(b, D, ahora, op);
 const vivo = {
   franja: pintar('franja'), hoy: pintar('hoy'), tablon_portada: pintar('tablon', { limite: 6 }), tablon_todo: pintar('tablon'),
-  linea: pintar('linea'), anio: pintar('anio'), agenda: pintar('agenda'), estado_ayto: pintar('servicio', { clave: 'ayuntamiento' })
+  linea: pintar('linea'), anio: pintar('anio'), lado: pintar('lado'), agenda: pintar('agenda'), estado_ayto: pintar('servicio', { clave: 'ayuntamiento' })
 };
 gruposListin.forEach(g => g.items.forEach(i => { if (i.clave) i.estado = pintar('servicio', { clave: i.clave }); }));
 
@@ -488,7 +494,8 @@ const heroVarias = listaHero.length > 1 ? jsonEnScript(listaHero.map(f => ({ src
 if (heroFoto) { heroFoto.sizes = HERO_SIZES; heroFoto.varias = !!heroVarias; }
 const pueblo = {
   ...P,
-  lugares: (P.lugares || []).map(l => { const f = foto(l.foto, l.alt, l.nombre); return { nombre: l.nombre, texto: l.texto, foto: f ? l.foto : null, ancho: f ? f.ancho : null, alto: f ? f.alto : null, alt: l.alt || '', credito: f ? f.credito : null }; }),
+  /* ancla: cada lugar tiene su sitio en «Qué ver» (la banda «Conocer …» de la portada enlaza ahí) */
+  lugares: (P.lugares || []).map(l => { const f = foto(l.foto, l.alt, l.nombre); return { nombre: l.nombre, texto: l.texto, foto: f ? l.foto : null, ancho: f ? f.ancho : null, alto: f ? f.alto : null, alt: l.alt || '', credito: f ? f.credito : null, ancla: 'lugar-' + slugDe(l.nombre) }; }),
   placa: P.placa ? { titulo: P.placa.titulo || 'Un lugar con nombre propio', lineas: P.placa.lineas, pie: P.placa.pie, texto: P.placa.texto || null } : null,
   gastronomia: P.gastronomia ? { ...P.gastronomia, foto_datos: P.gastronomia.foto ? foto(P.gastronomia.foto, P.gastronomia.alt, 'gastronomía') : null } : null,
   historia: P.historia || [], patrimonio: P.patrimonio || [], personajes: P.personajes || [],
@@ -543,6 +550,12 @@ for (const [id, c] of Object.entries(M.cabeceras || {})) {
 }
 /* si la foto grande de «El pueblo» es la del primer lugar del carril, ese lugar pasa al final:
    la misma foto dos veces seguidas parece un error */
+/* v3: «Conocer …» en la portada: de 3 a 5 lugares con foto, en el orden de municipio.json (antes de
+   mover el de la cabecera) o el que diga pueblo.portada_lugares (nombres). Con menos de 3, no sale */
+const conPortada = pueblo.lugares.filter(l => l.foto);
+if (P.portada_lugares) for (const n of P.portada_lugares) if (!conPortada.some(l => l.nombre === n)) errores.push('pueblo.portada_lugares: «' + n + '» no es un lugar con foto de pueblo.lugares');
+const conocerSel = (P.portada_lugares ? P.portada_lugares.map(n => conPortada.find(l => l.nombre === n)).filter(Boolean) : conPortada).slice(0, 5);
+const conocer = conocerSel.length >= 3 ? conocerSel.map(l => ({ nombre: l.nombre, foto: l.foto, ancho: l.ancho, alto: l.alto, ancla: l.ancla, credito: l.credito || null })) : [];
 if (cabeceras.pueblo && pueblo.lugares.length > 1 && pueblo.lugares[0].foto === cabeceras.pueblo.archivo) pueblo.lugares.push(pueblo.lugares.shift());
 const creditos = [...usadas.values()];
 
@@ -655,7 +668,7 @@ const comun = {
   pleno, quien_ayto: quienAyto, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },
-  pueblo, creditos, hay_creditos_fotos: creditos.length > 0, hero_foto: heroFoto, hero_varias: heroVarias,
+  pueblo, conocer, creditos, hay_creditos_fotos: creditos.length > 0, hero_foto: heroFoto, hero_varias: heroVarias,
   /* el nombre del pueblo, palabra a palabra (cada una en inline-block y sin partir: la entrada del hero) */
   nombre_palabras: M.nombre.trim().split(/\s+/).map((p, i) => ({ palabra: p, n: i })),
   mapa_embed_url: 'https://www.google.com/maps?q=' + encodeURIComponent(M.contacto.mapa_consulta || `Ayuntamiento de ${N}, ${M.contacto.direccion}, ${M.contacto.cp} ${N}`) + '&output=embed',

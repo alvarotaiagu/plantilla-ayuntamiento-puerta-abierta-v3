@@ -12,6 +12,7 @@
      · (la entrada del hero sin cortina es CSS: html.entrada-hero, en
        css/movimiento.css; la pone el <head>)
      · los escaños del hemiciclo aparecen en orden al entrar en pantalla
+     · el borde de oro del mes en curso se dibuja al entrar en pantalla (v3)
      · la foto de la noticia que se abre desde la portada se transforma en la
        del artículo (pageswap / pagereveal de las View Transitions) */
 (function () {
@@ -91,6 +92,22 @@
       });
     }, { rootMargin: '0px 0px 40px 0px', threshold: 0 });
     figuras.forEach(function (f) { io.observe(f); });
+  }
+
+  /* ═══ v3 · M6. el borde de oro del mes en curso se dibuja al asomar, una vez ═══
+     La clase va en la lista (vivo.js repinta los meses con innerHTML y se perdería en el mes).
+     Se observa el mes, no la sección (memoria «IntersectionObserver en sección alta»). */
+  var meses = $$('.anio').filter(function (l) { return l.querySelector('.es-mes-actual'); });
+  if (meses.length && 'IntersectionObserver' in window) {
+    var ioMes = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        var lista = e.target.closest('.anio');
+        if (lista) lista.classList.add('mov-mes');
+        ioMes.unobserve(e.target);
+      });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0 });
+    meses.forEach(function (l) { ioMes.observe(l.querySelector('.es-mes-actual')); });
   }
 
   /* ═══ 15. la foto de la noticia viaja de la portada al artículo ═══

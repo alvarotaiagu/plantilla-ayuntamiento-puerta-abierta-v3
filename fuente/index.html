@@ -77,13 +77,15 @@
         <h2 class="seccion__titulo" id="t-tramites">Los trámites más pedidos</h2>
         <a class="ver-todo" href="tramites.html">Todos los trámites<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
       </div>
-      <ul class="atajos">
+      <!-- atajos compactos: icono a la izquierda, nombre y nota; todos del mismo alto. Si el destino
+           no es la sede (un impreso, un documento), en la esquina va un documento en vez de la flecha
+           de salida; el destino entero lo oye el lector de pantalla -->
+      <ul class="atajos" style="--atajos-columnas: {{tramites.atajos_columnas}}">
         {{#tramites.atajos}}<li><a class="atajo" href="{{href}}">
           <svg class="icono atajo__icono" aria-hidden="true"><use href="#i-{{icono}}"/></svg>
-          <svg class="icono atajo__flecha" aria-hidden="true"><use href="#i-salida"/></svg>
-          <span class="atajo__nombre">{{nombre}}<span class="sr">{{sr}}</span></span>
+          <svg class="icono atajo__flecha" aria-hidden="true"><use href="#i-{{#destino}}documento{{/destino}}{{^destino}}salida{{/destino}}"/></svg>
+          <span class="atajo__nombre">{{nombre}}<span class="sr">{{sr}}{{#destino}}. {{destino}}{{/destino}}</span></span>
           <span class="atajo__nota">{{nota}}</span>
-          {{#destino}}<span class="atajo__destino">{{destino}}</span>{{/destino}}
         </a></li>
         {{/tramites.atajos}}
       </ul>
@@ -97,7 +99,12 @@
         <h2 class="seccion__titulo" id="t-tablon">Tablón de avisos</h2>
         <a class="ver-todo" href="avisos.html">Todos los avisos y anuncios<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
       </div>
-      <div class="tablon" data-vivo="tablon" data-limite="6">{{{vivo.tablon_portada}}}</div>
+      <!-- el tablón a dos tercios y, al lado, el canal de avisos y el próximo pleno (vivo.js → lado).
+           Sin ninguno de los dos, el bloque queda vacío, no se ve y el tablón ocupa el ancho -->
+      <div class="tablon-rejilla">
+        <div class="tablon" data-vivo="tablon" data-limite="6">{{{vivo.tablon_portada}}}</div>
+        <div class="tablon-lado" data-vivo="lado">{{{vivo.lado}}}</div>
+      </div>
       <p class="nota-fuente">Los anuncios marcados «Tablón oficial» vienen del tablón de anuncios de la sede electrónica, con el título explicado en lenguaje claro.</p>
     </div>
   </section>
@@ -120,23 +127,76 @@
     </div>
   </section>
 
-  {{#fiestas.length}}<section class="seccion banda banda--oscura" aria-labelledby="t-anio">
+  <!-- «El año»: en escritorio, dos tiras de seis; en móvil y tableta (anio--tira), una tira que se
+       desliza de lado y llega colocada en el mes en curso. Siguen siendo los 12 meses en orden.
+       banda--puerta: al llegar, un arco de medio punto sube por el borde de arriba (decorativo) -->
+  {{#fiestas.length}}<section class="seccion banda banda--oscura banda--puerta" aria-labelledby="t-anio">
     <div class="contenedor">
       <div class="seccion__cabeza">
         <h2 class="seccion__titulo" id="t-anio">El año en {{nombre_corto}}</h2>
-        <a class="ver-todo" href="pueblo.html">Conocer el pueblo<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+        <a class="ver-todo" href="pueblo.html#t-anio">Las fiestas, en «El pueblo»<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
       </div>
-      <ol class="anio" data-vivo="anio">{{{vivo.anio}}}</ol>
+      <ol class="anio anio--tira" data-vivo="anio" data-desborda aria-labelledby="t-anio">{{{vivo.anio}}}</ol>
+      <script>
+      /* la tira llega colocada en el mes en curso ANTES del primer pintado: sin salto ni animación.
+         El mes se calcula aquí con la hora de Madrid (la página pudo generarse otro mes) */
+      (function () {
+        try {
+          var ol = document.currentScript.previousElementSibling;
+          if (!ol || getComputedStyle(ol).overflowX === 'visible') return;
+          var mes = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', month: 'numeric' }).format(new Date()));
+          var li = ol.children[mes - 1];
+          if (li) ol.scrollLeft = li.offsetLeft - ol.children[0].offsetLeft;
+        } catch (e) {}
+      })();
+      </script>
     </div>
   </section>{{/fiestas.length}}
 
-  {{#quien_portada.length}}<section class="seccion banda banda--tenue" aria-labelledby="t-quien">
+  <!-- «Conocer …»: de 3 a 5 lugares de «Qué ver» en arco, cada uno enlazado a su sitio en
+       pueblo.html. En escritorio, en fila y el primero más grande; en móvil, un carril que se
+       desliza (el siguiente asoma). con-paralaje: la foto se mueve ±20 px dentro de su marco -->
+  {{#conocer.length}}<section class="seccion conocer con-paralaje" aria-labelledby="t-conocer">
+    <div class="contenedor">
+      <div class="seccion__cabeza">
+        <h2 class="seccion__titulo" id="t-conocer">Conocer {{nombre_corto}}</h2>
+        <a class="ver-todo" href="pueblo.html">Todo sobre el pueblo<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+      </div>
+      <div class="conocer__carril" data-desborda role="group" aria-labelledby="t-conocer">
+        <ul class="conocer__lista">
+          {{#conocer}}<li class="conocer__lugar">
+            <a class="conocer__enlace" href="pueblo.html#{{ancla}}">
+              <span class="conocer__marco arco-opcional paralaje"><img src="media/{{foto}}-800.jpg" width="{{ancho}}" height="{{alto}}" alt="" loading="lazy" decoding="async"></span>
+              <span class="conocer__nombre">{{nombre}}</span>
+            </a>
+            {{#credito}}<p class="credito conocer__credito">{{credito}}</p>{{/credito}}
+          </li>
+          {{/conocer}}
+        </ul>
+      </div>
+      <script>
+      /* con el Tabulador, el lugar que recibe el foco entra ENTERO en el carril (el navegador solo
+         desplaza si está del todo fuera, y uno a medio asomar quedaba cortado) */
+      (function () {
+        var c = document.currentScript.previousElementSibling;
+        if (!c || !c.addEventListener) return;
+        c.addEventListener('focusin', function (e) {
+          if (e.target === c || !e.target.getBoundingClientRect) return;
+          var r = e.target.getBoundingClientRect(), k = c.getBoundingClientRect();
+          if (r.left < k.left - 1 || r.right > k.right + 1) e.target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        });
+      })();
+      </script>
+    </div>
+  </section>{{/conocer.length}}
+
+  {{#quien_portada.length}}<section class="seccion banda banda--tenue banda--puerta" aria-labelledby="t-quien">
     <div class="contenedor">
       <div class="seccion__cabeza">
         <h2 class="seccion__titulo" id="t-quien">¿Quién se ocupa de qué?</h2>
         <a class="ver-todo" href="ayuntamiento.html">El Ayuntamiento<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
       </div>
-      <ul class="quien">
+      <ul class="quien quien--portada">
         {{#quien_portada}}{{> quien_fila}}{{/quien_portada}}
       </ul>
     </div>
