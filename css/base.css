@@ -714,6 +714,24 @@ code { font-size: .9em; overflow-wrap: anywhere; }
 @media (min-width: 48em) { .no-encontrada { grid-template-columns: 11rem 1fr; } }
 .no-encontrada__arco { width: 11rem; aspect-ratio: 3 / 4; }
 
+/* ═══════════════ TEXTURA DE CAL ═══════════════
+   Grano muy fino y unas manchas suaves sobre --papel, como una pared encalada. Vale para
+   cualquier pueblo: no lleva color, solo transparencia de negro (los números de feColorMatrix
+   y la tabla de feComponentTransfer), y se pinta sobre el --papel de cada marca.
+   - Contraste: la tabla tope deja cada píxel en ≤ 2 % + 1 % de negro, nunca más oscuro que
+     --superficie-2 (papel con un 3,5 % de tinta), que ya está medido contra el texto, el
+     apagado y la marca en scripts/lib/color.mjs. Se cumple mientras la tinta tenga canales
+     ≤ papel / 7 (cualquier tinta casi negra).
+   - Coste: dos imágenes que se rasterizan una vez y se repiten; se desplazan con la página
+     (nada de background-attachment: fixed ni filtros por fotograma).
+   - Las tarjetas (--superficie) y la cabecera quedan lisas: la hoja sobre la pared. */
+body {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 .003 .008 .014 .02'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720'%3E%3Cfilter id='m' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0 .003 .007 .01'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+  background-size: 220px 220px, 720px 720px;
+}
+
 /* ═══════════════ DENSIDAD ═══════════════
    «Puerta abierta»: el arco enmarca también las fotos del carril, de las
    noticias y el retrato vacío; la marca de «hoy» lleva un arquito.
