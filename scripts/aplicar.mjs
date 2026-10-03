@@ -245,6 +245,29 @@ const temasDatos = (M.tramites.temas || []).map(tm => ({ ...tm, tramites: tm.tra
 /* temas en dos columnas que se apilan (sin huecos al abrir un desplegable): la primera mitad a
    la izquierda, así el orden de lectura y de tabulación baja por cada columna */
 /* v3: con un número impar, el último va debajo a todo el ancho (sin hueco al final de una columna) */
+/* ── v3b · F9. «Avisar de un problema» (incidencia.html): un formulario que prepara un correo al
+   Ayuntamiento, sin servidor. Opcional: municipio.json → incidencias {correo, categorias}. Sin
+   `correo` no hay página (y el enlace de «Por momentos» no sale). Las categorías, en texto o
+   {nombre, ayuda}; sin ellas, las de siempre. El teléfono de la Policía Local sale de `servicios` */
+const CATEGORIAS_INCIDENCIA = [['Alumbrado', 'Una farola apagada o rota'], ['Agua', 'Una fuga o una tapa de alcantarilla movida'],
+  ['Limpieza', 'Basura en la calle o un contenedor roto'], ['Vía pública', 'Un bache, una acera rota, una señal caída'],
+  ['Ruidos', 'Ruidos que molestan de forma repetida'], ['Otro', null]].map(([nombre, ayuda]) => ({ nombre, ayuda }));
+let incidencias = null;
+if (M.incidencias && M.incidencias.correo) {
+  const I = M.incidencias;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(I.correo)) errores.push('incidencias.correo: «' + I.correo + '» no es un correo');
+  const cats = ((I.categorias || []).length ? I.categorias : CATEGORIAS_INCIDENCIA).map(c => (typeof c === 'string' ? { nombre: c, ayuda: null } : { nombre: c.nombre, ayuda: c.ayuda || null }));
+  if (cats.some(c => !c.nombre)) errores.push('incidencias.categorias: cada categoría lleva «nombre»');
+  const usadasCat = new Set();
+  const policia = (M.servicios || []).find(x => /polic[ií]a local/i.test(x.nombre) && x.telefono);
+  const enCatalogo = lista.find(t => /incidencia/i.test(t.nombre) && enSede(t.href));
+  incidencias = {
+    correo: I.correo, asunto_url: encodeURIComponent('Aviso de un problema'),
+    categorias: cats.map(c => { let id = 'cat-' + slugDe(c.nombre), n = 2; while (usadasCat.has(id)) id = 'cat-' + slugDe(c.nombre) + '-' + n++; usadasCat.add(id); return { ...c, id }; }),
+    policia: policia ? { nombre: policia.nombre, telefono: policia.telefono, tel_href: telHref(policia.telefono) } : null,
+    sede: enCatalogo ? { href: enCatalogo.href, nombre: enCatalogo.nombre, sr: enCatalogo.sr } : null
+  };
+}
 const mitadTemas = Math.floor(temasDatos.length / 2);
 const temaAncho = temasDatos.length % 2 ? temasDatos[temasDatos.length - 1] : null;
 const tramites = {
@@ -261,7 +284,8 @@ const tramites = {
   temas: temasDatos,
   temas_columnas: [...[temasDatos.slice(0, mitadTemas), temasDatos.slice(mitadTemas, mitadTemas * 2)].filter(c => c.length).map(temas => ({ temas, ancha: false })),
     ...(temaAncho ? [{ temas: [temaAncho], ancha: true }] : [])],
-  momentos: (M.tramites.momentos || []).map(m => ({ ...m, pasos: m.pasos.map(p => (p.id || p.url ? conHref(p) : { ...p, href: null, sr: '' })) })),
+  /* v3b · F9: el momento con `incidencia: true` enlaza «Avisar de un problema» (si hay página) */
+  momentos: (M.tramites.momentos || []).map(m => ({ ...m, incidencia: !!(m.incidencia && incidencias), pasos: m.pasos.map(p => (p.id || p.url ? conHref(p) : { ...p, href: null, sr: '' })) })),
   lista, total: lista.length, en_sede: tramitesSede, impresos: lista.filter(t => t.formato).length,
   letras: letrasTramites, az: indiceAZ
 };
@@ -671,6 +695,10 @@ const PAGINAS = [
   { archivo: 'cookies.html', id: 'legal', titulo: 'Cookies', descripcion: `Esta web no usa cookies.` },
   { archivo: 'accesibilidad.html', id: 'legal', titulo: 'Declaración de accesibilidad', descripcion: `Declaración de accesibilidad de la web del Ayuntamiento de ${N}.` },
   { archivo: '404.html', id: 'error', titulo: 'No encontramos esa página', descripcion: 'Página no encontrada.' },
+  /* v3b · F9: solo con municipio.json → incidencias.correo */
+  ...(incidencias ? [{ archivo: 'incidencia.html', id: 'incidencia', titulo: 'Avisar de un problema', migas: [{ href: 'tramites.html', texto: 'Trámites' }],
+    entradilla: 'Una farola apagada, una fuga de agua, un bache… Cuéntenos qué pasa y le preparamos el correo para el Ayuntamiento.',
+    descripcion: `Avise al Ayuntamiento de ${N} de un problema en la calle: alumbrado, agua, limpieza, baches o ruidos.` }] : []),
   ...noticias.map(n => ({ archivo: `noticia-${n.id}.html`, fuente: '_noticia.html', id: 'noticia', nav: 'noticias', titulo: n.titulo,
     migas: [{ href: 'noticias.html', texto: 'Noticias' }], descripcion: n.resumen || n.titulo, noticia: n }))
 ];
@@ -679,7 +707,8 @@ for (const n of noticias) if (!/^[a-z0-9-]+$/.test(n.id)) errores.push('noticias
    Una página interior nueva sin pictograma es un error (sería otra vez el arco vacío) */
 const PICTO_DE = { 'tramites.html': 'tramites', 'ayuntamiento.html': 'ayuntamiento', 'avisos.html': 'megafono', 'noticias.html': 'periodico',
   'agenda.html': 'calendario', 'telefonos.html': 'telefono', 'pueblo.html': 'pueblo', 'contacto.html': 'sobre',
-  'aviso-legal.html': 'balanza', 'privacidad.html': 'candado', 'cookies.html': 'galleta', 'accesibilidad.html': 'accesibilidad' };
+  'aviso-legal.html': 'balanza', 'privacidad.html': 'candado', 'cookies.html': 'galleta', 'accesibilidad.html': 'accesibilidad',
+  'incidencia.html': 'farola', 'facil.html': 'facil' };
 const pictoDe = p => PICTO_DE[p.archivo] || (p.id === 'noticia' ? 'periodico' : null);
 for (const p of PAGINAS) {
   if (p.id === 'inicio' || p.id === 'error') continue;
@@ -700,6 +729,8 @@ function escribir(rel, contenido) {
 }
 /* limpia las noticias generadas que ya no existen */
 for (const f of fs.readdirSync(RAIZ)) if (/^noticia-.*\.html$/.test(f) && !PAGINAS.some(p => p.archivo === f)) fs.rmSync(r(f));
+/* v3b: las páginas opcionales (incidencias, lectura fácil) se borran si sus datos ya no están */
+for (const f of ['incidencia.html', 'facil.html']) if (existe(f) && !PAGINAS.some(p => p.archivo === f)) fs.rmSync(r(f));
 
 escribir('css/marca.css', cssMarca());
 /* «Añadir a mi calendario»: un .ics por evento de la agenda (también fiestas y plenos).
@@ -717,7 +748,8 @@ escribir('js/tramites-datos.js', '/* GENERADO por scripts/aplicar.mjs desde muni
 const huella = rel => existe(rel) ? crypto.createHash('md5').update(fs.readFileSync(r(rel))).digest('hex').slice(0, 8) : '0';
 const v = { fuentes: huella('css/fuentes.css'), marca: huella('css/marca.css'), base: huella('css/base.css'), main: huella('js/main.js'), vivo: huella('js/vivo.js'), cortina: huella('js/cortina.js'), datos: huella('js/tramites-datos.js') };
 v.movimiento = huella('css/movimiento.css'); v.movimiento_js = huella('js/movimiento.js');   /* animaciones (todo bajo prefers-reduced-motion: no-preference) */
-v.imprimir = huella('css/imprimir.css'); v.identidad = huella('js/identidad.js');                /* v3: hoja de impresión; hemiciclo y botón de imprimir */
+v.imprimir = huella('css/imprimir.css'); v.identidad = huella('js/identidad.js');
+v.incidencia = huella('js/incidencia.js');                                                     /* v3b · F9: el formulario de incidencias */                /* v3: hoja de impresión; hemiciclo y botón de imprimir */
 const fuentesDir = existe('fonts') ? fs.readdirSync(r('fonts')) : [];
 const pre = (fam, peso) => fuentesDir.find(f => f.startsWith(slugDe(fam) + '-' + peso + '-latin.'));
 const precargar = [pre(marcaConf.letra.titulares, '700'), pre(marcaConf.letra.texto, '400')].filter(Boolean).map(f => 'fonts/' + f);
@@ -744,6 +776,7 @@ const comun = {
   paletas: paletas.map((p, i) => ({ clave: p.clave, nombre: nombreMatiz(p.col.marca), pulsado: i === 0 ? 'true' : 'false' })),
   tramites, listin_corto: listinCorto, listin_grupos: gruposListin,
   quien, quien_portada: quien.filter(q => q.portada), fiestas,
+  incidencias,
   pleno, quien_ayto: quienAyto, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },

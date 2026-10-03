@@ -27,6 +27,7 @@
           {{#pasos}}<li>{{#href}}<a href="{{href}}">{{texto}}<span class="sr">{{sr}}</span></a>{{/href}}{{^href}}{{texto}}{{/href}}</li>
           {{/pasos}}
         </ol>
+        {{#incidencia}}<p class="momento__accion"><a class="boton boton--marca" href="incidencia.html"><svg class="icono" aria-hidden="true"><use href="#i-incidencia"/></svg>Avisar de un problema</a></p>{{/incidencia}}
       </li>
       {{/tramites.momentos}}
     </ul>
