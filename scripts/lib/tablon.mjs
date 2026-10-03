@@ -44,6 +44,49 @@ export function parsearGestiona(html, base) {
   return out;
 }
 
+/* Sede de la Diputación de Badajoz (Portal del Ciudadano, sede.X.es): el tablón va
+   por subsecciones (Actas de JGL, Empleo Público, Anuncio General…), sin RSS ni
+   JSON público (comprobado en Monesterio el 03/10/2026). Se lee de dos formas:
+   - la vista antigua `/portal/tablonVirtual.do?subseccion=X&opc_id=175&pes_cod=9&ent_id=N`,
+     que llega pintada desde el servidor: tabla `Lista2`, una fila `doc_<id>` por anuncio,
+     título y enlace en la 1.ª celda, fecha en la 2.ª;
+   - el JSON que pide por AJAX la vista nueva (`listaDocumentos`), para copias guardadas.
+   Las dos dan el mismo enlace fijo al documento (`aDoc=F&documento=<id>&codVerif=<hash>`).
+   La categoría es la subsección: «Empleo Público» activa las reglas de selección de personal. */
+export function parsearDiputacion(html, base) {
+  const migas = [...html.matchAll(/<a[^>]*class="migaPan"[^>]*>([\s\S]*?)<\/a>/g)].map(m => limpiar(m[1]));
+  const categoria = migas.length ? migas[migas.length - 1] : '';
+  const out = [];
+  for (const f of html.split(/<tr\b/).slice(1)) {
+    if (!/id=['"]doc_\d+['"]/.test(f)) continue;
+    const a = f.match(/<a[^>]*href=['"]([^'"]*aDoc=F[^'"]*)['"][^>]*>([\s\S]*?)<\/a>/);
+    if (!a) continue;
+    const fecha = f.match(/<td>\s*(\d{2})\/(\d{2})\/(\d{4})/);
+    out.push({
+      titulo: limpiar(a[2]), descripcion: '', expediente: '', procedimiento: '', categoria,
+      fecha: fecha ? `${fecha[3]}-${fecha[2]}-${fecha[1]}` : null,
+      url: new URL(a[1].replace(/&amp;/g, '&'), base).href
+    });
+  }
+  return out;
+}
+export function parsearDiputacionJSON(json, base, entId) {
+  const padres = json.listaSeccionesPadres || [];
+  const categoria = padres.length ? limpiar(padres[padres.length - 1].nombre) : '';
+  return (json.listaDocumentos || []).map(d => {
+    const f = String(d.docFpu || '').match(/(\d{2})\/(\d{2})\/(\d{4})/);
+    return {
+      titulo: limpiar(d.docNom), descripcion: '', expediente: '', procedimiento: '', categoria,
+      fecha: f ? `${f[3]}-${f[2]}-${f[1]}` : null,
+      url: new URL(`/portal/tablonVirtual.do?aDoc=F&documento=${d.docId}&codVerif=${d.codVerif}&opc_id=175&pes_cod=9&ent_id=${entId}&idioma=1`, base).href
+    };
+  });
+}
+/* subsecciones que cuelgan de una página del tablón (para recorrerlo entero) */
+export function subseccionesDiputacion(html) {
+  return [...new Set([...html.matchAll(/tablonVirtual\.do\?subseccion=([A-Z0-9_]+)&(?:amp;)?opc_id=175/g)].map(m => m[1]))];
+}
+
 /* ── Datos personales: lo que NO se republica en la web ──
    El tablón oficial está obligado a publicarlo; la web municipal no, y
    copiarlo multiplica su difusión. Se excluye por patrón (título, descripción,
@@ -57,7 +100,10 @@ const PATRONES_PERSONALES = [
   [/nombramiento|toma\s+de\s+posesi[oó]n\s+de\s+(funcionari|personal)/i, 'nombramiento de personas'],
   [/constituci[oó]n\s+(de\s+)?(la\s+)?bolsa|bolsa\s+de\s+(trabajo|empleo).*(lista|orden|resultado)/i, 'bolsa de trabajo con nombres'],
   [/candidatos\s+a\s+jurado|sorteo\s+de\s+jurados?/i, 'lista de jurados'],
-  [/notificaci[oó]n|comparecencia|edicto\s+de\s+notificaci/i, 'notificación a una persona'],
+  [/notificaci[oó]n|comparecencia|edicto\s+de\s+notificaci|abandono\s+de\s+veh[ií]culo|veh[ií]culo\s+abandonado|abandono\s+veh[ií]culo/i, 'notificación a una persona'],
+  [/relaci[oó]n\s+nominal/i, 'relación nominal de personas'],
+  [/acta\s+(de\s+(la\s+)?)?mesa\s+(de\s+)?contrataci[oó]n/i, 'acta de mesa de contratación'],
+  [/mesas?\s+electoral(es)?.*(lista|miembros|sorteo)|(lista(do)?|miembros|sorteo).*mesas?\s+electoral/i, 'miembros de mesas electorales'],
   [/\b\d{8}[A-HJ-NP-TV-Z]\b|\*{3}\d{3,4}\*{1,3}|\b[XYZ]\d{7}[A-Z]\b/i, 'contiene un DNI o NIE']
 ];
 const ES_SELECCION = /selecci[oó]n(es)?\s+de\s+personal|provisi[oó]n(es)?\s+de\s+puestos|empleo\s+p[uú]blico/i;
@@ -69,7 +115,13 @@ export function motivoPersonal(e) {
   if (/\bacta\b/i.test(e.titulo + ' ' + e.descripcion) && ES_SELECCION.test(texto)) return 'acta de selección';
   /* y una lista también, aunque el título no diga de qué: en Fuente de Cantos «08 ANUNCIO LISTA
      DEFINITIVA» y «Anuncio lista definitva» (sic) solo se reconocen por el procedimiento */
-  if (/\b(lista(do)?s?|relaci[oó]n)\b/i.test(e.titulo + ' ' + e.descripcion) && ES_SELECCION.test(texto)) return 'lista de un proceso de selección';
+  if (/\b(lista(do)?s?|relaci[oó]n|candidat[oa]s)\b/i.test(e.titulo + ' ' + e.descripcion) && ES_SELECCION.test(texto)) return 'lista de un proceso de selección';
+  /* el acta (o el borrador) de una sesión de Junta de Gobierno o de Pleno nombra a vecinos (licencias,
+     reclamaciones, bajas). En Monesterio las publican «DISOCIADO» (sin nombres) salvo algunas: solo
+     entran las que lo dicen */
+  const sesion = /junta\s+de\s+gobierno|\bjgl\b|\bpleno\b|\bsesi[oó]n\b/i;
+  if (/\b(acta|borrador)\b/i.test(e.titulo) && (sesion.test(e.titulo) || /^acta\s+de\s+(junta|pleno)/i.test(e.categoria || ''))
+    && !/disociad/i.test(e.titulo + ' ' + e.descripcion)) return 'acta de sesión sin disociar';
   return null;
 }
 
@@ -119,6 +171,20 @@ export const CASOS_PRUEBA = [
   [{ titulo: '08 ANUNCIO LISTA DEFINITIVA', descripcion: 'ANUNCIO LISTA DEFINITIVA DEL PROCESO DE ADMINISTRATIVO', procedimiento: 'Selecciones de Personal y Provisiones de Puestos', categoria: 'Anuncios' }, 'lista de un proceso de selección'],
   [{ titulo: 'Anuncio lista definitva', descripcion: 'Lista definitiva bolsa CONDUCTORES', procedimiento: 'Selecciones de Personal y Provisiones de Puestos', categoria: 'Anuncios' }, 'lista de un proceso de selección'],
   [{ titulo: 'Anuncio de la convocatoria', descripcion: 'CONVOCATORIA DE PLENO DE SEPTIEMBRE', procedimiento: 'Convocatoria de El Pleno', categoria: 'Anuncios' }, null],
+  [{ titulo: 'Relación nominal provisional de candidatos para orientador y prospector para desarrollo local' }, 'relación nominal de personas'],
+  [{ titulo: 'Relación nominal definitiva de los puestos de monitores de ludoteca', descripcion: 'Relación nominal definitiva de candidatos para los dos puestos de monitores' }, 'relación nominal de personas'],
+  [{ titulo: 'Candidatos propuestos', procedimiento: 'Selecciones de Personal y Provisiones de Puestos' }, 'lista de un proceso de selección'],
+  [{ titulo: '05. Acta mesa contratación casetas feria y fiestas 2026', categoria: 'Anuncio General' }, 'acta de mesa de contratación'],
+  [{ titulo: '20251103 LISTADO MESAS ELECTORALES BOP 3 NOV 25', categoria: 'Anuncio General' }, 'miembros de mesas electorales'],
+  [{ titulo: 'EDICTO ABANDONO VEHÍCULO VIA PUBLICA', categoria: 'Anuncio General' }, 'notificación a una persona'],
+  [{ titulo: '01.09.25  - BORRADOR SESIÓN JGL', categoria: 'Acta de Junta de Gobierno Local' }, 'acta de sesión sin disociar'],
+  [{ titulo: '2025 02 27  BORRADOR ACTA SESION', categoria: 'Acta de Pleno' }, 'acta de sesión sin disociar'],
+  [{ titulo: '15.26. BORRADOR DISOCIADO SESIÓN JGL 17.08.26', categoria: 'Acta de Junta de Gobierno Local' }, null],
+  [{ titulo: 'LISTA PROVISIONAL PERSONAL APOYO JAMON 082026', categoria: 'Empleo Público' }, 'lista de un proceso de selección'],
+  [{ titulo: 'ACTA TRIBUNAL UN SOCORRISTA PISCINA 0726', categoria: 'Empleo Público' }, 'acta de selección'],
+  [{ titulo: 'BASES UN SOCORRISTA ACUATICO PISCINA MUNICIPAL 2026', categoria: 'Empleo Público' }, null],
+  [{ titulo: 'Convocatoria Pleno Ordinario 03.09.2026 - Tablón anuncios', categoria: 'Anuncio General' }, null],
+  [{ titulo: 'Anuncio de licitación Casetas Feria y Fiestas 2026', categoria: 'Anuncio General' }, null],
   [{ titulo: 'CONVOCATORIA AYUDA NATALIDAD CORRECTA 2026' }, null],
   [{ titulo: 'ANUNCIO COBRANZA IAE 2026' }, null],
   [{ titulo: 'Anuncio celebración sesión Ordinaria Pleno 30 de septiembre de 2026' }, null],

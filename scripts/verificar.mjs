@@ -36,7 +36,7 @@ const INTERIORES = PAGINAS.filter(p => p !== 'index.html');
 const sedeBase = M.sede.base.replace(/\/$/, '');
 const patronSede = M.sede.tipo === 'gestiona'
   ? new RegExp('^' + sedeBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/(catalog/t/[0-9a-f-]{36}|board|transparency|contractor-profile-list|preview-document/[0-9a-f-]{36}))?$')
-  : new RegExp('^' + sedeBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/portal/noEstatica\\.do\\?opc_id=\\d+&ent_id=\\d+)?$');
+  : new RegExp('^' + sedeBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/(portal|sede)/[A-Za-z]+\\.do\\?[\\w=&%.-]+)?$');
 
 /* ═════════════ 1. comprobaciones sin navegador ═════════════ */
 function estaticas() {
@@ -75,7 +75,9 @@ function estaticas() {
     const h = href.replace(/&amp;/g, '&');
     if (h.startsWith(sedeBase)) { total++; if (!patronSede.test(h)) malos.push(p + ': ' + h); }
   }
-  comprobar(total > 100 && !malos.length, `${total} enlaces a la sede, todos con el patrón de «${M.sede.tipo}»` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  /* como mínimo, cada trámite vigente enlazado una vez (Ribera tiene 111 en la sede; Monesterio, 25) */
+  const minimo = Math.min(100, (M.tramites.todos || []).filter(t => t.vigente !== false && !/^(pdf|doc)$/.test(t.tipo || '')).length);
+  comprobar(total >= minimo && !malos.length, `${total} enlaces a la sede, todos con el patrón de «${M.sede.tipo}»` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
   /* textos de relleno */
   const relleno = PAGINAS.filter(p => /\[PENDIENTE|\bTODO\b|lorem ipsum|undefined|\bnull\b|NaN/.test(leer(RAIZ, p).replace(/<script[\s\S]*?<\/script>/g, '')));
   comprobar(!relleno.length, 'sin [PENDIENTE], TODO, «undefined», «null» ni relleno en el HTML' + (relleno.length ? ' → ' + relleno.join(', ') : ''));

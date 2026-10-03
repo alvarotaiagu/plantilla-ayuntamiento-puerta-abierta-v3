@@ -95,8 +95,10 @@ if (M.sede.tipo === 'gestiona') {
   S = {
     inicio: sedeBase, tablon: noEst(opc.tablon), transparencia: M.sede.transparencia || noEst(opc.transparencia),
     perfil: M.sede.perfil_contratante || noEst(opc.perfil),
-    tramite: t => (t.opc ? noEst(t.opc) : t.url || noEst(t.id)),
-    patron: new RegExp('^' + escRe(sedeBase) + '(/portal/noEstatica\\.do\\?opc_id=\\d+&ent_id=\\d+)?$')
+    tramite: t => (t.opc ? noEst(t.opc) : t.url || (/^https?:/.test(t.id) ? t.id : noEst(t.id))),
+    /* además de noEstatica.do, la ficha de un trámite (/sede/fichaInformativa.do?…) y los
+       documentos del tablón (/portal/tablonVirtual.do?aDoc=F…) son enlaces fijos de la sede */
+    patron: new RegExp('^' + escRe(sedeBase) + '(/(portal|sede)/[A-Za-z]+\\.do\\?[\\w=&%.-]+)?$')
   };
 } else {
   errores.push('sede.tipo: "gestiona" | "diputacion"');

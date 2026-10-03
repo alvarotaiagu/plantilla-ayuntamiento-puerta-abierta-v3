@@ -57,6 +57,7 @@ Fuentes que funcionaron en Ribera y Segura:
 | `horario` | sí | `texto` y `tramos: [{dias:[1..7], de:"09:00", a:"14:00"}]` (1 es lunes). Sin tramos no se calcula «abierto ahora». Si no está confirmado, `"ejemplo": true` |
 | `sede` | sí | Ver §4 |
 | `tablon_autorizado` | — | `false` hasta que el Ayuntamiento autorice por escrito leer su tablón (ver §7) |
+| `tablon_max` | no | Cuántos anuncios del tablón enseña la web (40 si no se dice). Hace falta en las sedes que guardan años de tablón (Diputación) |
 | `hoja` | no | `{id, pestanas}` de la hoja de Google publicada (ver README) |
 | `legal` | sí | `titular`, `nif` y `dir3` |
 | `escudo_credito` | sí | Autor, licencia y URL de la ficha de Commons |
@@ -90,6 +91,11 @@ Fuentes que funcionaron en Ribera y Segura:
           "opc": { "tablon": 1, "transparencia": 2, "perfil": 3 }, "instancia_general": "<opc o url>" }
 ```
 - **Diputación de Badajoz**: las rutas son `/portal/noEstatica.do?opc_id=…&ent_id=N`. Los `opc_id` se sacan del menú de su sede. En los trámites, pon `opc` o una `url` completa.
+  - Primer caso real: Monesterio (`ent_id` 54). El catálogo está en `/sede/catalogoTramites.do?ent_id=N&idioma=1&pes_cod=-1` y es corto (22 trámites).
+  - Los de **registro de entrada** tienen ficha con enlace fijo: `/sede/fichaInformativa.do?asu_cod=…&asu_mod_cod=…&codVerif=<hash>&tra_cod=`. El `codVerif` es estable, no de sesión. Ponla en `url`.
+  - Los del **padrón** no tienen ficha pública. Usa su `opc`: `noEstatica.do?opc_id=49` abre una página que pide identificarse y lo explica. Las rutas internas (`/sede/pmhnet/…`) devuelven una página vacía sin sesión.
+  - El patrón de la verificación admite cualquier `/portal/*.do?…` o `/sede/*.do?…` de su `base`.
+  - **No suele haber transparencia ni quejas** en la sede. Sin `sede.quejas`, «Quejas» lleva a la instancia general. Pon en `sede.instancia_general` la `url` de la ficha del registro general.
 
 La verificación comprueba que **todos** los enlaces de la sede siguen el patrón de su tipo.
 
@@ -139,6 +145,11 @@ python scripts/fotos.py --lote media/_lote.json          # recorte + gradación 
   - Después, rellena `titulo_claro` en cada anuncio.
   - Las sedes de Gestiona tienen `robots.txt` que prohíbe `/board` a los robots, así que **la lectura automática solo se activa con la autorización del Ayuntamiento** (`"tablon_autorizado": true`).
   - Algunas sedes (Zafra) tienen el certificado sin el intermedio y el `fetch` de Node falla. Apúntalo.
+  - **Sede de la Diputación:** el tablón va por subsecciones y no tiene RSS ni JSON público.
+    - El lector usa la vista antigua, `/portal/tablonVirtual.do?subseccion=<COD>&opc_id=175&pes_cod=9&ent_id=N`, que llega pintada desde el servidor, y la recorre subsección a subsección (una página por segundo).
+    - Para la maqueta, `--desde` admite una carpeta con las copias: HTML de la vista antigua o el JSON de la nueva (`POST /sede/tablonElectronico.do`).
+    - Guarda **todo desde 2018**. La web enseña los `tablon_max` más recientes (40 por defecto, en `municipio.json`) y cuenta las exclusiones de ese periodo.
+    - La categoría es la subsección. En «Empleo Público» caen las listas y las actas de selección, y las actas de Junta de Gobierno o de Pleno que no digan «disociado» se quedan fuera.
 
 ## 8. Aplicar y verificar
 

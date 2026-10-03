@@ -1,0 +1,890 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es"  xml:lang="es">
+<head>
+
+  
+<title>Portal del Ciudadano</title>
+
+
+
+
+
+
+
+
+
+
+<script type="text/javascript" src="/portal/js/firmaDigital.js"></script>
+
+
+
+<!-- <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE9" /> -->
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+
+
+   <meta name="keywords" content="ciudadano, ciudadana, empresa, tramites, online, on-line,ayuntamiento, diputacion, local, administraciÃ³n local,padrÃ³n municipal, habitantes,rentas, ingresos, tributos, contabilidad, perfil del contratante, factura electrÃ³nica, registro oficial de licitadores"/>
+ 
+
+<!-- Bootstrap -->
+
+<!-- 	rel="stylesheet"> -->
+<link rel="shortcut icon" href="../favicon.ico"/>
+<link href="/portal/bootstrap/css/bootstrap-theme.css"
+	rel="stylesheet">
+
+	
+	
+
+<link href="/portal/bootstrap/css/bootstrap_54.css" rel="stylesheet">
+
+<link rel="stylesheet" type="text/css" href="/portal/js/select2/css/select2.min.css">
+
+<link href='/portal/css/0_apnt_eell.css' rel='stylesheet' type='text/css' />
+<link href='/portal/bootstrap/css/adaptacion_mdb_54.css' rel='stylesheet' type='text/css' />
+
+<script type="text/javascript" src="/portal/js/jquery.js"></script>
+
+<script type="text/javaScript" src='/portal/js/select2/js/select2.min.js'></script>
+
+<script src="/portal/bootstrap/js/respond.js" type="text/javascript"></script>
+
+<script type="text/javascript" src="/portal/bootstrap/js/bootstrap.js"></script>
+
+
+<script type="text/javascript" src="/sede/js/vendors/purify/purify.min.js"></script>
+<script type="text/javascript" src="/portal/bootstrap/js/bootbox.js"></script>
+
+<script type="text/javascript" src="/portal/dojotoolkit/dojo/dojo.js"></script>
+<script type="text/javaScript" src='/portal/js/ajax.js'></script>
+<script type="text/javascript" src="/portal/js/aw.js"></script>
+
+
+<script type="text/javascript" src="/portal/js/accesibilidad.js"></script>
+
+
+
+
+
+<script type="text/javascript">
+function alert(mensaje){
+	var mensajeSanitizadoHeadBoot = DOMPurify.sanitize(mensaje);
+	var msg = "<span id='infoAlerta'>i</span><br> <span class='infoAlertaText'>" + mensajeSanitizadoHeadBoot + "</span>";
+	bootbox.alert({size:"large",message:msg,callback: function(){}});
+	
+}
+</script>
+
+
+<script type="text/javascript">
+
+var ventanaCargando;
+var errorFirmando = false;
+
+function pulsarFirmarIdentificateCallback(resFirma)
+{	
+	
+	
+	if (resFirma!="" && resFirma != undefined)
+	{
+	    resFirma = filtrarXSSFirma(resFirma);
+		document.forms['loginCertificado'].firmaLogin.value = resFirma;
+		document.forms['loginCertificado'].opcion.value = 11;
+		document.forms['loginCertificado'].submit();
+		document.forms['loginCertificado'].firmar.disabled=true;
+	}
+	else
+	{
+	  ventanaCargando.hide();	
+	}
+}
+
+ function pulsarFirmarIdentificateCallbackError(tipo,mensaje)
+{
+	if (!errorFirmando)
+	{
+		errorFirmando=true;
+		activarBotonesFirma();
+		if (tipo == 'es.gob.afirma.standalone.ApplicationNotFoundException')
+		{
+			alert("ATENCIÓN: Para poder realizar firmas digitales es necesario instalar la aplicación Autofirma. Descargue la versión mas conveniente para usted:<ul><li><a class='enlaces' rel='nofollow noopener noreferrer' target='_blank' href='http://firmaelectronica.gob.es/Home/Descargas.html'>Versión de escritorio: Windows,Linux o Mac</a></li><li><a class='enlaces' rel='nofollow noopener noreferrer' target='_blank' href='https://play.google.com/store/apps/details?id=es.gob.afirma'>Android</a></li><li><a class='enlaces' rel='nofollow noopener noreferrer' target='_blank' href='https://itunes.apple.com/us/app/cliente-firma-movil/id627410001?mt=8'>iOS (Iphone)</a></li></ul>Una vez instalada la aplicación debe recargar la página antes de volver a intentar la realización de la firma");
+		}
+		else
+		{
+			alert('Error obteniendo la firma digital de la solicitud.' + " " + mensaje);
+		}
+		ventanaCargando.hide();			
+	}
+	
+ }
+
+function pulsarFirmarIdentificate()
+{
+	var textoCargando = "Cargando...";
+	ventanaCargando =  new dijit.Dialog({title:textoCargando,style:"width:150px;height:200px;"});
+	ventanaCargando.attr("content","<img src='/portal/images/loading.gif' alt='Cargando...' width='100%' height='100%'>");
+	ventanaCargando.show();
+	errorFirmando = false;
+	firmar(document.forms['loginCertificado'].shaLogin.value,'Error obteniendo la firma digital de la solicitud.',"","TEXTO",0,pulsarFirmarIdentificateCallback,pulsarFirmarIdentificateCallbackError,true);
+}
+</script>
+
+  <script type="text/javascript" src="/portal/js/botones.js"></script>
+  <script type="text/javascript" src="/portal/jsp/calendario.jsp"></script>
+  <!-- anadimos la librería de dojo-->
+<script type="text/javascript" src="/portal/dojotoolkit/dojo/dojo.js"></script>
+<script type="text/javascript" src="/portal/dojotoolkit/dijit/dijit.js"></script>
+<script type="text/javascript" src="/portal/dojotoolkit/dijit/dijit-all.js"></script>
+
+<link rel="stylesheet" type="text/css" href="/portal/dojotoolkit/dijit/themes/tundra/tundra.css">
+<script type="text/javascript" src="/portal/js/funciones.js"></script>
+ <script type="text/javascript">
+<!--
+
+var ventanaReloj;
+
+function lineaMouseOver(linea)    {linea.className = "Lista2LineaOver";}
+function lineaParMouseOut(linea)  {linea.className = "Lista2LineaPar";}
+function lineaImparMouseOut(linea){linea.className = "Lista2LineaImpar";}
+function inicio()
+{
+
+loadCalendario();
+}
+function validarFormulario()
+{
+	return validarFechas();
+}
+function validarFechas()
+{
+	if(!esCampoNulo("fechaDesde"))
+	{
+   if(!validarCampoFecha("fechaDesde", "F"))
+	 {
+		alert('Formato no válido: Fecha publicación desde ');
+		posicionarCursor("fechaDesde");
+		return false;
+	 }
+  }
+  if(!esCampoNulo("fechaHasta"))
+	{
+		if(!validarCampoFecha("fechaHasta", "F"))
+		{
+			alert('Formato no válido: Fecha publicación hasta');
+			posicionarCursor("fechaHasta");
+			return false;
+		}
+	}
+
+  if(!esCampoNulo("fechaDesde") && !esCampoNulo("fechaHasta"))
+  {
+		if(comparaCamposFechas("fechaDesde", "fechaHasta")==1)
+		{
+			alert('La fecha desde no puede ser superior a la fecha hasta');
+			posicionarCursor("fechaDesde");
+			return false;
+	  }
+  }
+	ventanaReloj.show();
+	return true
+}
+
+function pulsarLimpiar()
+{
+	document.forms['datos'].fechaDesde.value = '';
+	document.forms['datos'].fechaHasta.value = '';
+	document.forms['datos'].descripcion.value = '';
+	posicionarCursor("fechaDesde");
+}
+ -->
+ </script>
+
+
+<script type="text/javascript" src="/portal/jsp/calendario.jsp"></script>
+</head>
+
+<body onload="inicio();" class='tundra'>
+
+
+			
+				<div>
+			
+					
+
+
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<header>
+		<nav class="navbar navbar-default" role="navigation">
+		  
+		  	<div class="container">
+		  
+		  <!-- Brand and toggle get grouped for better mobile display -->
+		  <div class="navbar-header">
+		    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+		      <span class="sr-only">Toggle navigation</span>
+		      <span class="icon-bar"></span>
+		      <span class="icon-bar"></span>
+		      <span class="icon-bar"></span>
+		    </button>
+		    
+		    <a title="MONESTERIO" class="navbar-brand" href="/portal/entidades.do?pes_cod=9&amp;ent_id=54&amp;idioma=1">
+		    	<img alt="MONESTERIO" src="/sede/img/escudo/EMONESTERIO.JPG" height="75" class="">
+	    	</a>
+	    	
+		  </div>
+		
+		  <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+		  	<p class="navbar-text">
+		  		<a title="MONESTERIO" href="/portal/entidades.do?pes_cod=9&amp;ent_id=54&amp;idioma=1">
+			  		
+			  			<span class="mdb_cab_titulo">Sede Electrónica<br /></span>
+						MONESTERIO
+					
+				</a>
+		  	</p>
+		    <ul class="nav navbar-nav">
+		      <li>
+		      	<a title="Inicio" href="/portal/entidades.do?pes_cod=9&amp;ent_id=54&amp;idioma=1">
+		      		<span class="texto-cabecera glyphicon glyphicon-home" aria-hidden="true"></span>&nbsp;Inicio
+		      	</a>
+		      </li>
+		      
+		      <li>
+		      	<a title="Catálogo de Trámites" href="/sede/catalogoTramites.do?ent_id=54&idioma=1&amp;pes_cod=9">
+		      		Catálogo de Trámites
+		      	</a>
+		      </li>
+		       
+		       
+		      <li>
+		      	<a title="Mi Carpeta" href="/sede/miCarpeta.do?pes_cod=9&amp;ent_id=54&amp;idioma=1">
+		      		Mi Carpeta
+		      	</a>
+		      </li>
+		    </ul>
+		    <ul class="nav navbar-nav navbar-right">
+		    	
+		    	<!--  Accesibilidad -->
+				<li>
+					<a href="#" onclick="volverAInicioMostrandoAccesibilidad()" id="accesibilidadLink" title="Accesibilidad">
+						<span class="texto-cabecera glyphicon glyphicon-eye-close" aria-hidden="true"></span>
+						<form id="FormAltoContraste" action="/portal/inicio.do" method="post">
+		    				<input type="hidden" id="altoContrasteActivo" name="altoContrasteActivo" value='false' />
+							<input type="hidden" id="tamanyoFuente" name="tamanyoFuente" value='1'/>
+	   					</form>
+   					</a>
+				</li>
+				
+		    	<!-- IDIOMA -->
+		    	
+		    	<!-- ENTIDADES -->
+		    	
+					
+				<!-- IDENTIFICATE -->
+				
+	        	
+	        	<li class="dropdown">
+	      			<a href="#" class="dropdown-toggle" data-toggle="dropdown"><span class="texto-cabecera glyphicon glyphicon-user" aria-hidden="true"></span>&nbsp;Identifícate <b class="caret"></b></a>
+	      			<div class="dropdown-menu" role="menu" aria-labelledby="loginDropdownMenu" style="width: 300px;" id="loginDropdownMenu">
+	              		<div class="row">
+	              
+	              			<form action="https://sede.monesterio.es/portal/login.do?&amp;subseccion=EMP_PUB&amp;pes_cod=9&amp;idioma=1&amp;asu_cod=&amp;asunto=&amp;ent_id=54" method="post" id='loginCertificado' >
+			      				<input type='hidden' value='eda47a6a-1c57-4513-a249-a32bf0ded974' name='CSRFToken'/>   
+			      				<input type="hidden" name="opcion" id='opcion' value="1" />
+			
+			      				
+					          		<input type="hidden" name="shaLogin" id='shaLogin4' value="Prueba de firma para verificar certificado"/>
+					          		<input type='hidden' name='firmaLogin' value='' id='firmaLogin'/>
+				      			
+				
+				      			<input type="hidden" name="opc_id" id='opc_id4' value="175" />
+			      				<input type="hidden" name="idioma" id='idioma4' value="1"/>
+	           
+	                			
+	           
+	                			<div class="col-md-12 col-xs-12 form-group">
+	                  				<div class="col-md-10 col-md-offset-1 col-xs-10 col-xs-offset-1 input-group">
+	                    			
+	                          				<button type="submit" name="firmar" id="firmar" class="btn btn-default botoneraAytosColor" style="width:100%;" onclick="pulsarFirmarIdentificate(); return false;" ><span class="glyphicon glyphicon-lock" style="margin-right:10px;"></span>Certificado digital</button>
+	                      				
+	                  				</div>
+	                			</div>
+	                
+				                <!-- CL@VE -->
+				                
+	             	
+				             	<!-- idCAT -->
+				             	
+				             	
+				             	<!-- Giltz@ -->
+				             	
+	             	
+	               				
+			                </form>
+	           			</div> 
+	           		</div>
+	   			</li>
+	      		
+	      		<!-- NUM. SOLICITUDES, NOTIFICACIONES Y COMUNICACIONES -->
+		    	<li class="dropdown">
+	   				<a href="#" class="dropdown-toggle" data-toggle="dropdown">
+	    				<span class="texto-cabecera glyphicon glyphicon-envelope" aria-hidden="true"></span>&nbsp;0
+	    				<b class="caret"></b>
+	   				</a>
+	   				<ul class="dropdown-menu">
+	   						
+	   					<li><a href='/sede/solicitudes.do?entidad=54&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1' title="Solicitudes">Solicitudes (0)</a></li>
+	   					
+		              	<li><a href='/portal/notificaciones.do?opcion=0&amp;btnBuscar=1;&amp;entidad=54&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1' title="Notificaciones / Comunicaciones">Notificaciones / Comunicaciones (0)</a></li>
+	   				</ul>
+	 			</li>
+		    </ul>
+		  </div><!-- /.navbar-collapse -->
+		  
+		  
+		  	</div>
+		  
+		</nav>
+	</header>
+
+
+<script type="text/javascript">
+	;
+	loadAppletFirma(-1,'','Applet (Mini aplicación Java) para la firma digital de solicitudes.','','Cargando applet (Mini aplicación Java) para firma digital','https://sede.monesterio.es/portal/js','1','es','false',-1);
+
+	function activarBotonesFirma()
+	{ 
+		document.forms['loginCertificado'].firmar.disabled=false;
+	} 
+	function desactivarBotonesFirma()
+	{ 
+		document.forms['loginCertificado'].firmar.disabled=true;
+	}
+</script>
+
+
+<script type="text/javascript">
+
+	// Para desactivar la funcionalidad de link del dropdown
+  	$(document).ready(function(){
+    	//Handles menu drop down
+    	$('.dropdown-menu').click(function (e)
+    	{
+	     	e.stopPropagation();
+    	});
+    	
+    	// Aplico el tamanyo seleccionado
+    	var tamanyoFuenteActual = $("#tamanyoFuente").val();
+    	changeClassResponsive(tamanyoFuenteActual);
+  	});
+  
+  	
+  
+  
+  
+  function pulsarLoginClave(formulario)
+  {
+	  if (confirm("A continuación, será redirigido a la página de Cl@ve para realizar la autenticación. ¿Desea continuar?"))
+	  {
+		  if (formulario === undefined || formulario == "")
+	      {
+	          formulario = 'loginCertificado';
+	      }
+		  document.forms[formulario].action = 'https://sede.monesterio.es/portal/loginClave.do?pes_cod=9&amp;ent_id=54&amp;idioma=1';
+		  document.forms[formulario].submit();
+		  document.forms[formulario].firmar.disabled=true;
+	  }
+  }
+  
+  function pulsarLoginIdCat(formulario)
+  {
+	  if (confirm("A continuación, será redirigido a la página de la AOC para realizar la autenticación mediante idCAT. ¿Desea continuar?"))
+	  {
+		  if (formulario === undefined || formulario == "")
+	      {
+	          formulario = 'loginCertificado';
+	      }
+		  document.forms[formulario].action = 'https://sede.monesterio.es/portal/loginIdCat.do?pes_cod=9&amp;ent_id=54&amp;idioma=1';
+		  document.forms[formulario].submit();
+		  document.forms[formulario].firmar.disabled=true;
+	  }
+  }
+  
+  function pulsarLoginGiltza(formulario)
+  {
+	  if (confirm("A continuación, será redirigido a la página de Giltz@ para realizar la autenticación. ¿Desea continuar?"))
+	  {
+	      if (formulario === undefined || formulario == "")
+	      {
+	          formulario = 'loginCertificado';
+	      }
+		  document.forms[formulario].action = 'https://sede.monesterio.es/portal/loginGiltza.do?pes_cod=9&amp;ent_id=54&amp;idioma=1';
+		  document.forms[formulario].submit();
+		  document.forms[formulario].firmar.disabled=true;
+	  }
+  }
+  
+  function changeClassResponsive(tamanyoFuenteActual) {
+		if (tamanyoFuenteActual == "2" || tamanyoFuenteActual == "3") {
+			$("html").removeAttr("class");
+			$("html").attr("class", classes[tamanyoFuenteActual - 1]);
+			
+			aplicarEstilos(tamanyoFuenteActual -1);
+		}
+	}
+
+	function aplicarEstilos(tamanyoFuenteActual) {
+		var htmlElement = document.querySelector('html')
+	    htmlElement.removeAttribute("class");
+	    htmlElement.classList.add(classes[tamanyoFuenteActual]);
+	    
+	    const parrafos = document.querySelectorAll('p');
+	    for (const parrafo of parrafos) {
+	    	parrafo.classList.add(classes[tamanyoFuenteActual]);
+	    }
+	    
+		const spans = document.querySelectorAll('span');
+	    for (const span of spans) {
+	    	span.classList.add(classes[tamanyoFuenteActual]);
+	    }
+	    
+	    const inputs = document.querySelectorAll('input');
+	    for (const input of inputs) {
+	    	input.classList.add(classes[tamanyoFuenteActual]);
+	    }
+	    
+	    const enlaces = document.querySelectorAll('a');
+	    for (const enlace of enlaces) {
+	    	enlace.classList.add(classes[tamanyoFuenteActual]);
+	    }
+	    
+	    const cabecerasH1 = document.querySelectorAll('h1');
+	    for (const h1 of cabecerasH1) {
+	    	h1.classList.add(classes[tamanyoFuenteActual]);
+	    }
+	    
+	    const cabecerasH2 = document.querySelectorAll('h2');
+	    for (const h2 of cabecerasH2) {
+	    	h2.classList.add(classes[tamanyoFuenteActual]);
+	    }
+	    
+	    const labels = document.querySelectorAll('label');
+	    for (const label of labels) {
+	    	label.classList.add(classes[tamanyoFuenteActual]);
+	    }
+	    
+	    const lis = document.querySelectorAll('li');
+	    for (const li of lis) {
+	    	li.classList.add(classes[tamanyoFuenteActual]);
+	    }
+	}
+
+</script>
+
+
+
+
+				</div>
+				<main class="container">
+	
+	
+
+
+<!-- Bloque 4 contiene barra de Navegación y Buscador. No se saca en una jsp externa -->
+	
+
+		<div class="row fondoBuscador"  id="b4">
+			<div class="col-sm-8 show text-left" style= "  float: left !important"  id="c5">
+				<div class="migaPan">
+
+		
+<span class="text-primary">Estás en: </span>
+
+
+
+
+<a id="migaPan1" name="migaPan1" class="migaPan" style="text-decoration: underline;" href='/portal/inicio.do?pes_cod=9&amp;ent_id=54&amp;idioma=1' title='Portal del Ciudadano'>
+	Inicio
+</a>
+
+
+
+			
+		 <span class="glyphicon glyphicon-chevron-right"></span> <a class="migaPan" style="text-decoration: underline;" onclick='ventanaReloj.show();' title='Acceder a la subsección.' href='/portal/tablonVirtual.do?subseccion=TABLONVIRTUAL&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>Tablón Virtual</a>
+	
+		 <span class="glyphicon glyphicon-chevron-right"></span> <a class="migaPan" style="text-decoration: underline;" onclick='ventanaReloj.show();' title='Acceder a la subsección.' href='/portal/tablonVirtual.do?subseccion=AYU&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>1.- Ayuntamiento</a>
+	
+		 <span class="glyphicon glyphicon-chevron-right"></span> <a class="migaPan" style="text-decoration: underline;" onclick='ventanaReloj.show();' title='Acceder a la subsección.' href='/portal/tablonVirtual.do?subseccion=EMP_PUB&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>Empleo Público</a>
+	
+				</div>
+			</div>
+
+
+				
+
+
+
+
+
+    <div class="col-sm-4 show" style=" float: right !important " id="c6">
+    	<div>
+
+	    	<form method="get" action="/sede/buscador.do" name="formbuscador">
+	    	<input type='hidden' value='eda47a6a-1c57-4513-a249-a32bf0ded974' name='CSRFToken'/>
+				
+
+	     	   	<div class="col-xs-11 col-sm-11">
+	     			 <input type="text" class="form-control pull-right" id="buscador" name="aBuscar" value="" placeholder="Buscar" aria-label="Buscar"/>
+	     		</div>
+
+	      		<div class="col-xs-1 col-sm-1">
+	       			<button type="submit" class="btn busqueda" id="btnBuscador" aria-label='Buscar' ><span class="glyphicon glyphicon-search"></span></button>
+				</div>
+
+			</form>
+
+		</div>
+	</div>
+
+
+
+		</div>
+		
+
+
+	<!-- Bloque 5 comienzo, contiene el código particular de la jsp en la que estoy -->
+	
+
+
+		<div class="row" id="b5">
+			<div class="col-sm-12 show text-left" style="  float: left !important" id="c7">
+
+
+
+<form id='datos' action="/portal/tablonVirtual.do?opcion=" method="post" onsubmit="return validarFormulario();" >
+  <input type="hidden" name="subseccion" id="subseccion" value="EMP_PUB"/>
+  <input type="hidden" name="entidad" id="entidad" value="54"/>
+	<input type='hidden' name='opc_id' id='opc_id' value='175'/>
+<input type='hidden' value='eda47a6a-1c57-4513-a249-a32bf0ded974' name='CSRFToken'/>
+
+
+
+<input type="hidden" name="ent_id" value="54" id='ent_id'/>
+
+
+
+
+<input type="hidden" name="idioma2" value="1" id='idioma2'/>
+		
+
+<div class="Etiqueta">
+	<h1 class='titulo'>Empleo Público</h1>
+    
+<script type="text/javascript"><!--
+function gestionError(){try{
+
+}catch(e){}}//fin funcion
+--></script>	
+
+
+<!-- <p class="small error" id="errorOriginal"></p>-->
+   
+
+	<h2 class='subtitulo'>Buscar en Empleo Público</h2>
+	<div class='formulario row'>
+    <div class="col-md-3 col-sm-6" ><label style='width:90%' for="fechaDesde"><span>Fecha publicación desde </span><input type="text" name="fechaDesde" id="fechaDesde" class="fecha" size="13" style='width:88%' value=''/></label></div>
+    <div class="col-md-3 col-sm-6" ><label style='width:90%' for="fechaHasta"><span>Fecha publicación hasta</span><input type="text" name="fechaHasta" id="fechaHasta" class="fecha" size="13" style='width:88%' value=''/></label></div>
+   <div class="col-md-6 col-sm-6" > <label style='width:100%' for="descripcion"><span>Descripción</span><input type="text" name="descripcion" id="descripcion" class="InputTx"  size="43" value=''/></label></div>
+  </div>
+
+  <div class='botones row'>
+  	<input type="submit" id="filtro" name="filtro" class="botonPeq"    value="Buscar"/>
+  	<input type="submit" id="limpiar" name="limpiar" class="botonPeq"    value="Limpiar" onClick="pulsarLimpiar();"/>
+  </div>
+
+
+		<h2 class='subtitulo'>Expedientes</h2>
+
+<div class="row">
+<p>
+Puede filtrar los expedientes seleccionando su estado:</p> 
+</div>
+
+<div class="row">
+	<div class="col-md-6 col-sm-8 col-xs-12">
+    <select id="estado" name="estado" class="combo">
+    	<option value="" selected='selected'>Todos</option>
+      <option value="-1" >Sin Estado</option>
+
+    
+   </select>&nbsp;
+   </div>
+   <div class="col-md-6 col-sm-4  col-xs-12">
+   <input type="submit" id="sel_est" name="sel_est" class="botonPeq"    value="Seleccionar"/>
+   </div>
+</div>
+
+
+
+
+   	
+  	<div class="row rojo"><p>
+  	 No se han encontrado expedientes
+  	</p></div>
+  	
+	<h2 class='subtitulo'>Documentos</h2>
+
+
+   <table class='Lista2' style='width:100%;'><thead class='Font12px'>
+   	<tr class='Lista2Linea'>
+ 		 <td width="80%"> <a onclick='ventanaReloj.show();' style="color:white;" title='Nombre' href='/portal/tablonVirtual.do?campo=8&amp;subseccion=EMP_PUB&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>Nombre</a></td>
+ 		 <td> <a onclick='ventanaReloj.show();' style="color:white;" title='Fecha de Publicación' href='/portal/tablonVirtual.do?campo=9&amp;subseccion=EMP_PUB&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>Fecha de Publicación</a></td>
+ 		 
+ 		 <td style="color:white;">Evidencias electrónicas</td>
+ 		 
+   	</tr>
+   	</thead>
+   	
+       <tr class='Lista2LineaPar' id='doc_545094' onmouseover='lineaMouseOver(this);' onmouseout='lineaParMouseOut(this);'>
+	     	<td><a title='Ver documento (Se abrirá en una nueva ventana).' rel="nofollow noopener noreferrer" target="_blank" href='/portal/tablonVirtual.do?aDoc=F&amp;documento=545094&amp;codVerif=A3B4556C6287A1B3824F67C5E87663EDF6E4D28F&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>ACTA TRIBUNAL SELECCION PERSONAL APOYO AL JAMON MONESTERIO</a></td>
+       	<td>07/09/2026 15:02:46</td>
+    
+       	   <td>
+             <a onclick='ventanaReloj.show();' title='Obtener sello de tiempo del enlace (podrá abrir ventana nueva)' href='/portal/verificarDocumentos.do?ent_id=54&amp;opcion=verificar&amp;codigo=P74SC-ZGUIM-GT343&amp;subseccion=EMP_PUB&amp;codigoCodificado=FBB32FA3FCB9142DFDF4CB67B41FCAA18ED7852F&amp;pes_cod=9&amp;idioma=1'>Evidencias</a>
+       	   </td>
+             
+
+
+	    </tr>
+<tr class='Lista2LineaImpar' id='doc_544396' onmouseover='lineaMouseOver(this);' onmouseout='lineaImparMouseOut(this);'>
+	     	<td><a title='Ver documento (Se abrirá en una nueva ventana).' rel="nofollow noopener noreferrer" target="_blank" href='/portal/tablonVirtual.do?aDoc=F&amp;documento=544396&amp;codVerif=84A5FB0A7431AF59C627A448B60CACF3025A7ADF&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>LISTA DEFINITIVA PERSONAL APOYO JAMON 082026</a></td>
+       	<td>03/09/2026 09:38:23</td>
+    
+       	   <td>
+             <a onclick='ventanaReloj.show();' title='Obtener sello de tiempo del enlace (podrá abrir ventana nueva)' href='/portal/verificarDocumentos.do?ent_id=54&amp;opcion=verificar&amp;codigo=PYQAO-XI09C-718RK&amp;subseccion=EMP_PUB&amp;codigoCodificado=69F4A99494AEE46EF2B7028A10FBA91CB82123C7&amp;pes_cod=9&amp;idioma=1'>Evidencias</a>
+       	   </td>
+             
+
+
+	    </tr>
+<tr class='Lista2LineaPar' id='doc_544123' onmouseover='lineaMouseOver(this);' onmouseout='lineaParMouseOut(this);'>
+	     	<td><a title='Ver documento (Se abrirá en una nueva ventana).' rel="nofollow noopener noreferrer" target="_blank" href='/portal/tablonVirtual.do?aDoc=F&amp;documento=544123&amp;codVerif=07A3F8E155831DFFBC19B0248209FD652D126730&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>LISTA PROVISIONAL PERSONAL APOYO JAMON 082026</a></td>
+       	<td>02/09/2026 08:33:31</td>
+    
+       	   <td>
+             <a onclick='ventanaReloj.show();' title='Obtener sello de tiempo del enlace (podrá abrir ventana nueva)' href='/portal/verificarDocumentos.do?ent_id=54&amp;opcion=verificar&amp;codigo=SBBOL-PZR27-H8SCZ&amp;subseccion=EMP_PUB&amp;codigoCodificado=3669585EB4E4D1F462DF426552BE39EA62F67796&amp;pes_cod=9&amp;idioma=1'>Evidencias</a>
+       	   </td>
+             
+
+
+	    </tr>
+<tr class='Lista2LineaImpar' id='doc_539410' onmouseover='lineaMouseOver(this);' onmouseout='lineaImparMouseOut(this);'>
+	     	<td><a title='Ver documento (Se abrirá en una nueva ventana).' rel="nofollow noopener noreferrer" target="_blank" href='/portal/tablonVirtual.do?aDoc=F&amp;documento=539410&amp;codVerif=C9E0B2E7B900D5B28F29D11EBCCA7E29548129CC&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>LISTA PROVISIONAL DE ADMITIDOS Y EXCLUIDOS PARA LA PROVISION TEMPORAL DE PERSOAN DE APOYO A LA PROMOCION DEL JAMON DE MONESTERIO</a></td>
+       	<td>31/07/2026 14:58:58</td>
+    
+       	   <td>
+             <a onclick='ventanaReloj.show();' title='Obtener sello de tiempo del enlace (podrá abrir ventana nueva)' href='/portal/verificarDocumentos.do?ent_id=54&amp;opcion=verificar&amp;codigo=67950-FZ9PU-21YN0&amp;subseccion=EMP_PUB&amp;codigoCodificado=D20F754C37FD1E631341C266C0D45BF345ADBAEE&amp;pes_cod=9&amp;idioma=1'>Evidencias</a>
+       	   </td>
+             
+
+
+	    </tr>
+<tr class='Lista2LineaPar' id='doc_536276' onmouseover='lineaMouseOver(this);' onmouseout='lineaParMouseOut(this);'>
+	     	<td><a title='Ver documento (Se abrirá en una nueva ventana).' rel="nofollow noopener noreferrer" target="_blank" href='/portal/tablonVirtual.do?aDoc=F&amp;documento=536276&amp;codVerif=521D30F81795BA475A32848C9607A4362844A5E7&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>LISTA DEFINITIVA PERSONAL APOYO PERIODO ESTIVAL, FERIA Y FIESTAS 0226</a></td>
+       	<td>16/07/2026 13:40:07</td>
+    
+       	   <td>
+             <a onclick='ventanaReloj.show();' title='Obtener sello de tiempo del enlace (podrá abrir ventana nueva)' href='/portal/verificarDocumentos.do?ent_id=54&amp;opcion=verificar&amp;codigo=NN9TM-745NK-16OAT&amp;subseccion=EMP_PUB&amp;codigoCodificado=951D28CA46D25E925FDA41623A6D3FEA91FE5A58&amp;pes_cod=9&amp;idioma=1'>Evidencias</a>
+       	   </td>
+             
+
+
+	    </tr>
+<tr class='Lista2LineaImpar' id='doc_536223' onmouseover='lineaMouseOver(this);' onmouseout='lineaImparMouseOut(this);'>
+	     	<td><a title='Ver documento (Se abrirá en una nueva ventana).' rel="nofollow noopener noreferrer" target="_blank" href='/portal/tablonVirtual.do?aDoc=F&amp;documento=536223&amp;codVerif=A5685EDCECBD53F2E92BBB9AF7B792D2C794A9E3&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>LISTA PROVISIONAL PERSONAL APOYO PERIODO ESTIVAL, FERIA Y FIESTAS 2026</a></td>
+       	<td>15/07/2026 13:58:27</td>
+    
+       	   <td>
+             <a onclick='ventanaReloj.show();' title='Obtener sello de tiempo del enlace (podrá abrir ventana nueva)' href='/portal/verificarDocumentos.do?ent_id=54&amp;opcion=verificar&amp;codigo=87YM6-6GHJQ-F1T1H&amp;subseccion=EMP_PUB&amp;codigoCodificado=FC63068E9ECEB9AB73BC4959CD1538816DDF738F&amp;pes_cod=9&amp;idioma=1'>Evidencias</a>
+       	   </td>
+             
+
+
+	    </tr>
+<tr class='Lista2LineaPar' id='doc_534810' onmouseover='lineaMouseOver(this);' onmouseout='lineaParMouseOut(this);'>
+	     	<td><a title='Ver documento (Se abrirá en una nueva ventana).' rel="nofollow noopener noreferrer" target="_blank" href='/portal/tablonVirtual.do?aDoc=F&amp;documento=534810&amp;codVerif=3BA112678A1E16FB0A475B4773A6605A3795F362&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>OFERTA EMPLEO PERSONAL APOYO DURANTE PERIODO ESTIVAL FERIA Y FIESTAS</a></td>
+       	<td>07/07/2026 12:23:47</td>
+    
+       	   <td>
+             <a onclick='ventanaReloj.show();' title='Obtener sello de tiempo del enlace (podrá abrir ventana nueva)' href='/portal/verificarDocumentos.do?ent_id=54&amp;opcion=verificar&amp;codigo=0FZ5M-PK8TX-A5WLD&amp;subseccion=EMP_PUB&amp;codigoCodificado=DE9F30AEA3E691B457176FC723128751D7E4E553&amp;pes_cod=9&amp;idioma=1'>Evidencias</a>
+       	   </td>
+             
+
+
+	    </tr>
+<tr class='Lista2LineaImpar' id='doc_534797' onmouseover='lineaMouseOver(this);' onmouseout='lineaImparMouseOut(this);'>
+	     	<td><a title='Ver documento (Se abrirá en una nueva ventana).' rel="nofollow noopener noreferrer" target="_blank" href='/portal/tablonVirtual.do?aDoc=F&amp;documento=534797&amp;codVerif=0ED4A7003614B7D9574737C679C6839D9C12A4B4&amp;opc_id=175&amp;pes_cod=9&amp;ent_id=54&amp;idioma=1'>ACTA TRIBUNAL UN SOCORRISTA PISCINA 0726</a></td>
+       	<td>07/07/2026 09:38:29</td>
+    
+       	   <td>
+             <a onclick='ventanaReloj.show();' title='Obtener sello de tiempo del enlace (podrá abrir ventana nueva)' href='/portal/verificarDocumentos.do?ent_id=54&amp;opcion=verificar&amp;codigo=3P7OG-2XGTA-546X3&amp;subseccion=EMP_PUB&amp;codigoCodificado=75AC6D02FAD1919829A91D03A1633237B609A1F1&amp;pes_cod=9&amp;idioma=1'>Evidencias</a>
+       	   </td>
+             
+
+
+	    </tr>
+   	
+    </table>
+    
+</div>
+
+</form>
+  <script type="text/javascript">
+<!--
+	ventanaReloj =  new dijit.Dialog({title:"Cargando...",style:"width:150px;height:180px;",onfocus:true});
+	ventanaReloj.attr("content","<img src='/portal/images/loading.gif' alt='Cargando...' width='100%' height='80%'>");
+	ventanaReloj.show();
+	ventanaReloj.hide();
+-->
+</script>
+ 
+	
+	<!-- Bloque 5 fin y menu, contiene el menú rápido-->
+
+
+</div> <!-- Cierra el div del contenido -->
+
+
+
+</div> <!-- Cierra el div de bloque 5 -->
+
+
+
+
+<!-- Bloque 6, contiene el menú de pie-->
+<div class="row"><br> </div>
+
+
+
+
+
+ 
+ 
+
+	<!-- Cerramos main -->
+	</main>
+	<!-- Footer -->
+	<footer>
+	
+
+ 
+<div class="row"  id="b6">
+	
+		
+				<div class="col-sm-12 show text-left pie col-xs-12" style="widht: 100%; float: left;" id="c9">
+		
+						
+				<div class="col-sm-3  col-xs-12 pie">
+					<a href="/portal/textoLegal.do?pes_cod=9&amp;ent_id=54&amp;idioma=1"
+						title="Ver aviso legal sobre este portal" accesskey="v" style="">
+						Aviso Legal</a></div>
+
+					<div class="col-sm-3 col-xs-12 pie"><a href="/portal/accesibilidad.do?pes_cod=9&amp;ent_id=54&amp;idioma=1"
+						title="Información sobre la accesibilidad de esta página" accesskey="a" style="">
+						Accesibilidad</a></div>
+
+					<div class="col-sm-3 col-xs-12 pie">	<a href="/portal/requisitos.do?pes_cod=9&amp;ent_id=54&amp;idioma=1"
+						title="Ver los requisitos de este portal" accesskey="q" style="">
+						Requisitos</a></div>
+
+														
+
+							<div class="col-sm-3 col-xs-12 pie">	<a href="/portal/contacto.do?pes_cod=9&amp;ent_id=54&amp;idioma=1"
+								title="Contacta con nosotros y plantea tus dudas, sugerencias..." accesskey="t" style="">
+								Contacto</a></div>
+					
+					
+					  
+					  <div class="col-sm-12 pie-inferior">
+					  	
+					  	© 2026 MONESTERIO
+					  </div>
+					
+     </div>
+    
+	
+  </div>     
+
+
+  </div>
+
+<!-- Bloque 7, contiene espacio libre-->
+<!-- <div class="row"><div class="col-sm-12"> <br></div></div> -->
+
+
+
+</footer> <!-- Cerramos el pie -->
+
+
+
+
+
+
+<script src="/portal/bootstrap/js/respond.js" type="text/javascript"></script>
+
+
+</body>
+</html>
