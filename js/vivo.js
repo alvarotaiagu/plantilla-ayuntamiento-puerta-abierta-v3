@@ -130,13 +130,14 @@
     /* toda la franja es un solo enlace, con el color de su gravedad: rojo solo lo urgente; lo
        programado, en ámbar. La palabra («Urgente:», «Programado:») y el icono lo dicen
        también sin color. El texto no se recorta: en móvil cabe en dos líneas (para eso está
-       `titulo_corto`, si el título es largo) y «Ver aviso» se queda en la flecha */
+       `titulo_corto`, si el título es largo) y «Ver aviso» se queda en la flecha. El color va en
+       el envoltorio y el foco se dibuja por dentro: por fuera, el blanco caería sobre la cal */
     var g = gravedad(u), urg = g === 'urgente';
-    return '<a class="franja-urgente__enlace es-' + g + '" href="' + esc(enlaceAviso(u, D)) + '"' + marcaEjemplo(u, 'aviso:' + u.id) + '>' +
+    return '<div class="franja-urgente__fondo es-' + g + '"><a class="franja-urgente__enlace" href="' + esc(enlaceAviso(u, D)) + '"' + marcaEjemplo(u, 'aviso:' + u.id) + '>' +
       '<span class="contenedor franja-urgente__dentro">' + icono(urg ? 'i-aviso' : 'i-calendario') +
       '<span class="franja-urgente__texto"><b>' + (urg ? 'Urgente' : g === 'programado' ? 'Programado' : 'Aviso') + ':</b> ' + esc(u.titulo_corto || u.titulo) +
       (u.ejemplo ? ' ' + EJEMPLO : '') + '</span>' +
-      ' <span class="franja-urgente__ver"><span class="franja-urgente__ver-texto">Ver aviso</span>' + icono('i-flecha') + '</span></span></a>';
+      ' <span class="franja-urgente__ver"><span class="franja-urgente__ver-texto">Ver aviso</span>' + icono('i-flecha') + '</span></span></a></div>';
   }
 
   /* ── lo que se añadió al panel «Hoy»: farmacia de guardia, el tiempo, el próximo

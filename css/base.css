@@ -132,11 +132,11 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .propuesta__texto { margin: 0; padding: .45rem var(--sangre); text-align: center; max-width: none; }
 .propuesta b { font-weight: 600; }
 
-.franja-urgente__enlace {
-  display: block; color: var(--sobre-alerta); background: var(--alerta); text-decoration: none; line-height: 1.4;
-}
-.franja-urgente__enlace.es-programado, .franja-urgente__enlace.es-informativo { background: var(--aviso); color: var(--sobre-aviso); }
+.franja-urgente__fondo { background: var(--alerta); color: var(--sobre-alerta); }
+.franja-urgente__fondo.es-programado, .franja-urgente__fondo.es-informativo { background: var(--aviso); color: var(--sobre-aviso); }
+.franja-urgente__enlace { display: block; color: inherit; text-decoration: none; line-height: 1.4; }
 .franja-urgente__enlace:hover { color: inherit; }
+.franja-urgente__enlace:focus-visible { outline-offset: -5px; }
 .franja-urgente__dentro { display: flex; align-items: center; gap: .6rem; min-height: 44px; padding-block: .45rem; font-size: 1rem; }
 .franja-urgente__enlace:hover .franja-urgente__ver-texto { text-decoration-thickness: 2px; }
 .franja-urgente .icono { width: 1.35rem; height: 1.35rem; }
@@ -153,6 +153,7 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
   .bandas:has(.franja-urgente:not([hidden])) .propuesta__texto { padding-right: 1.25rem; text-align: left; }
   .bandas:has(.franja-urgente:not([hidden])) .propuesta__largo { display: none; }
   .bandas:has(.franja-urgente:not([hidden])) .franja-urgente { flex: 1 1 auto; min-width: 0; display: flex; }
+  .bandas:has(.franja-urgente:not([hidden])) .franja-urgente__fondo { flex: 1 1 auto; display: flex; }
   .bandas:has(.franja-urgente:not([hidden])) .franja-urgente__enlace { flex: 1 1 auto; display: flex; }
   .bandas:has(.franja-urgente:not([hidden])) .franja-urgente__dentro { max-width: none; margin: 0; padding-inline: 1.25rem var(--sangre); }
   .bandas:not(.con-propuesta) .franja-urgente__dentro { padding-left: var(--sangre); }

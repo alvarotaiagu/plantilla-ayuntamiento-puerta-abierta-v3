@@ -1604,7 +1604,7 @@ async function v3Pliegue() {
       await conDatos(page, D => { D.avisos = [{ id: 'prueba-' + g, fecha: new Date().toISOString().slice(0, 10), tema: 'Agua', titulo: 'Aviso de prueba ' + g, gravedad: g, caduca: '2999-01-01', ejemplo: false, oculto: false }]; });
       await ir(page, 'index.html');
       colores[g] = await page.evaluate(() => {
-        const f = document.querySelector('.franja-urgente__enlace'), ch = document.querySelector('.hoy__fila--aviso .chip');
+        const f = document.querySelector('.franja-urgente__fondo'), ch = document.querySelector('.hoy__fila--aviso .chip');
         const cs = e => e ? [getComputedStyle(e).backgroundColor, getComputedStyle(e).color] : null;
         return { franja: cs(f), chip: cs(ch) };
       });
