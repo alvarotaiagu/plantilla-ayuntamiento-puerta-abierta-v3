@@ -55,17 +55,19 @@
              Cada palabra del nombre va en su caja sin partir: la entrada del hero las sube una a una -->
         <h1 class="hero__titulo" id="titulo-pagina"><span class="sr">Ayuntamiento de </span>{{#nombre_palabras}}<span class="hero__palabra" style="--n: {{n}}">{{palabra}}</span>{{^@ultimo}} {{/@ultimo}}{{/nombre_palabras}}</h1>
         {{#lema}}<p class="hero__lema"><span class="hero__lema-raya" aria-hidden="true"></span>{{lema}}</p>{{/lema}}
-        <!-- Buscador de trámites a la vista. Sin JavaScript, el formulario lleva a la página de
-             trámites con lo escrito (?q=…#buscar); con él, los resultados salen aquí debajo -->
-        <form class="hero__buscador" action="tramites.html#buscar" method="get" role="search" aria-label="Trámites" data-buscador-pagina data-buscador-max="5">
+        <!-- Buscador a la vista (v3b: trámites, avisos, noticias, teléfonos y lugares, agrupados). Sin
+             JavaScript, el formulario lleva a la página de trámites con lo escrito (?q=…#buscar); con
+             él, los resultados salen aquí debajo. Al ir a Trámites («Buscar» o «Ver los N
+             resultados»), el campo viaja con una View Transition (M8, css/movimiento.css) -->
+        <form class="hero__buscador" action="tramites.html#buscar" method="get" role="search" aria-label="Buscar en la web" data-buscador-pagina data-buscador-max="5">
           <label class="campo__etiqueta hero__etiqueta" for="hero-buscar">¿Qué necesita hacer?</label>
           <div class="hero__fila">
             <input class="campo__entrada" id="hero-buscar" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="Padrón, recibos, obras…" aria-describedby="hero-buscar-ayuda" data-buscador-campo>
             <button class="boton boton--marca hero__buscar" type="submit"><svg class="icono" aria-hidden="true"><use href="#i-lupa"/></svg><span class="hero__buscar-texto">Buscar</span></button>
           </div>
-          <p class="hero__ayuda" id="hero-buscar-ayuda">Con sus palabras: cada resultado le lleva a su trámite en la sede electrónica.</p>
+          <p class="hero__ayuda" id="hero-buscar-ayuda">Con sus palabras: trámites, avisos, noticias, teléfonos y lugares del pueblo.</p>
           <p class="hero__cuenta" role="status" data-buscador-cuenta></p>
-          <ul class="resultados hero__resultados" data-buscador-resultados></ul>
+          <div class="resultados hero__resultados" data-buscador-resultados data-buscador-nivel="2"></div>
         </form>
         <ul class="hero__botones">
           <li><a class="boton boton--marca" href="tramites.html"><svg class="icono" aria-hidden="true"><use href="#i-sede"/></svg>Hacer un trámite</a></li>

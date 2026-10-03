@@ -1535,6 +1535,18 @@ html.con-cortina { overflow: hidden; background: var(--cortina); }   /* también
 }
 .puerta__pie:empty { display: none; }
 .puerta__pie a { color: var(--marca); }
+/* ── F8 · el buscador global: un título por grupo (Trámites, Avisos y anuncios, Noticias,
+   Teléfonos, El pueblo), en versalitas pequeñas, y «Ver los N resultados» al pie en la portada ── */
+.resultados__lista { list-style: none; margin: 0; padding: 0; }
+.resultados__titulo {
+  margin: 1rem 0 0; padding: 0 .25rem .35rem; border-bottom: 2px solid var(--oro);
+  font: 600 .8125rem/1.3 var(--f-texto); letter-spacing: .08em; text-transform: uppercase; color: var(--apagado);
+}
+.resultados__titulo:first-child { margin-top: .35rem; }
+.hero__resultados .resultados__titulo:first-child { margin-top: .75rem; }
+.resultados__lista li:last-child a { border-bottom: 0; }
+.resultados__todos { margin: 0; padding: .7rem .25rem .8rem; border-top: 1px solid var(--linea); font-weight: 600; }
+.resultados .resultados__todos a { display: inline; padding: 0; border: 0; color: var(--marca); text-decoration: underline; }
 /* ═══════════════ fin v3b ═══════════════ */
 
 /* [MANDO DE MAQUETA] inicio */

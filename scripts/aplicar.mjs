@@ -747,7 +747,13 @@ escribir('css/marca.css', cssMarca());
 }
 escribir('js/tramites-datos.js', '/* GENERADO por scripts/aplicar.mjs desde municipio.json → tramites. Lo carga el buscador. */\n' +
   'window.TRAMITES = ' + jsonEnScript(lista.map(t => ({ n: t.nombre, h: t.href, s: t.sr, c: [...(claros.get(t.href) || [])] }))) + ';\n' +
-  'window.SINONIMOS = ' + jsonEnScript(M.tramites.sinonimos || {}) + ';\n');
+  'window.SINONIMOS = ' + jsonEnScript(M.tramites.sinonimos || {}) + ';\n' +
+  /* v3b · F8: lo demás que encuentra el buscador global y no va en los datos vivos de cada página:
+     el listín (nombre, número, grupo y detalle) y los lugares de «El pueblo» con su ancla */
+  'window.BUSCAR = ' + jsonEnScript({
+    telefonos: gruposListin.flatMap(g => g.items.filter(i => i.telefono).map(i => ({ n: i.nombre, t: i.telefono, g: g.grupo, d: i.detalle || '', h: 'telefonos.html' }))),
+    lugares: pueblo.lugares.map(l => ({ n: l.nombre, x: l.texto || '', h: 'pueblo.html#' + l.ancla }))
+  }) + ';\n');
 
 const huella = rel => existe(rel) ? crypto.createHash('md5').update(fs.readFileSync(r(rel))).digest('hex').slice(0, 8) : '0';
 const v = { fuentes: huella('css/fuentes.css'), marca: huella('css/marca.css'), base: huella('css/base.css'), main: huella('js/main.js'), vivo: huella('js/vivo.js'), cortina: huella('js/cortina.js'), datos: huella('js/tramites-datos.js') };

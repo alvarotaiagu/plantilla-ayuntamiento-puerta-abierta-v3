@@ -251,13 +251,14 @@
   }
 
   /* v3 · M5. Los resultados del buscador (diálogo, portada y Trámites) entran escalonados: solo
-     transform, 160 ms cada uno y 28 ms entre uno y otro, tope en el sexto: ≤ 300 ms en total */
-  .resultados > li { animation: mov-resultado .16s var(--curva-salida) backwards; }
-  .resultados > li:nth-child(2) { animation-delay: 28ms; }
-  .resultados > li:nth-child(3) { animation-delay: 56ms; }
-  .resultados > li:nth-child(4) { animation-delay: 84ms; }
-  .resultados > li:nth-child(5) { animation-delay: 112ms; }
-  .resultados > li:nth-child(n+6) { animation-delay: 140ms; }
+     transform, 160 ms cada uno y 28 ms entre uno y otro, tope en el sexto: ≤ 300 ms en total.
+     v3b: van en grupos (una lista por tipo); el escalón se cuenta dentro de cada lista */
+  .resultados li { animation: mov-resultado .16s var(--curva-salida) backwards; }
+  .resultados li:nth-child(2) { animation-delay: 28ms; }
+  .resultados li:nth-child(3) { animation-delay: 56ms; }
+  .resultados li:nth-child(4) { animation-delay: 84ms; }
+  .resultados li:nth-child(5) { animation-delay: 112ms; }
+  .resultados li:nth-child(n+6) { animation-delay: 140ms; }
   @keyframes mov-resultado { from { translate: 0 6px; } }
 
   /* los <details> de trámites se abren animados (::details-content +
@@ -354,4 +355,13 @@
      (con movimiento reducido el resaltado sigue, sin transición: es información) */
   .hemiciclo circle { transition: opacity .18s ease-out; }
   .pleno__boton { transition: background-color .15s, border-color .15s, box-shadow .15s; }
+
+  /* ═══ v3b · M8. Del hero a la página de trámites: el campo de búsqueda viaja ═══
+     Al enviar el buscador de la portada (o pulsar «Ver los N resultados»), Trámites llega con lo
+     escrito (?q=) y su campo ocupa el lugar del de la portada con la View Transition entre
+     documentos de §15: los dos campos llevan el mismo nombre. 400 ms. Sin soporte (Firefox) o con
+     movimiento reducido (fuera de este @media), navegación normal */
+  .hero__buscador [data-buscador-campo], .buscador-pagina [data-buscador-campo] { view-transition-name: campo-buscar; }
+  ::view-transition-group(campo-buscar) { animation-duration: .4s; animation-timing-function: var(--curva-salida); }
+  ::view-transition-old(campo-buscar), ::view-transition-new(campo-buscar) { height: 100%; }
 }
