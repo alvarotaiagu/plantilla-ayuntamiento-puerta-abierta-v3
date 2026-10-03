@@ -377,6 +377,20 @@ const pueblo = {
   placa: P.placa ? { titulo: P.placa.titulo || 'Un lugar con nombre propio', lineas: P.placa.lineas, pie: P.placa.pie, texto: P.placa.texto || null } : null,
   gastronomia: P.gastronomia ? { ...P.gastronomia, foto_datos: P.gastronomia.foto ? foto(P.gastronomia.foto, P.gastronomia.alt, 'gastronomía') : null } : null,
   historia: P.historia || [], patrimonio: P.patrimonio || [], personajes: P.personajes || [],
+  /* patrimonio por grupos (campo opcional `grupo` de cada elemento), en el orden en que aparecen.
+     Sin grupos, un solo bloque sin título; lo que no lleve grupo entre otros que sí, va a «Otros» */
+  patrimonio_grupos: (() => {
+    const gs = [];
+    for (const it of P.patrimonio || []) {
+      const t = it.grupo || null;
+      let g = gs.find(x => x.clave === t);
+      if (!g) gs.push(g = { clave: t, titulo: t, items: [] });
+      g.items.push({ nombre: it.nombre, detalle: it.detalle || null });
+    }
+    if (gs.length > 1) gs.forEach(g => { if (!g.titulo) g.titulo = 'Otros'; });
+    gs.sort((a, b) => (a.clave === null) - (b.clave === null));
+    return gs.map(g => ({ titulo: g.titulo, items: g.items, cuenta: g.items.length }));
+  })(),
   /* url: null explícito: si falta, el Mustache la busca hacia fuera y encuentra la `url` de la web
      (una ruta sin enlace salía con «Ver la ruta» a la portada; Monesterio, Camino de Santiago) */
   rutas: (P.rutas || []).map(r => ({ ...r, url: r.url || null })),

@@ -733,20 +733,30 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .placa__pie { margin-top: 1.25rem; color: var(--apagado); font-size: 1rem; }
 .placa__nota { color: var(--apagado); }
 
-.patrimonio { list-style: none; margin: 0; padding: 0; columns: 2 22rem; column-gap: 2.5rem; }
-.patrimonio li { break-inside: avoid; padding: .75rem 0; border-top: 1px solid var(--linea); }
-.patrimonio b { display: block; font: 700 1.125rem/1.35 var(--f-titulo); }
-.patrimonio span { display: block; color: var(--apagado); font-size: 1rem; line-height: 1.5; }
+/* patrimonio por grupos (campo opcional `grupo`): una columna con título por grupo, que se
+   colocan lado a lado en escritorio. Sin grupos, la lista de siempre en dos columnas */
+.patrimonio-grupos { display: grid; gap: 2rem 2.5rem; align-items: start; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); }
+.patrimonio-grupo { min-width: 0; }
+.patrimonio-grupo__titulo { font-size: 1.3rem; margin: 0; padding-bottom: .5rem; border-bottom: 2px solid var(--tinta); }
+.patrimonio { list-style: none; margin: 0; padding: 0; }
+.patrimonio-grupo:only-child .patrimonio { columns: 2 22rem; column-gap: 2.5rem; }
+.patrimonio__fila { break-inside: avoid; padding: .75rem 0; border-bottom: 1px solid var(--linea); }
+.patrimonio-grupo:only-child .patrimonio__fila { border-bottom: 0; border-top: 1px solid var(--linea); }
+.patrimonio__nombre { display: block; font: 700 1.125rem/1.35 var(--f-titulo); }
+.patrimonio__detalle { display: block; color: var(--apagado); font-size: 1rem; line-height: 1.5; margin-top: .15rem; }
 
 .gastronomia { display: grid; gap: 2rem; align-items: start; }
-@media (min-width: 56em) { .gastronomia { grid-template-columns: 1.3fr 1fr; gap: 3rem; } }
+@media (min-width: 56em) { .gastronomia--con-foto { grid-template-columns: 1.3fr 1fr; gap: 3rem; } }
 .gastronomia__listas { display: grid; gap: 1.25rem; }
+/* sin foto, las listas ocupan el ancho en columnas: que no quede un hueco a la derecha */
+.gastronomia:not(.gastronomia--con-foto) .gastronomia__listas { grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 1.25rem 2.5rem; }
 .gastronomia__titulo { font-size: 1.15rem; margin-bottom: .3rem; }
 .lista-coma { list-style: none; margin: 0; padding: 0; }
 .lista-coma li { display: inline; }
 .lista-coma li:not(:last-child)::after { content: " · "; color: var(--apagado); }
 .gastronomia__foto { margin: 0; }
-.gastronomia__foto img { border-radius: var(--radio); width: 100%; }
+.gastronomia__marco { aspect-ratio: 4 / 3; overflow: hidden; background: var(--superficie-2); }
+.gastronomia__marco img { width: 100%; height: 100%; object-fit: cover; }
 
 .rutas { list-style: none; margin: 0; padding: 0; display: grid; gap: 0 2.5rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); }
 .ruta { padding: .9rem 0 .2rem; border-top: 1px solid var(--linea); }

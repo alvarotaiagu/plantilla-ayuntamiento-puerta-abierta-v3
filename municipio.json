@@ -1311,74 +1311,92 @@
     "patrimonio": [
       {
         "nombre": "Iglesia de Nuestra Señora de Gracia",
+        "grupo": "Iglesia y ermitas",
         "detalle": "Del siglo XIII-XIV, reedificada en 1745 y 1859. Dos torres gemelas, un retablo barroco de Alonso Rodríguez Lucas y un púlpito de mármol de Estremoz. C/ Iglesia, 2."
       },
       {
         "nombre": "Ermita del Cristo de la Misericordia",
+        "grupo": "Iglesia y ermitas",
         "detalle": "Del siglo XVIII, con atrio, arcada lateral y torre. Guarda la imagen del Cristo, que la tradición atribuye a Pedro Roldán."
       },
       {
         "nombre": "Ermita de la Aurora",
+        "grupo": "Iglesia y ermitas",
         "detalle": "En la calle Meléndez Valdés. Conserva la sillería de los Trece de la Orden de Santiago y piedras visigodas en el umbral."
       },
       {
         "nombre": "Ermita del Cristo Viejo",
+        "grupo": "Iglesia y ermitas",
         "detalle": "Del siglo XVI, hoy en ruinas, con cúpula y una torre de remate bulboso."
       },
       {
         "nombre": "Ermita de San Juan Macías",
+        "grupo": "Iglesia y ermitas",
         "detalle": "Levantada en 1985 en la casa natal del santo."
       },
       {
         "nombre": "Ermita de San Isidro",
+        "grupo": "Iglesia y ermitas",
         "detalle": "De 1998, a unos 4 km del pueblo."
       },
       {
         "nombre": "Casa natal de Juan Meléndez Valdés",
+        "grupo": "Casas, palacios y monumentos",
         "detalle": "En la calle Larga, con la placa que recuerda al poeta."
       },
       {
         "nombre": "Monumento a Meléndez Valdés",
+        "grupo": "Casas, palacios y monumentos",
         "detalle": "Busto de bronce de 1985, obra del escultor pacense Luis Martínez Giraldo."
       },
       {
         "nombre": "Casa de Vargas-Zúñiga",
+        "grupo": "Casas, palacios y monumentos",
         "detalle": "Casa-palacio de los siglos XVII y XVIII, con balcón, escudo con venera y rejas con la cruz de Santiago. Hoy es la Casa de la Cultura."
       },
       {
         "nombre": "Palacio de Quintanilla",
+        "grupo": "Casas, palacios y monumentos",
         "detalle": "En la calle Ayuntamiento, con fachada barroca."
       },
       {
         "nombre": "Casa de Bazo",
+        "grupo": "Casas, palacios y monumentos",
         "detalle": "Con un balcón bajo bóveda de venera."
       },
       {
         "nombre": "Casas de los Olea y de los Grajera",
+        "grupo": "Casas, palacios y monumentos",
         "detalle": "Casas de esquina con blasones, de los siglos XVII y XVIII."
       },
       {
         "nombre": "Antiguo convento de Jesús y María",
+        "grupo": "Casas, palacios y monumentos",
         "detalle": "Convento de clarisas fundado en 1535. Hoy es el Ayuntamiento."
       },
       {
         "nombre": "Oppidum de Hornachuelos",
+        "grupo": "Arqueología y campo",
         "detalle": "Poblado fortificado prerromano de unas cinco hectáreas, excavado entre 1986 y 1997. Tiene centro de interpretación en la Casa de la Cultura."
       },
       {
         "nombre": "Pozo de San Juan Macías",
+        "grupo": "Arqueología y campo",
         "detalle": "En la finca del Valle Garzón, a unos 4 km: el lugar del primer milagro del santo."
       },
       {
         "nombre": "Pilar del Caño",
+        "grupo": "Arqueología y campo",
         "detalle": "Pilar tradicional, a las afueras del pueblo."
       },
       {
         "nombre": "Los pozos rojos y blancos",
+        "grupo": "Arqueología y campo",
         "detalle": "Los pozos del término se pintan de rojo el cuerpo y de blanco el brocal."
       },
       {
         "nombre": "Ruinas del lavadero de lanas",
+        "grupo": "Arqueología y campo",
         "detalle": "Arcos de ladrillo junto al arroyo Valdemedel."
       }
     ],
