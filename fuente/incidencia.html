@@ -32,7 +32,7 @@
         <p class="campo__error" id="error-categoria" hidden data-error-de="categoria"></p>
         <div class="incidencia__opciones">
           {{#incidencias.categorias}}<label class="incidencia__opcion" for="{{id}}">
-            <input type="radio" id="{{id}}" name="categoria" value="{{nombre}}" required>
+            <input type="radio" id="{{id}}" name="categoria" value="{{nombre}}" required><span class="incidencia__marca" aria-hidden="true"></span>
             <span><b>{{nombre}}</b>{{#ayuda}}<span class="incidencia__ayuda">{{ayuda}}</span>{{/ayuda}}</span>
           </label>
           {{/incidencias.categorias}}
@@ -63,8 +63,7 @@
           <textarea class="campo__entrada" id="campo-descripcion" name="descripcion" rows="5" required aria-describedby="ayuda-descripcion error-descripcion"></textarea>
         </div>
         <div class="incidencia__foto">
-          <input type="checkbox" id="campo-foto" name="foto" value="Adjunto una foto a este correo">
-          <label for="campo-foto">Tengo una foto y la adjuntaré al correo</label>
+          <label class="incidencia__casilla" for="campo-foto"><input type="checkbox" id="campo-foto" name="foto" value="Adjunto una foto a este correo" aria-describedby="ayuda-foto"><span class="incidencia__marca incidencia__marca--casilla" aria-hidden="true"></span><span>Tengo una foto y la adjuntaré al correo</span></label>
           <p class="campo__ayuda" id="ayuda-foto">Una foto ayuda mucho. Esta página no puede mandarla por usted: cuando se abra su correo, adjúntela allí (el clip o «Adjuntar»).</p>
         </div>
       </fieldset>

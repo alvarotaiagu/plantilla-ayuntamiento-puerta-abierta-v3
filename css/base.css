@@ -1454,7 +1454,28 @@ body {
 }
 .incidencia__opcion:hover { border-color: var(--marca); }
 .incidencia__opcion:has(input:checked) { border-color: var(--marca); background: var(--marca-tenue); box-shadow: inset 4px 0 0 var(--marca); }
-.incidencia__opcion input, .incidencia__foto input { width: 1.35rem; height: 1.35rem; margin: .1rem 0 0; flex: none; accent-color: var(--marca); }
+/* la zona táctil es la tarjeta entera (≥ 44 px): el control nativo la cubre, sin aspecto propio (y con
+   el foco alrededor de la tarjeta); el círculo o la casilla que se ven son .incidencia__marca */
+.incidencia__opcion, .incidencia__casilla { position: relative; }
+.incidencia__opcion input, .incidencia__casilla input {
+  appearance: none; position: absolute; inset: -2px; width: auto; height: auto; margin: 0;
+  background: none; border: 0; border-radius: var(--radio); cursor: pointer;
+}
+.incidencia__marca {
+  flex: none; display: grid; place-items: center; width: 1.4rem; height: 1.4rem; margin-top: .1rem;
+  background: var(--superficie); border: 2px solid var(--linea-fuerte); border-radius: 50%;
+}
+.incidencia__marca--casilla { border-radius: 4px; }
+input:checked + .incidencia__marca { border-color: var(--marca); }
+input:checked + .incidencia__marca::after { content: ""; width: .7rem; height: .7rem; border-radius: 50%; background: var(--marca); }
+input:checked + .incidencia__marca--casilla { background: var(--marca); }
+input:checked + .incidencia__marca--casilla::after {
+  width: .4rem; height: .75rem; margin-top: -.15rem; border-radius: 0; background: none;
+  border: solid var(--sobre-marca); border-width: 0 3px 3px 0; transform: rotate(45deg);
+}
+.incidencia__casilla { display: flex; gap: .7rem; align-items: flex-start; min-height: 48px; padding: .75rem .9rem; font-weight: 600; background: var(--superficie); border: 2px solid var(--linea-fuerte); border-radius: var(--radio); cursor: pointer; }
+.incidencia__casilla:hover { border-color: var(--marca); }
+.incidencia__casilla:has(input:checked) { border-color: var(--marca); background: var(--marca-tenue); }
 .incidencia__ayuda { display: block; color: var(--apagado); font-size: .9375rem; line-height: 1.35; }
 .incidencia__opcion:has(input:checked) .incidencia__ayuda { color: var(--tinta); }
 .incidencia textarea.campo__entrada { min-height: 6rem; resize: vertical; line-height: 1.5; }
@@ -1463,9 +1484,8 @@ body {
 .incidencia__ubicacion { display: grid; gap: .5rem; justify-items: start; }
 .incidencia__ubicacion .campo__ayuda { margin: 0; }
 .incidencia__estado { margin: 0; min-height: 1.6em; font-size: 1rem; }
-.incidencia__foto { display: grid; grid-template-columns: auto 1fr; gap: .35rem .7rem; align-items: start; }
-.incidencia__foto label { font-weight: 600; }
-.incidencia__foto .campo__ayuda { grid-column: 2; margin: 0; }
+.incidencia__foto { display: grid; gap: .5rem; justify-items: start; }
+.incidencia__foto .campo__ayuda { margin: 0; }
 .incidencia__datos { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); }
 .incidencia__enviar .campo__ayuda { margin-top: .75rem; }
 .campo__error { margin: 0; padding-left: .75rem; border-left: 4px solid var(--alerta); font-weight: 600; color: var(--tinta); }
