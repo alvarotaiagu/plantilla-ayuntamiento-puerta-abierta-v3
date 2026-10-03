@@ -10,6 +10,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import vm from 'node:vm';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { cargarPlaywright } from './og.mjs';
@@ -442,6 +443,151 @@ async function tablon() {
   }
 }
 
+/* ── panel «Hoy»: farmacia de guardia, el tiempo, pleno, recogida, canal y .ics ──
+   La lógica se prueba con vivo.js en Node (como lo ejecuta aplicar.mjs), con fechas
+   simuladas; luego, en el navegador, con el reloj de Playwright. */
+const cargarVivo = () => { const c = { window: {}, Intl, Date }; vm.runInNewContext(leer(RAIZ, 'js', 'vivo.js'), c); return c.window.Vivo; };
+/* un .ics válido según RFC 5545: CRLF y nada más, líneas de ≤ 75 octetos, bloques cerrados, UID, DTSTAMP y DTSTART */
+function icsValido(txt) {
+  const mal = [];
+  if (!txt.endsWith('\r\n') || /[^\r]\n|\r(?!\n)/.test(txt)) mal.push('saltos que no son CRLF');
+  const lineas = txt.slice(0, -2).split('\r\n');
+  const largas = lineas.filter(l => Buffer.byteLength(l, 'utf8') > 75);
+  if (largas.length) mal.push(largas.length + ' líneas de más de 75 octetos');
+  const desplegado = txt.replace(/\r\n /g, '').split('\r\n').filter(Boolean);
+  const pila = [];
+  for (const l of desplegado) {
+    const b = /^BEGIN:(\w+)$/.exec(l), e = /^END:(\w+)$/.exec(l);
+    if (b) pila.push(b[1]); else if (e && pila.pop() !== e[1]) mal.push('END:' + e[1] + ' sin su BEGIN');
+  }
+  if (pila.length) mal.push('sin cerrar: ' + pila.join(', '));
+  if (desplegado[0] !== 'BEGIN:VCALENDAR' || !desplegado.includes('VERSION:2.0') || !desplegado.some(l => /^PRODID:/.test(l))) mal.push('cabecera VCALENDAR');
+  const uid = desplegado.find(l => /^UID:\S+@\S+$/.test(l)), sello = desplegado.find(l => /^DTSTAMP:\d{8}T\d{6}Z$/.test(l));
+  const ini = desplegado.find(l => /^DTSTART(;TZID=Europe\/Madrid:\d{8}T\d{6}|;VALUE=DATE:\d{8})$/.test(l));
+  if (!uid) mal.push('UID'); if (!sello) mal.push('DTSTAMP'); if (!ini) mal.push('DTSTART');
+  if (ini && /TZID/.test(ini) && !desplegado.includes('BEGIN:VTIMEZONE')) mal.push('TZID sin VTIMEZONE');
+  if (!desplegado.some(l => /^SUMMARY:/.test(l))) mal.push('SUMMARY');
+  return { ok: !mal.length, mal, uid, desplegado };
+}
+async function panelHoy() {
+  const V = cargarVivo();
+  const en = iso => V.ahoraEn('Europe/Madrid', new Date(iso));
+  const rutas = { tramites: 'tramites.html', avisos: 'avisos.html', agenda: 'agenda.html', noticia: 'noticia-{id}.html', media: 'media/' };
+  const base = { slug: 'prueba', nombre: 'Pueblo de Prueba', nombre_corto: 'Prueba', zona: 'Europe/Madrid', horario: { texto: 'L-V', tramos: [] }, avisos: [], agenda: [], noticias: [], tablon: { entradas: [] }, rutas, tramites_sede: 1 };
+  const hoyDe = (extra, iso) => V.pintar('hoy', { ...base, ...extra }, en(iso || '2026-10-14T10:00:00+02:00'));
+
+  /* 1. sin datos no sale nada nuevo, ni un hueco */
+  const vacio = hoyDe({});
+  comprobar(!/Farmacia de guardia|Más hoy|hoy__canal|hoy__breve/.test(vacio), 'panel «Hoy»: sin datos no salen la farmacia, «Más hoy» ni el canal de avisos (ningún hueco)');
+
+  /* 2. farmacia de guardia y la frontera del cambio (09:30): rotación semanal y una fecha suelta que manda */
+  const F = { lista: [{ id: 'a', nombre: 'Farmacia A' }, { id: 'b', nombre: 'Farmacia B', telefono: '900 000 001' }, { id: 'c', nombre: 'Farmacia C', localidad: 'Pueblo vecino' }],
+    cambio: '09:30', rotacion: { inicio: '2026-10-05', dias: 7, orden: ['a', 'b'] }, guardias: [{ desde: '2026-10-20', hasta: '2026-10-20', farmacia: 'c' }] };
+  const casos = [['2026-10-12T09:29:00+02:00', 'a', '2026-10-12'], ['2026-10-12T09:30:00+02:00', 'b', '2026-10-19'], ['2026-10-05T09:29:00+02:00', 'b', '2026-10-05'],
+    ['2026-10-20T09:29:00+02:00', 'a', '2026-10-26'], ['2026-10-20T09:30:00+02:00', 'c', '2026-10-21'], ['2026-10-21T09:29:00+02:00', 'c', '2026-10-21'], ['2026-10-21T09:30:00+02:00', 'a', '2026-10-26'],
+    ['2026-03-29T09:45:00+02:00', 'a', '2026-03-30']];      /* el día del cambio de hora, y antes del inicio de la rotación */
+  const malF = casos.map(([iso, id, hasta]) => { const g = V.farmaciaDeGuardia(F, en(iso)); return g && g.farmacia.id === id && g.hasta === hasta ? null : `${iso}: ${g ? g.farmacia.id + ' hasta ' + g.hasta : 'nada'} (esperaba ${id} hasta ${hasta})`; }).filter(Boolean);
+  const h1 = hoyDe({ farmacias: F }, '2026-10-12T09:29:00+02:00'), h2 = hoyDe({ farmacias: F }, '2026-10-12T09:30:00+02:00');
+  const h3 = hoyDe({ farmacias: F }, '2026-10-20T12:00:00+02:00');
+  if (!/Farmacia A/.test(h1) || !/hasta hoy a las 9:30/.test(h1)) malF.push('09:29 pinta: ' + (h1.match(/Farmacia de guardia.*?<\/li>/) || [''])[0].replace(/<[^>]+>/g, ' '));
+  if (!/Farmacia B/.test(h2) || !/href="tel:\+34900000001"/.test(h2) || !/hasta el lunes 19 de octubre a las 9:30/.test(h2)) malF.push('09:30 pinta: ' + (h2.match(/Farmacia de guardia.*?<\/li>/) || [''])[0].replace(/<[^>]+>/g, ' '));
+  if (!/Farmacia C/.test(h3) || !/Pueblo vecino/.test(h3) || !/hasta mañana a las 9:30/.test(h3)) malF.push('fecha suelta pinta: ' + (h3.match(/Farmacia de guardia.*?<\/li>/) || [''])[0].replace(/<[^>]+>/g, ' '));
+  const soloOficial = hoyDe({ farmacias: { lista: [], oficial: { nombre: 'Colegio de prueba', url: 'https://example.org/g' } } });
+  if (!/Consulte la de hoy en la web del Colegio de prueba/.test(soloOficial)) malF.push('sin farmacia propia no sale el enlace oficial');
+  if (/Farmacia de guardia/.test(hoyDe({ farmacias: { lista: [{ id: 'a', nombre: 'A' }], rotacion: null, guardias: [] } }))) malF.push('sin guardia que cubra el día ni fuente oficial, la fila sale igual');
+  comprobar(!malF.length, `farmacia de guardia: la de hoy según fecha y hora, con el cambio a las 9:30 (a las 9:29 sigue la de ayer), una fecha suelta manda sobre la rotación, teléfono con tel: y, sin farmacia propia, el enlace a la fuente oficial (${casos.length} fechas simuladas)` + (malF.length ? ' → ' + malF.join(' | ') : ''));
+
+  /* 3. el tiempo, el próximo pleno, la recogida y el canal */
+  const R = [{ id: 'enseres', nombre: 'Recogida de enseres', dias: [3], como: 'Pídala antes', telefono: '900 000 002' }];
+  const extra = { tiempo: { url: 'https://www.aemet.es/es/eltiempo/prediccion/municipios/pueblo-de-prueba-id06999', lugar: 'Pueblo de Prueba' }, recogida: R, canal: { nombre: 'Canal de prueba', url: 'https://example.org/c' },
+    agenda: [{ id: 'pleno-2026-10-29', fecha: '2026-10-29', hora: '20:00', titulo: 'Pleno ordinario', tipo: 'pleno', ics: 'ics/pleno-2026-10-29.ics' }, { id: 'feria', fecha: '2026-11-02', titulo: 'Feria' }] };
+  const miercoles = hoyDe(extra, '2026-10-14T10:00:00+02:00'), martes = hoyDe(extra, '2026-10-13T10:00:00+02:00');
+  const lineaAg = (miercoles.match(/Lo próximo en la agenda.*?<\/li><\/ul>/) || [''])[0];
+  const malM = [];
+  if (!/Más hoy/.test(miercoles) || !/id06999/.test(miercoles)) malM.push('el tiempo');
+  if (!/Próximo pleno:.*Jueves 29 de octubre, 20:00/.test(miercoles) || !/href="ics\/pleno-2026-10-29\.ics"/.test(miercoles) || /Pleno ordinario/.test(lineaAg)) malM.push('pleno (sale en «Más hoy» con su .ics y no repetido en la agenda)');
+  if (!/Recogida de enseres:<\/b> toca hoy/.test(miercoles) || !/Recogida de enseres:<\/b> la próxima, mañana/.test(martes)) malM.push('recogida: «toca hoy» el miércoles y «la próxima, mañana» el martes');
+  if (!/class="hoy__canal".*Canal de prueba.*avisos\.html#t-canal/.test(miercoles)) malM.push('canal de avisos al pie del panel');
+  const pasado = hoyDe({ ...extra, agenda: [{ ...extra.agenda[0], fecha: '2026-10-01' }] });
+  if (/Próximo pleno/.test(pasado)) malM.push('un pleno ya celebrado sale como próximo');
+  comprobar(!malM.length, 'panel «Hoy» → «Más hoy»: el enlace de AEMET, el próximo pleno (con «Añadir a mi calendario» y sin repetirse en la agenda), la recogida («toca hoy» / «la próxima, mañana») y el canal de avisos con «Cómo apuntarse»' + (malM.length ? ' → ' + malM.join(' | ') : ''));
+
+  /* 4. .ics: el generador con un título que hay que escapar y doblar, y todos los archivos escritos */
+  const largo = { id: 'feria, de; prueba', fecha: '2026-12-31', hora: '23:30', titulo: 'Feria, mercado; y baile \\ con tildes: «Ñandú» áéíóú '.repeat(3).trim(), lugar: 'Plaza, 1', nota: 'Línea uno\nLínea dos' };
+  const t1 = icsValido(V.ics(largo, base, new Date('2026-10-03T10:00:00Z'))), t2 = icsValido(V.ics({ id: 'dia', fecha: '2026-11-12', titulo: 'Todo el día' }, base));
+  const malI = [...t1.mal, ...t2.mal.map(m => 'día entero: ' + m)];
+  if (!t1.desplegado.some(l => l.startsWith('SUMMARY:Feria\\, mercado\\; y baile \\\\ con tildes'))) malI.push('escapado de , ; \\');
+  if (!t1.desplegado.includes('DESCRIPTION:Línea uno\\nLínea dos')) malI.push('salto de línea en DESCRIPTION');
+  if (!t1.desplegado.includes('DTEND;TZID=Europe/Madrid:20270101T003000')) malI.push('DTEND que pasa de medianoche');
+  if (!t2.desplegado.includes('DTSTART;VALUE=DATE:20261112') || !t2.desplegado.includes('DTEND;VALUE=DATE:20261113')) malI.push('día entero con VALUE=DATE');
+  if (V.ics(largo, base, new Date(0)).split('\r\n').find(l => l.startsWith('UID')) !== V.ics(largo, base, new Date()).split('\r\n').find(l => l.startsWith('UID'))) malI.push('el UID cambia entre generaciones');
+  /* los archivos que escribió aplicar.mjs y los enlaces de la agenda */
+  const dirIcs = path.join(RAIZ, 'ics'), archivos = fs.existsSync(dirIcs) ? fs.readdirSync(dirIcs).filter(f => f.endsWith('.ics')) : [];
+  const uids = new Set();
+  for (const f of archivos) { const t = icsValido(fs.readFileSync(path.join(dirIcs, f), 'utf8')); if (!t.ok) malI.push(f + ': ' + t.mal.join(', ')); if (uids.has(t.uid)) malI.push(f + ': UID repetido'); uids.add(t.uid); }
+  const agendaHtml = leer(RAIZ, 'agenda.html'), enlaces = [...agendaHtml.matchAll(/href="(ics\/[^"]+\.ics)"/g)].map(m => m[1]);
+  const pendientes = (agendaHtml.match(/<h2[^>]*id="t-proximo"[\s\S]*?(<h2|<\/section>)/) || [''])[0].match(/class="evento"/g) || [];
+  if (enlaces.some(e => !fs.existsSync(path.join(RAIZ, e)))) malI.push('enlace a un .ics que no existe');
+  if (enlaces.length !== pendientes.length) malI.push(`${enlaces.length} enlaces .ics para ${pendientes.length} eventos que vienen`);
+  if (!/Añadir a mi calendario <span class="evento__ics-tipo">\(archivo \.ics\)<\/span><span class="sr">: «/.test(agendaHtml)) malI.push('texto accesible del enlace');
+  comprobar(!malI.length && archivos.length > 0, `.ics (RFC 5545): CRLF, líneas de ≤ 75 octetos sin partir tildes, UID estable y único, DTSTAMP, DTSTART con Europe/Madrid (y VTIMEZONE) o VALUE=DATE el día entero, escapado de , ; \\ y saltos; ${archivos.length} archivos en ics/ y un enlace por cada evento que viene en la agenda` + (malI.length ? ' → ' + malI.slice(0, 6).join(' | ') : ''));
+
+  /* 5. en esta web: cada bloque solo con sus datos, y el INE manda en el enlace de AEMET */
+  const index = leer(RAIZ, 'index.html');
+  const tieneCanal = !!(M.canal_avisos && M.canal_avisos.url);
+  const malW = [];
+  if (/class="hoy__canal"/.test(index) !== tieneCanal || /class="pie__canal"/.test(index) !== tieneCanal) malW.push('canal de avisos ' + (tieneCanal ? 'falta' : 'sobra') + ' en el panel o en el pie');
+  if (M.ine && !index.includes('-id' + M.ine + '"')) malW.push('el enlace de AEMET no lleva el INE ' + M.ine);
+  if (!M.ine && /aemet\.es/.test(index)) malW.push('sale AEMET sin INE');
+  const dir3 = /^L01(\d{5})\d$/.exec((M.legal && M.legal.dir3) || '');
+  if (M.ine && dir3 && dir3[1] !== String(M.ine)) malW.push('ine y legal.dir3 no casan');
+  if (!(M.farmacias && ((M.farmacias.lista || []).length || M.farmacias.oficial)) && /Farmacia de guardia/.test(index)) malW.push('sale la farmacia sin datos');
+  if (!(M.recogida || []).length && /hoy__breve[^>]*data-dato-ejemplo="recogida/.test(index)) malW.push('sale la recogida sin datos');
+  comprobar(!malW.length, `panel «Hoy» de ${M.nombre}: ${[M.farmacias ? 'farmacia' : null, M.ine ? 'AEMET (INE ' + M.ine + ', casa con el DIR3)' : null, (M.plenos || []).length ? 'plenos' : null, (M.recogida || []).length ? 'recogida' : null, tieneCanal ? 'canal' : 'sin canal'].filter(Boolean).join(', ')}, cada cosa solo con sus datos` + (malW.length ? ' → ' + malW.join(' | ') : ''));
+
+  /* 6. en el navegador: la farmacia cambia a la hora del cambio con el reloj real */
+  if (M.farmacias && (M.farmacias.lista || []).length) {
+    const cambio = M.farmacias.cambio || '09:30', [hh, mm] = cambio.split(':').map(Number);
+    const antes = `2026-10-05T${String(mm ? hh : hh - 1).padStart(2, '0')}:${String(mm ? mm - 1 : 59).padStart(2, '0')}:00+02:00`, despues = `2026-10-05T${cambio}:00+02:00`;
+    const vistos = [];
+    for (const iso of [antes, despues]) {
+      const { ctx, page } = await nueva();
+      await page.clock.setFixedTime(new Date(iso));
+      await ir(page, 'index.html');
+      vistos.push(await page.evaluate(() => { const f = document.querySelector('.hoy__fila--farmacia b'); return f ? f.textContent : ''; }));
+      await ctx.close();
+    }
+    const Dpag = JSON.parse(index.match(/<script type="application\/json" id="datos-vivos">([\s\S]*?)<\/script>/)[1]);
+    const esperados = [antes, despues].map(iso => { const g = V.farmaciaDeGuardia(Dpag.farmacias, en(iso)); return g ? g.farmacia.nombre : ''; });
+    comprobar(vistos[0] === esperados[0] && vistos[1] === esperados[1], `farmacia de guardia en el navegador (reloj simulado): a las ${antes.slice(11, 16)} «${vistos[0]}», a las ${cambio} «${vistos[1]}»` + (vistos.join() !== esperados.join() ? ` → esperaba «${esperados.join('» y «')}»` : ''));
+  }
+
+  /* 7. un evento que llega de la hoja: «Añadir a mi calendario» genera el .ics con un Blob */
+  const { ctx, page } = await nueva();
+  await page.route('**/agenda.html', async r => {
+    const resp = await r.fetch(); let cuerpo = await resp.text();
+    cuerpo = cuerpo.replace(/"hoja":(null|\{[^}]*\}\})/, '"hoja":{"id":"HOJA-DE-PRUEBA","pestanas":{"agenda":"Agenda"}}');
+    r.fulfill({ response: resp, body: cuerpo });
+  });
+  const manana = new Date(Date.now() + 5 * 864e5), f = manana.toISOString().slice(0, 10).split('-').map(Number);
+  await page.route('https://docs.google.com/**', r => {
+    const datos = { table: { cols: [{ label: 'id' }, { label: 'fecha' }, { label: 'hora' }, { label: 'titulo' }, { label: 'lugar' }],
+      rows: [{ c: [{ v: 'desde-la-hoja' }, { v: `Date(${f[0]},${f[1] - 1},${f[2]})` }, { v: 'Date(1899,11,30,19,0,0)' }, { v: 'Concierto, desde la hoja; prueba' }, { v: 'Plaza' }] }] } };
+    r.fulfill({ contentType: 'text/plain', body: 'google.visualization.Query.setResponse(' + JSON.stringify(datos) + ');' });
+  });
+  await ir(page, 'agenda.html');
+  await page.waitForSelector('#evento-desde-la-hoja button[data-ics]', { timeout: 4000 }).catch(() => {});
+  let blob = null;
+  if (await page.$('#evento-desde-la-hoja button[data-ics]')) {
+    const [descarga] = await Promise.all([page.waitForEvent('download', { timeout: 4000 }), page.click('#evento-desde-la-hoja button[data-ics]')]);
+    blob = { nombre: descarga.suggestedFilename(), txt: fs.readFileSync(await descarga.path(), 'utf8') };
+  }
+  await ctx.close();
+  const tb = blob ? icsValido(blob.txt) : { ok: false, mal: ['no salió el botón o no descargó'], desplegado: [] };
+  comprobar(tb.ok && /\.ics$/.test(blob.nombre) && tb.desplegado.includes('SUMMARY:Concierto\\, desde la hoja\\; prueba') && tb.desplegado.some(l => /^DTSTART;TZID=Europe\/Madrid:\d{8}T190000$/.test(l)),
+    'un evento de la hoja de cálculo (sin .ics escrito) se descarga como .ics válido generado con un Blob al pulsar, con la hora de la celda (19:00)' + (tb.ok ? '' : ' → ' + tb.mal.join(', ')));
+}
+
 /* ── contenido: «Ejemplo» exactamente en lo marcado ── */
 async function contenidoEjemplo() {
   const esperados = new Set();
@@ -450,6 +596,10 @@ async function contenidoEjemplo() {
   contenido('avisos').avisos.filter(a => a.ejemplo).forEach(a => esperados.add('aviso:' + a.id));
   contenido('agenda').eventos.filter(a => a.ejemplo).forEach(a => esperados.add('evento:' + a.id));
   contenido('noticias').noticias.filter(a => a.ejemplo).forEach(a => esperados.add('noticia:' + a.id));
+  /* lo nuevo del panel «Hoy» (con la rotación de muestra siempre hay una farmacia de guardia) */
+  if (M.farmacias && M.farmacias.ejemplo && (M.farmacias.rotacion || (M.farmacias.guardias || []).length)) esperados.add('farmacia');
+  (M.recogida || []).filter(x => x.ejemplo).forEach(x => esperados.add('recogida:' + x.id));
+  (M.plenos || []).filter(p => p.ejemplo).forEach(p => esperados.add('evento:pleno-' + p.fecha + (p.id ? '-' + p.id : '')));
   const { ctx, page } = await nueva({ densidad: 'sobria' });
   const vistos = new Set(), malos = [];
   for (const p of PAGINAS) {
@@ -724,6 +874,11 @@ async function opcionales() {
     m.instalaciones = O.instalaciones;
     m.tramites.todos = [...m.tramites.todos, ...O.tramites_extra];
     m.servicios = [...m.servicios, ...O.servicios_extra];
+    /* lo nuevo del panel «Hoy»: farmacias con teléfono, dos recogidas y un pleno siempre a 10 días */
+    if (O.farmacias) m.farmacias = O.farmacias;
+    if (O.recogida) m.recogida = O.recogida;
+    const enDias = n => new Date(Date.now() + n * 864e5).toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+    if (O.plenos_dentro_de_dias) m.plenos = O.plenos_dentro_de_dias.map(({ dias, ...p }) => ({ ...p, fecha: enDias(dias) }));
     fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(m, null, 2));
     const ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
     if (ap.status !== 0) { comprobar(false, 'opcionales: aplicar.mjs falla con los datos de muestra → ' + (ap.stderr || ap.stdout).slice(-400)); return; }
@@ -760,6 +915,8 @@ async function opcionales() {
       await page.goto(b + 'avisos.html', { waitUntil: 'networkidle' });
       const canal = await page.evaluate(() => { const s = document.querySelector('.canal-avisos'); return s ? [...s.querySelectorAll('a')].map(a => ({ h: a.getAttribute('href'), sr: a.querySelector('.sr').textContent })) : null; });
       if (!canal || canal.length !== 1 + (O.canal_avisos.otros || []).length || canal[0].h !== O.canal_avisos.url || !canal.every(a => /otra web/.test(a.sr))) malos.push('canal de avisos: ' + JSON.stringify(canal));
+      const pasos = await page.evaluate(() => document.querySelectorAll('.canal-avisos__pasos li').length);
+      if (pasos !== (O.canal_avisos.pasos || []).length) malos.push('canal de avisos: ' + pasos + ' pasos para apuntarse');
       viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => 'avisos.html: ' + v.id));
       if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) desb.push(w + ' avisos.html');
       await page.goto(b + 'tramites.html', { waitUntil: 'networkidle' });
@@ -777,11 +934,33 @@ async function opcionales() {
       if (CAPTURAS && w === 320) await page.screenshot({ path: captura('opcionales-instalaciones-m.png'), fullPage: true });
       viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => 'telefonos.html: ' + v.id));
       if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) desb.push(w + ' telefonos.html');
+      /* portada: farmacia con teléfono, «Más hoy» (tiempo, pleno y recogidas) y el canal en el panel y en el pie */
+      await page.goto(b + 'index.html', { waitUntil: 'networkidle' });
+      const hoyO = await page.evaluate(() => { const h = document.querySelector('.hoy'); return { farmacia: !!h.querySelector('.hoy__fila--farmacia a[href^="tel:"]'), breves: h.querySelectorAll('.hoy__breve').length,
+        canal: [...h.querySelectorAll('.hoy__canal a')].map(a => a.getAttribute('href')), pie: [...document.querySelectorAll('.pie__canal a')].map(a => a.getAttribute('href')), ics: !!h.querySelector('.hoy__breve a.enlace-ics[href$=".ics"]') }; });
+      const brevesEsperados = (m.ine ? 1 : 0) + 1 + Math.min(2, O.recogida.length);
+      if (!hoyO.farmacia || hoyO.breves !== brevesEsperados || !hoyO.ics || hoyO.canal[0] !== O.canal_avisos.url || !/avisos\.html#t-canal$/.test(hoyO.canal[1] || '') || hoyO.pie[0] !== O.canal_avisos.url)
+        malos.push(`${w} px: panel «Hoy» ${JSON.stringify(hoyO)} (esperaba ${brevesEsperados} líneas en «Más hoy»)`);
+      viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => 'index.html: ' + v.id));
+      if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) desb.push(w + ' index.html');
+      if (CAPTURAS) await page.locator('.hoy').screenshot({ path: captura(`opcionales-hoy-${w}.png`) });
+      /* agenda: el pleno con su convocatoria y su .ics */
+      await page.goto(b + 'agenda.html', { waitUntil: 'networkidle' });
+      const pl = await page.evaluate(() => { const e = [...document.querySelectorAll('.evento')].find(x => x.querySelector('.chip') && x.querySelector('.chip').textContent === 'Pleno'); return e ? { conv: !!e.querySelector('a.evento__enlace[href*="convocatoria"]'), ics: !!e.querySelector('a.evento__ics[href$=".ics"]') } : null; });
+      if (!pl || !pl.conv || !pl.ics) malos.push('agenda: pleno ' + JSON.stringify(pl));
+      viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => 'agenda.html: ' + v.id));
+      if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) desb.push(w + ' agenda.html');
       await ctx.close();
     }
     srv.close();
+    /* un INE que no casa con el DIR3: aplicar.mjs se niega (AEMET enseñaría otro pueblo) */
+    if (m.legal && /^L01\d{6}$/.test(m.legal.dir3 || '')) {
+      fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify({ ...m, ine: String((Number(m.legal.dir3.slice(3, 8)) + 2) % 100000).padStart(5, '0') }, null, 2));
+      const mal = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
+      if (mal.status === 0 || !/ine «\d{5}» no casa con legal\.dir3/.test(mal.stderr)) malos.push('aplicar.mjs acepta un INE que no casa con el DIR3');
+    }
     comprobar(!malos.length && !viol.length && !desb.length,
-      'opcionales con datos de muestra: «Normativa y documentos» (desplegables, cada enlace dice qué abre), «Para visitar» (dirección, horario, entrada y teléfono solo si constan), «Dónde comer y dormir» (grupos, teléfonos y fuente), el canal de avisos, impresos en Word, un servicio del listín sin teléfono e «Instalaciones municipales» (grupos de fichas, cada dato solo si consta, el enlace dice qué abre); 0 violaciones de axe y sin scroll horizontal a 320 y 1440 px' +
+      'opcionales con datos de muestra: «Normativa y documentos» (desplegables, cada enlace dice qué abre), «Para visitar» (dirección, horario, entrada y teléfono solo si constan), «Dónde comer y dormir» (grupos, teléfonos y fuente), el canal de avisos, impresos en Word, un servicio del listín sin teléfono e «Instalaciones municipales» (grupos de fichas, cada dato solo si consta, el enlace dice qué abre), el panel «Hoy» completo (farmacia con teléfono, tiempo, pleno con .ics, dos recogidas, canal en el panel y en el pie, pasos para apuntarse), el pleno en la agenda con convocatoria y .ics, y un INE que no casa con el DIR3 rechazado; 0 violaciones de axe y sin scroll horizontal a 320 y 1440 px' +
       (malos.length ? ' → ' + malos.join(' | ') : '') + (viol.length ? ' → axe: ' + [...new Set(viol)].join(', ') : '') + (desb.length ? ' → desborda ' + desb.join(', ') : ''));
   } finally { fs.rmSync(dest, { recursive: true, force: true }); }
 }
@@ -819,7 +998,7 @@ async function capturas() {
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
 if (!SOLO || SOLO.includes('estaticas')) estaticas();
-for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['cortina', cortina], ['contenido', contenidoEjemplo], ['interaccion', interaccion],
+for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', panelHoy], ['cortina', cortina], ['contenido', contenidoEjemplo], ['interaccion', interaccion],
   ['estructura', estructura], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();
