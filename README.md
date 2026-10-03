@@ -59,7 +59,7 @@ El RD 1112/2018 obliga a cumplir WCAG 2.1 AA. Por eso esta plantilla **rompe a p
 
 | Página | Qué tiene |
 |---|---|
-| `index.html` | Franja urgente (si la hay). Hero «Hoy en Ribera» con el arco. Trámites por temas con 4 atajos. Tablón con filtros (los 6 últimos). «Lo que viene y lo que pasó» con el listín corto. «¿Quién se ocupa de qué?». «El año en Ribera». Franja de sede y pie |
+| `index.html` | Franja urgente (si la hay; en móvil, una línea). Hero con el arco, el buscador de trámites, los botones y el panel «Hoy en Ribera». Los trámites más pedidos (4 atajos con icono) y por temas. Tablón con filtros y la fecha en bloque (los 6 últimos), en banda blanca. «Lo que viene y lo que pasó» (Hoy arriba; lo que viene en 60 días y las últimas noticias) con el listín corto. «El año en Ribera» en banda oscura. «¿Quién se ocupa de qué?» en banda tenue. Franja de sede y pie |
 | `tramites.html` | Buscador, «Por momentos», por temas y «Todos los trámites (115)» con filtro |
 | `ayuntamiento.html` | Alcaldía (retrato como hueco diseñado y saluda de ejemplo). Quién se ocupa de qué. El pleno en hemiciclo (color, trama y rótulo). Concejalías. Horario y contacto. Enlace a las grabaciones de pleno |
 | `avisos.html` | Avisos propios y el tablón completo con filtros |

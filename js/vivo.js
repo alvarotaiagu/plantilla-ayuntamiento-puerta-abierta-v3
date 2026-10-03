@@ -246,16 +246,21 @@
   }
 
   /* ── el año en fiestas ── */
+  /* Tira de 12 meses: los que tienen fiesta se despliegan; los vacíos ocupan poco (en escritorio,
+     solo la abreviatura; el nombre entero y «sin fiestas» siguen ahí para el lector de pantalla).
+     El mes en curso, con el borde de oro. Sigue siendo una lista ordenada de 12 meses */
   function anio(D, ahora) {
     return MESES.map(function (m, i) {
       var mes = i + 1;
       var fs = (D.fiestas || []).filter(function (f) { return f.mes === mes; });
       var actual = mes === ahora.mes;
-      return '<li class="mes' + (fs.length ? ' con-fiesta' : '') + (actual ? ' es-mes-actual' : '') + '">' +
-        '<p class="mes__nombre">' + m.charAt(0).toUpperCase() + m.slice(1) + (actual ? ' <span class="mes__ahora">Este mes</span>' : '') + '</p>' +
+      var nombre = m.charAt(0).toUpperCase() + m.slice(1);
+      return '<li class="mes' + (fs.length ? ' con-fiesta' : ' es-vacio') + (actual ? ' es-mes-actual' : '') + '">' +
+        '<p class="mes__nombre"><span class="mes__largo">' + nombre + '</span><span class="mes__corto" aria-hidden="true">' + MESES_C[i] + '</span>' +
+        (actual ? ' <span class="mes__ahora">Este mes</span>' : '') + '</p>' +
         (fs.length ? '<ul class="mes__fiestas">' + fs.map(function (f) {
           return '<li><b>' + esc(f.nombre) + '</b>' + (f.mayor ? ' <span class="chip chip--mayor">Fiesta mayor</span>' : '') + '<span>' + esc(f.cuando) + '</span></li>';
-        }).join('') + '</ul>' : '<p class="mes__vacio">Sin fiestas señaladas</p>') + '</li>';
+        }).join('') + '</ul>' : '<p class="mes__vacio"><span class="mes__raya" aria-hidden="true"></span><span class="mes__vacio-texto">Sin fiestas señaladas</span></p>') + '</li>';
     }).join('');
   }
 

@@ -527,16 +527,63 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .quien__cargo { display: block; color: var(--apagado); font-size: 1rem; line-height: 1.4; }
 
 /* ── el año ── */
-.anio { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 1fr)); }
-.mes { padding: .85rem 1rem; min-height: 7rem; }
-.mes.es-mes-actual { border: 3px solid var(--oro); padding: calc(.85rem - 2px) calc(1rem - 2px); }
-.mes__nombre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .3rem .5rem; margin: 0 0 .45rem; font: 700 1.15rem/1.3 var(--f-titulo); }
+/* Una tira de 12 meses. En móvil, una fila por mes (los vacíos, finos); en escritorio, dos tiras
+   de seis (enero–junio y julio–diciembre) donde los meses con fiesta se despliegan y los vacíos
+   se quedan en la abreviatura. Sigue siendo UNA lista ordenada: el salto entre las dos tiras es
+   un ::after con order, y los meses no cambian de orden */
+.anio { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+.mes { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: .3rem 1rem; align-items: baseline; padding: .75rem 1rem; }
+.mes.es-vacio { padding-block: .35rem; }
+.mes.es-mes-actual { border: 3px solid var(--oro); padding-inline: calc(1rem - 2px); }
+.mes__nombre { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .5rem; margin: 0; font: 700 1.15rem/1.3 var(--f-titulo); }
+.mes__corto { display: none; }
 .mes__ahora { padding: .15rem .45rem; border-radius: 4px; background: var(--tinta); color: var(--papel); font: 600 .75rem/1.3 var(--f-texto); letter-spacing: .06em; text-transform: uppercase; }
 .mes__fiestas { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.mes__fiestas li { max-width: none; }
 .mes__fiestas b { display: block; font-size: 1rem; line-height: 1.3; }
 .mes__fiestas span:not(.chip) { display: block; color: var(--apagado); font-size: .9375rem; line-height: 1.35; }
 .mes__fiestas .chip { margin-block: .2rem; font-size: .75rem; }
-.mes__vacio { margin: 0; color: var(--apagado); font-size: .9375rem; }
+.mes__vacio { margin: 0; color: var(--apagado); font-size: .9375rem; align-self: center; }
+.mes__raya { display: inline-block; width: 1.75rem; height: 2px; vertical-align: middle; background: var(--linea-fuerte); }
+/* «Sin fiestas señaladas»: a la vista solo en el mes en curso; en los demás, la raya (y el texto oculto) */
+.mes:not(.es-mes-actual) .mes__vacio-texto, .mes.es-mes-actual .mes__raya {
+  position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+@media (min-width: 64em) {
+  .anio { display: flex; flex-wrap: wrap; column-gap: .5rem; row-gap: 0; }
+  .anio::after { content: ""; order: 2; flex-basis: 100%; height: 0; }
+  .mes { order: 1; display: block; flex: 3 1 12rem; min-width: 0; margin-bottom: .5rem; padding: .85rem 1rem; }
+  .mes:nth-child(n+7) { order: 3; }
+  .mes__nombre { margin-bottom: .45rem; }
+  .mes.es-vacio { flex: 0 0 4.75rem; display: flex; flex-direction: column; align-items: center; gap: .6rem; padding: .85rem .25rem; text-align: center; }
+  .mes.es-vacio .mes__nombre { margin: 0; }
+  .mes.es-vacio:not(.es-mes-actual) .mes__largo { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .mes.es-vacio:not(.es-mes-actual) .mes__corto { display: block; text-transform: capitalize; }
+  .mes.es-vacio.es-mes-actual { flex: 1.3 1 9rem; align-items: flex-start; text-align: left; padding-inline: calc(1rem - 2px); }
+  .mes.es-mes-actual { padding-block: calc(.85rem - 2px); }
+}
+
+/* ═══════════════ BANDAS DE LA PORTADA ═══════════════
+   Ritmo por bandas a todo lo ancho, todo con tokens: el tablón sobre la hoja, «Quién se ocupa»
+   sobre el tenue de la marca y «El año» en banda oscura (tinta) con el oro de acento. */
+.banda { border-top: 0; }
+.banda--superficie { background: var(--superficie); border-block: 1px solid var(--linea); }
+.banda--superficie + .seccion { border-top: 0; }
+.banda--tenue { background: var(--marca-tenue); }
+.banda--tenue .quien__iniciales { background: var(--superficie); }
+.banda--oscura { background: var(--oscuro); color: var(--sobre-oscuro); }
+.banda--oscura .seccion__titulo, .banda--oscura h2, .banda--oscura h3 { color: var(--sobre-oscuro); }
+.banda--oscura a, .banda--oscura a:hover { color: var(--sobre-oscuro); }
+.banda--oscura .ver-todo { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+.banda--oscura .ver-todo:hover { text-decoration-thickness: 2px; }
+.banda--oscura :focus-visible { outline-color: var(--foco-claro); }
+.banda--oscura .mes { background: var(--superficie-oscura); border-color: var(--linea-oscura); color: var(--sobre-oscuro); }
+.banda--oscura .mes.es-mes-actual { border-color: var(--oro); }
+.banda--oscura .mes__fiestas span:not(.chip), .banda--oscura .mes__vacio, .banda--oscura .mes__corto { color: var(--sobre-oscuro-apagado); }
+.banda--oscura .mes__raya { background: var(--linea-oscura); }
+.banda--oscura .chip--mayor, .banda--oscura .mes__ahora { background: var(--oro); color: var(--tinta); }
+/* respiro: sin «Quién se ocupa» detrás, la banda oscura no se pega a la franja verde de la sede */
+main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 
 /* ═══════════════ PIE ═══════════════ */
 .sede-franja { background: var(--marca); color: var(--sobre-marca); padding-block: clamp(2.25rem, 5vw, 3.5rem); }

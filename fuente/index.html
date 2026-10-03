@@ -72,7 +72,7 @@
     </div>
   </section>
 
-  <section class="seccion seccion--tablon" aria-labelledby="t-tablon">
+  <section class="seccion seccion--tablon banda banda--superficie" aria-labelledby="t-tablon">
     <div class="contenedor">
       <div class="seccion__cabeza">
         <h2 class="seccion__titulo" id="t-tablon">Tablón de avisos</h2>
@@ -101,7 +101,17 @@
     </div>
   </section>
 
-  {{#quien_portada.length}}<section class="seccion" aria-labelledby="t-quien">
+  {{#fiestas.length}}<section class="seccion banda banda--oscura" aria-labelledby="t-anio">
+    <div class="contenedor">
+      <div class="seccion__cabeza">
+        <h2 class="seccion__titulo" id="t-anio">El año en {{nombre_corto}}</h2>
+        <a class="ver-todo" href="pueblo.html">Conocer el pueblo<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+      </div>
+      <ol class="anio" data-vivo="anio">{{{vivo.anio}}}</ol>
+    </div>
+  </section>{{/fiestas.length}}
+
+  {{#quien_portada.length}}<section class="seccion banda banda--tenue" aria-labelledby="t-quien">
     <div class="contenedor">
       <div class="seccion__cabeza">
         <h2 class="seccion__titulo" id="t-quien">¿Quién se ocupa de qué?</h2>
@@ -112,16 +122,6 @@
       </ul>
     </div>
   </section>{{/quien_portada.length}}
-
-  {{#fiestas.length}}<section class="seccion" aria-labelledby="t-anio">
-    <div class="contenedor">
-      <div class="seccion__cabeza">
-        <h2 class="seccion__titulo" id="t-anio">El año en {{nombre_corto}}</h2>
-        <a class="ver-todo" href="pueblo.html">Conocer el pueblo<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
-      </div>
-      <ol class="anio" data-vivo="anio">{{{vivo.anio}}}</ol>
-    </div>
-  </section>{{/fiestas.length}}
 
 </main>
 {{> abajo}}

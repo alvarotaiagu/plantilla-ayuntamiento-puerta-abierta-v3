@@ -149,6 +149,13 @@ export function derivarTokens(col) {
   t['--foco'] = t['--marca'];
   t['--foco-claro'] = BLANCO;
   t['--cortina'] = mezclar(papel, tinta, 0.05);           /* cal en sombra: nunca el color de lo que destapa */
+  /* banda oscura de la portada («El año»): la tinta de fondo, la cal como texto,
+     un apagado medido y las tarjetas un punto más claras. El oro, solo de acento */
+  t['--oscuro'] = tinta;
+  t['--superficie-oscura'] = mezclar(tinta, papel, 0.07);
+  t['--sobre-oscuro'] = papel;
+  t['--sobre-oscuro-apagado'] = apagadoMaximo(papel, [t['--superficie-oscura'], tinta], 4.6);
+  t['--linea-oscura'] = mezclar(tinta, papel, 0.24);
 
   const informe = [
     ['texto', '--tinta', '--papel', 4.5],
@@ -171,7 +178,14 @@ export function derivarTokens(col) {
     ['foco', '--foco', '--superficie', 3],
     ['foco', '--foco-claro', '--marca', 3],
     ['foco', '--foco-claro', '--alerta', 3],
-    ['cortina', '--marca', '--cortina', 3]
+    ['cortina', '--marca', '--cortina', 3],
+    ['oscura', '--sobre-oscuro', '--oscuro', 4.5],
+    ['oscura', '--sobre-oscuro', '--superficie-oscura', 4.5],
+    ['oscura', '--sobre-oscuro-apagado', '--oscuro', 4.5],
+    ['oscura', '--sobre-oscuro-apagado', '--superficie-oscura', 4.5],
+    ['oscura', '--tinta', '--oro', 4.5],
+    ['foco', '--foco-claro', '--oscuro', 3],
+    ['foco', '--foco-claro', '--superficie-oscura', 3]
   ].map(([uso, a, b, min]) => ({ uso, texto: a, fondo: b, ratio: +contraste(t[a], t[b]).toFixed(2), min }));
 
   return { tokens: t, informe };

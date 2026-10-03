@@ -65,8 +65,8 @@ function estaticas() {
   comprobar(!conLetra.length, 'ninguna letra nombrada fuera de css/marca.css' + (conLetra.length ? ' → ' + conLetra.join(', ') : ''));
   /* contraste de cada pareja de tokens, en las tres paletas */
   for (const [clave, g] of [['A', 0], ['B', (marca.giros_paleta || [100, -100])[0]], ['C', (marca.giros_paleta || [100, -100])[1]]]) {
-    const inf = derivarTokens(g ? paletaGirada(marca.colores, g) : marca.colores).informe.filter(f => f.ratio < f.min);
-    comprobar(!inf.length, `paleta ${clave}: las 21 parejas de tokens llegan a su mínimo (4,5 texto, 3 bordes y foco)` + (inf.length ? ' → ' + inf.map(f => f.texto + '/' + f.fondo + ' ' + f.ratio).join(', ') : ''));
+    const todas = derivarTokens(g ? paletaGirada(marca.colores, g) : marca.colores).informe, inf = todas.filter(f => f.ratio < f.min);
+    comprobar(!inf.length, `paleta ${clave}: las ${todas.length} parejas de tokens llegan a su mínimo (4,5 texto, también en la banda oscura; 3 bordes y foco)` + (inf.length ? ' → ' + inf.map(f => f.texto + '/' + f.fondo + ' ' + f.ratio).join(', ') : ''));
   }
   /* enlaces de la sede con el patrón de su tipo */
   const malos = [];
