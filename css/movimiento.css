@@ -337,4 +337,21 @@
     animation: mov-borde .6s var(--curva-va-y-viene) .1s backwards;
   }
   @keyframes mov-borde { from { --mov-giro: 0deg; } to { --mov-giro: 360deg; } }
+
+  /* ═══ v3. El perfil del pueblo (pie) se traza una vez al asomar ═══
+     Cada trazo lleva pathLength="1" (aplicar.mjs): se dibuja de 1 a 0 en 600 ms. El
+     dasharray solo existe mientras corre la animación (fill: backwards): en reposo, sin
+     clase o sin soporte, el dibujo está entero. La escala del SVG es uniforme (slice),
+     así que el dasharray no se rompe (memoria «dasharray con escala no uniforme»). */
+  .pie__perfil.mov-perfil path { animation: mov-perfil .6s var(--curva-salida) backwards; }
+  .pie__perfil.mov-perfil path.lejos { animation-duration: .45s; }
+  @keyframes mov-perfil {
+    from { stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+    to { stroke-dasharray: 1 1; stroke-dashoffset: 0; }
+  }
+
+  /* ═══ v3. Hemiciclo: los escaños de los demás grupos se atenúan en 180 ms ═══
+     (con movimiento reducido el resaltado sigue, sin transición: es información) */
+  .hemiciclo circle { transition: opacity .18s ease-out; }
+  .pleno__boton { transition: background-color .15s, border-color .15s, box-shadow .15s; }
 }

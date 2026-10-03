@@ -855,23 +855,75 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 .sede-franja__enlace span span { display: block; color: var(--sobre-marca-apagado); font-size: .9375rem; line-height: 1.4; }
 .sede-franja__nota { margin: 1rem 0 0; color: var(--sobre-marca-apagado); font-size: .9375rem; }
 
-.pie__cuerpo { background: var(--superficie-2); padding-block: 2.25rem 2.75rem; font-size: 1rem; }
-.pie__cuerpo p { margin: 0 0 .3rem; }
-.pie__rejilla { display: grid; gap: 1.5rem 3rem; }
-@media (min-width: 64em) { .pie__rejilla { grid-template-columns: 1.3fr 1fr; } }
+/* ── el perfil del pueblo (v3): el borde de arriba del pie ──
+   El pueblo dibujado a línea (marca/perfil.svg o el genérico), de pie sobre la franja de la sede.
+   El lienzo es de 1600 × 180: el alto sigue al ancho (11,25vw) y nunca baja de 88 px. Por debajo
+   de ~780 px se recorta por los lados (preserveAspectRatio slice), nunca se estira: lo que importa
+   (la iglesia) va en el centro. El trazo se ajusta a la escala para quedarse en ~1,3 px. */
+.pie__perfil { height: max(5.5rem, 11.25vw); margin-top: clamp(1rem, 3vw, 2.5rem); color: var(--marca); overflow: clip; }
+.pie__perfil-dibujo {
+  display: block; width: 100%; height: 100%; max-width: none;
+  fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round;
+}
+.pie__perfil-dibujo .lejos { stroke: var(--linea-fuerte); stroke-width: 1.5; }
+@media (min-width: 48.875em) { .pie__perfil-dibujo { stroke-width: 1.7; } .pie__perfil-dibujo .lejos { stroke-width: 1; } }
+@media (min-width: 120em) { .pie__perfil-dibujo { stroke-width: 1.3; } }
+
+/* ── el cuerpo del pie (v3): el Ayuntamiento, enlaces útiles y el plano; abajo, lo legal ──
+   Tres columnas en escritorio; sin plano (marca/plano.svg), dos. En tableta, el plano baja a
+   una fila propia con su texto al lado; en móvil, todo en una columna. */
+.pie__cuerpo { background: var(--superficie-2); padding-block: clamp(2.25rem, 4vw, 3rem) 2rem; font-size: 1rem; }
+.pie__cuerpo p { margin: 0 0 .4rem; }
+.pie__rejilla { display: grid; gap: 2rem 3rem; }
+.pie__col { min-width: 0; }
+@media (min-width: 48em) {
+  .pie__rejilla { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); }
+  .pie__plano { grid-column: 1 / -1; }
+}
+@media (min-width: 64em) {
+  .pie__rejilla--plano { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1.05fr); }
+  .pie__rejilla--plano .pie__plano { grid-column: auto; }
+}
 .pie__id { display: flex; gap: 1rem; align-items: flex-start; }
 .pie__escudo { height: 4.5rem; width: auto; flex: none; }
-.pie__nombre { font: 700 1.2rem/1.3 var(--f-titulo); }
-.pie__nav ul, .pie__redes { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 1.25rem; }
-.pie__nav a, .pie__redes a { display: inline-flex; align-items: center; min-height: 44px; }
-.pie__redes { grid-column: 1 / -1; }
+.pie__nombre, .pie__titulo { font: 700 1.2rem/1.3 var(--f-titulo); margin: 0 0 .6rem; }
+.pie__etiqueta { display: block; color: var(--apagado); font-size: .875rem; font-weight: 600; line-height: 1.3; }
+.pie__lista { list-style: none; margin: 0; padding: 0; columns: 2 9rem; column-gap: 1.5rem; }
+.pie__lista li { break-inside: avoid; }
+.pie__lista a, .pie__redes a, .pie__legal a { display: inline-flex; align-items: center; min-height: 44px; }
+.pie__cuerpo .pie__subtitulo { margin: 1rem 0 0; color: var(--apagado); font-size: .875rem; font-weight: 600; }
+.pie__redes, .pie__legal ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 1.25rem; }
+/* el plano: dibujo propio desde OpenStreetMap, sin peticiones. Enlaza a «Contacto» (el mapa de Google, bajo clic) */
+.pie__plano-figura { margin: 0; }
+.pie__plano-enlace { display: block; max-width: 24rem; background: var(--superficie); border: 1px solid var(--linea-fuerte); border-radius: var(--radio); overflow: hidden; }
+.pie__plano-enlace:hover { border-color: var(--marca); }
+.pie__plano-dibujo { display: block; width: 100%; height: auto; }
+.pie__cuerpo .pie__plano-pie { max-width: 24rem; margin: .6rem 0 .1rem; color: var(--apagado); font-size: .9375rem; line-height: 1.45; }
+@media (min-width: 48em) and (max-width: 63.99em) {
+  .pie__plano-figura { display: grid; grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); gap: 0 2rem; align-items: end; }
+  .pie__cuerpo .pie__plano-pie { margin: 0; }
+}
+.plano-fondo { fill: var(--superficie); }
+.plano-plaza { fill: var(--marca-tenue); }
+.plano-calle { fill: none; stroke: var(--linea-fuerte); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.plano-calle--principal { stroke: var(--apagado); stroke-width: 3; }
+.plano-hito { fill: var(--superficie-2); stroke: var(--linea-fuerte); stroke-width: 1; }
+.plano-ayto { fill: var(--marca); stroke: var(--marca-fuerte); stroke-width: 1; }
+.plano-aro { fill: none; stroke: var(--marca); stroke-width: 1.6; }
+.plano-punto { fill: var(--marca); }
+.plano-escala { fill: none; stroke: var(--tinta); stroke-width: 1.2; }
+.plano-rotulo { font: 500 11.5px var(--f-texto); fill: var(--tinta); paint-order: stroke; stroke: var(--superficie); stroke-width: 3.5px; stroke-linejoin: round; }
+.plano-rotulo--ayto { font-size: 12.5px; font-weight: 700; fill: var(--marca); }
+.plano-rotulo--escala { font-size: 10px; }
 .pie__canal { grid-column: 1 / -1; padding: .9rem 1.1rem; background: var(--superficie); border: 1px solid var(--linea); border-left: 3px solid var(--marca); border-radius: var(--radio); }
 .pie__canal-titulo { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
 .pie__canal-titulo .icono { color: var(--marca); }
 .canal-avisos__como { margin-top: 1.5rem; }
 .canal-avisos__pasos { margin: 0; padding-left: 1.4rem; }
 .canal-avisos__pasos li + li { margin-top: .35rem; }
-.pie__creditos, .pie__propuesta { grid-column: 1 / -1; color: var(--apagado); font-size: .9375rem; }
+.pie__base { display: grid; gap: .5rem; margin-top: 2rem; }
+.pie__legal { padding-top: .5rem; border-top: 1px solid var(--linea-fuerte); }
+.pie__creditos, .pie__propuesta { color: var(--apagado); font-size: .9375rem; }
 .pie__propuesta { color: var(--tinta); font-weight: 600; }
 
 /* ── aviso de cookies: :not([hidden]) o el botón «no hace nada» ── */
@@ -1129,6 +1181,11 @@ a.calendario__dia:focus-visible { outline-offset: 1px; }
 @media (min-width: 64em) { .listin-completo { grid-template-columns: 1fr 1fr; align-items: start; } }
 .listin-grupo__titulo { font-size: 1.3rem; padding-bottom: .5rem; border-bottom: 2px solid var(--tinta); margin-bottom: 0; }
 .listin-completo .listin__fila { padding-block: .45rem; }
+/* F1 (v3): «Imprimir los teléfonos» (solo con JS) y lo que solo sale en el papel (css/imprimir.css) */
+.nevera-accion { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin: 0 0 2rem; }
+.nevera-accion[hidden] { display: none; }
+.nevera-accion p { margin: 0; color: var(--apagado); font-size: 1rem; }
+.nevera-cabeza, .nevera-pie { display: none; }
 
 .alcaldia { display: grid; gap: 2rem; align-items: center; }
 @media (min-width: 56em) { .alcaldia { grid-template-columns: 15rem 1fr; gap: 3rem; } }
@@ -1161,6 +1218,20 @@ a.calendario__dia:focus-visible { outline-offset: 1px; }
 .pleno__leyenda li { display: flex; align-items: center; gap: .75rem; }
 .pleno__muestra { width: 1.75rem; height: 1.75rem; flex: none; }
 .pleno__papel { display: block; color: var(--apagado); font-size: .9375rem; }
+/* M4 (v3): cada grupo de la leyenda pasa a ser un botón (js/identidad.js) que resalta sus escaños.
+   El botón ocupa lo mismo que la fila (márgenes negativos): no hay salto al convertirla.
+   Resaltado = los escaños de los demás se atenúan y el centro dice cuántos son; además, la fila
+   y la tarjeta del grupo se enmarcan. Pulsado (aria-pressed), se queda; Esc lo suelta. */
+.pleno__boton {
+  display: flex; align-items: center; gap: .75rem; width: calc(100% + 1.2rem); min-height: 48px;
+  margin: -.35rem -.6rem; padding: .35rem .6rem; text-align: left; line-height: inherit;
+  background: none; border: 1px solid transparent; border-radius: var(--radio); cursor: pointer;
+}
+.pleno__leyenda li.es-resaltado .pleno__boton { background: var(--superficie); border-color: var(--linea-fuerte); }
+.pleno__boton[aria-pressed="true"] { background: var(--marca-tenue); border-color: var(--marca); box-shadow: inset 4px 0 0 var(--marca); }
+.pleno__ayuda { margin: 1.1rem 0 0; color: var(--apagado); font-size: .9375rem; }
+.pleno[data-resalta] .hemiciclo circle:not(.es-resaltado) { opacity: .2; }
+.grupo.es-resaltado { border-color: var(--marca); box-shadow: inset 0 3px 0 var(--marca); }
 .grupos { display: grid; gap: 1rem; margin-top: 2rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16rem), 1fr)); }
 .grupo { padding: 1.1rem 1.25rem .5rem; }
 .grupo__titulo { display: flex; align-items: center; gap: .6rem; font-size: 1.1rem; }

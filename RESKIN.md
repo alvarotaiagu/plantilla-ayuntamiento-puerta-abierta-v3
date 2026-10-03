@@ -19,6 +19,7 @@ Prueba real: `pruebas/segura-de-leon/` es Segura de León completo (otro escudo,
 cp -r plantilla-ayuntamiento-puerta-abierta-web <municipio>-ayuntamiento-web
 cd <municipio>-ayuntamiento-web
 rm -rf .git screenshots _scratch && git init
+rm -f marca/perfil.* marca/plano.*    # el perfil y el plano son del pueblo de origen (ver §6 bis)
 npm install                      # Playwright y axe-core, solo para los scripts
 ```
 
@@ -153,6 +154,60 @@ python scripts/fotos.py --lote media/_lote.json          # recorte + gradación 
 - Una entrada por foto en `media/creditos.json`: `titulo`, `autor`, `licencia`, `url` y `nota`. **`aplicar.mjs` se niega a escribir si una foto no tiene crédito.**
 - Las fotos de **su web** solo valen para la maqueta que se les enseña. Ponlo en la `nota`.
 - Ni banco de imágenes ni IA. Si falta una foto, se deja el hueco diseñado y se apunta en el README.
+
+## 6 bis. El pie: el perfil del pueblo y el plano
+
+El pie abre con **el perfil del pueblo dibujado a línea** (de pie sobre la franja verde de la sede) y lleva, en su tercera columna, **un plano de las calles del Ayuntamiento**. Los dos son SVG propios que `aplicar.mjs` incrusta en cada página: ni una petición en tiempo de ejecución. Los dos son opcionales:
+
+| Archivo | Si falta |
+|---|---|
+| `marca/perfil.svg` (lo dibuja `scripts/perfil.mjs` desde `marca/perfil.json`) | Sale el **perfil genérico** (`fuente/_perfil_generico.svg`): casas encaladas, tejados, chimeneas y una iglesia con espadaña de un solo vano. Vale para cualquier pueblo extremeño. **Nunca una arcada**: el concepto es una sola puerta |
+| `marca/plano.svg` + `marca/plano.json` (los escribe `scripts/plano.mjs` desde OpenStreetMap) | El pie queda a dos columnas (el Ayuntamiento y los enlaces útiles), sin hueco |
+
+### El perfil de otro pueblo
+
+Un vecino tiene que reconocer su pueblo: se dibuja **desde fotos reales** (las de `media/` o las que se tengan), no de memoria.
+
+1. Elige el edificio que todo el mundo reconoce (la torre de la iglesia, el castillo, el silo) y, si hay, uno o dos más (otra torre, una fachada con frontón, la sierra del fondo).
+2. Copia `marca/perfil.json` de Ribera como punto de partida y cambia las `piezas`. El lienzo mide **1600 × 180**: `x` de izquierda a derecha y `alto` desde el suelo. **Lo principal va en el centro**: en un móvil de 320 px solo se ve de x = 475 a x = 1125.
+3. Mide sobre la foto: abre la foto con una regla (en Ribera, la foto de las torres recortada y ampliada ×3 con marcas cada 10 px) y pasa las medidas con **una sola escala** (Ribera: 0,66 unidades por píxel de la foto). Proporciones que importan: alto de la torre frente a su ancho, dónde está el campanario, cómo remata (cúpula, chapitel, espadaña), pináculos, óculos y vanos. La base de las torres puede quedar escondida detrás de las casas, como en la foto.
+4. `node scripts/perfil.mjs` escribe `marca/perfil.svg` (cuenta los trazos). Míralo a 320, 1440 y 1920 px (`verificar.mjs --capturas` deja `screenshots/v3-perfil-*.png`). Repite hasta que se reconozca.
+
+Las piezas (ver los comentarios de `scripts/perfil.mjs`):
+
+| Pieza | Para qué |
+|---|---|
+| `casas` | Filas de casas con semilla fija: `desde`, `hasta`, `alto: [min, max]`, `capa`, `ventanas`, `chimeneas`, `tejados` |
+| `torre` | Fuste, cornisa volada, vano en arco, `oculo` o `reloj`, `pinaculos` y `remate`: `cupula` (tambor, cúpula, linterna, cruz) o `chapitel` (apuntado) |
+| `cupula` | Una cúpula suelta sobre una nave |
+| `cuerpo` | La fachada entre dos torres: remate, `balaustrada`, líneas de cornisa, `oculos`, `ventanas`; con `muros: true`, con sus muros (la fachada de una iglesia de espadaña) |
+| `cimborrio`, `nave` | Tejado ochavado con linterna; nave a un faldón o a un agua |
+| `fronton` | Casa grande con frontón mixtilíneo, balcones, portada y escudo |
+| `espadana` | El muro de las campanas, con **un** vano y su campana |
+| `sierra`, `pajaros` | La sierra del fondo (línea fina) y algún pájaro |
+
+Cada pieza lleva su `capa` (más alta, más cerca): lo de detrás no se dibuja por debajo de la silueta de lo de delante, así que no hace falta resolver los cruces a mano. Sin colores: el SVG solo lleva `<path>` (`aplicar.mjs` rechaza cualquier otra cosa) y el color lo ponen los tokens. Al aplicar, cada trazo recibe `pathLength="1"` para que el pie lo trace al asomar.
+
+Si prefieres dibujarlo a mano (Inkscape), vale cualquier `marca/perfil.svg` con `viewBox="0 0 1600 180"`, solo `<path>` con `d` (y `class="lejos"` para lo del fondo), sin `fill`, `stroke` ni `style`, rectas rectas, pocas curvas y nada importante fuera de x ∈ [475, 1125].
+
+### El plano
+
+```bash
+node scripts/plano.mjs                       # busca amenity=townhall en OSM dentro del término
+node scripts/plano.mjs --osm way/566195233   # o el elemento exacto (mira en openstreetmap.org)
+node scripts/plano.mjs --radio 170           # metros del Ayuntamiento al borde (Ribera: 170)
+```
+
+- **El Ayuntamiento, por su elemento de OSM**, nunca por el pin de Facebook (memoria «ubicación real: nodo de OSM»). Si OSM tiene varios, el script avisa y usa el que se llama «Ayuntamiento…»; si no tiene ninguno, búscalo a mano y pásalo con `--osm`.
+- Dibuja las calles (las principales más gruesas), las plazas, las iglesias, el edificio del Ayuntamiento en la marca y una escala de 100 m, y rotula hasta 3 calles (la de la dirección del Ayuntamiento primero, si cabe) sin que los rótulos choquen.
+- Lo usado queda en `marca/plano.json`: elemento, centro, radio, fecha y calles rotuladas. El script lo reutiliza la próxima vez.
+- **ODbL**: el pie dice siempre «Datos del plano: © colaboradores de OpenStreetMap» con enlace a su página de derechos. `aplicar.mjs` se niega si `plano.json` no trae la atribución.
+- El User-Agent es el del proyecto, sin datos de nadie. Si Overpass está ocupado, prueba otros dos servidores. Con `--guardar copia.json` y `--desde copia.json` se redibuja sin red.
+- Se ejecuta una vez al montar la web (o si cambian las calles). El plano enlaza a «Contacto», donde está el mapa de Google, que solo se carga si se pide.
+
+### La hoja de teléfonos
+
+`telefonos.html` tiene «Imprimir los teléfonos» (solo con JavaScript) y `css/imprimir.css` la deja en **una hoja A4**: escudo y «Teléfonos útiles de …», urgencias arriba y en grande, el resto en dos columnas, la fecha de los datos (`municipio.json → fecha_datos`), la de impresión y la web (`url`). `verificar.mjs` imprime el PDF y falla si pasa de una hoja: con un listín mucho más largo que el de Ribera (17 números), reduce los tamaños de `css/imprimir.css` o quita detalles del listín.
 
 ## 7. Contenido y tablón
 
