@@ -946,12 +946,12 @@ async function estructura() {
         letra: cs.fontSize, interlineado: parseFloat(cs.lineHeight) / parseFloat(cs.fontSize), toques, maxCar: Math.max(0, ...parrafos)
       };
     });
-    if (r.h1 !== 1 || r.primero !== 1 || r.salto || r.lang !== 'es' || !r.marcas || !r.saltar || r.letra !== '18px' || r.interlineado < 1.5)
+    if (r.h1 !== 1 || r.primero !== 1 || r.salto || r.lang !== ((/^pueblo-([a-z]{2})\.html$/.exec(p) || [])[1] || 'es') || !r.marcas || !r.saltar || r.letra !== '18px' || r.interlineado < 1.5)
       malos.push(`${p}: h1=${r.h1}, salto=${r.salto}, lang=${r.lang}, landmarks=${r.marcas}, saltar=${r.saltar}, letra=${r.letra}, interlineado=${r.interlineado.toFixed(2)}`);
     r.toques.forEach(t => pequenos.push(`${p}: ${Math.round(t.w)}×${Math.round(t.h)} ${t.e}`));
     if (r.maxCar > 75) medida.push(`${p}: ${Math.round(r.maxCar)}`);
   }
-  comprobar(!malos.length, 'estructura: lang="es", saltar al contenido, header/nav/main/footer, un solo h1 y títulos sin saltos; texto de 18 px con interlineado ≥ 1,5' + (malos.length ? ' → ' + malos.slice(0, 3).join(' | ') : ''));
+  comprobar(!malos.length, 'estructura: lang="es" (en «El pueblo» traducido, el de su idioma), saltar al contenido, header/nav/main/footer, un solo h1 y títulos sin saltos; texto de 18 px con interlineado ≥ 1,5' + (malos.length ? ' → ' + malos.slice(0, 3).join(' | ') : ''));
   comprobar(!pequenos.length, 'zonas táctiles de al menos 44 × 44 px a 390 px (los enlaces dentro de una frase se rigen por la frase)' + (pequenos.length ? ' → ' + pequenos.slice(0, 5).join(' | ') : ''));
   await ctx.close();
   const e = await nueva();
@@ -1031,7 +1031,7 @@ async function interiores() {
   }
   /* qué lleva cada cabecera: foto donde se configura, arco de línea en el resto, nada en la 404 */
   const tipos = INTERIORES.map(p => { const h = leer(RAIZ, p); const c = (h.match(/class="cabeza-pagina( [^"]*)?"/) || [])[1] || ''; return { p, foto: /--foto/.test(c), grande: /--grande/.test(c), linea: /--arco/.test(c) }; });
-  const idDe = p => ({ 'aviso-legal.html': 'legal', 'privacidad.html': 'legal', 'cookies.html': 'legal', 'accesibilidad.html': 'legal', '404.html': 'error' })[p] || (p.startsWith('noticia-') ? 'noticia' : p.replace('.html', ''));
+  const idDe = p => ({ 'aviso-legal.html': 'legal', 'privacidad.html': 'legal', 'cookies.html': 'legal', 'accesibilidad.html': 'legal', '404.html': 'error' })[p] || (p.startsWith('noticia-') ? 'noticia' : /^pueblo-[a-z]{2}\.html$/.test(p) ? 'pueblo' : p.replace('.html', ''));   /* v3b: «El pueblo» traducido es «El pueblo» */
   const malTipo = tipos.filter(t => { const id = idDe(t.p), c = conf[id]; const debeFoto = !!(c && fs.existsSync(path.join(RAIZ, 'media', (typeof c === 'string' ? c : c.archivo) + '.jpg')));
     return t.foto !== debeFoto || t.grande !== (debeFoto && id === 'pueblo') || t.linea !== (!debeFoto && id !== 'error'); }).map(t => t.p);
   comprobar(!malos.length && !malTipo.length, `cabeceras interiores: foto en arco donde municipio.json → cabeceras la pone (${Object.keys(conf).filter(k => !k.startsWith('_')).join(', ') || 'ninguna'}), arco de línea de pie sobre el filete en el resto y nada en la 404; ni pisa el título ni las migas, cabe y es de medio punto a 320, 390, 1024, 1440 px y con zoom; en la sobria, sin arco` +
@@ -1971,7 +1971,7 @@ async function v3Interiores() {
   /* ── 1. cada cabecera interior: pictograma dentro del arco, o la foto de `cabeceras`; nunca vacía ── */
   {
     const conf = M.cabeceras || {}, malos = [];
-    const idDe = p => ({ 'aviso-legal.html': 'legal', 'privacidad.html': 'legal', 'cookies.html': 'legal', 'accesibilidad.html': 'legal' })[p] || (p.startsWith('noticia-') ? 'noticia' : p.replace('.html', ''));
+    const idDe = p => ({ 'aviso-legal.html': 'legal', 'privacidad.html': 'legal', 'cookies.html': 'legal', 'accesibilidad.html': 'legal' })[p] || (p.startsWith('noticia-') ? 'noticia' : /^pueblo-[a-z]{2}\.html$/.test(p) ? 'pueblo' : p.replace('.html', ''));   /* v3b: «El pueblo» traducido es «El pueblo» */
     const pictos = new Set();
     for (const [w, h] of [[1440, 900], [390, 844]]) {
       const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
