@@ -31,6 +31,10 @@
           <li><a href="{{raiz}}accesibilidad.html">Declaración de accesibilidad</a></li>
         </ul>
       </nav>
+      {{#canal_avisos}}<div class="pie__canal">
+        <p class="pie__canal-titulo"><svg class="icono" aria-hidden="true"><use href="#i-movil"/></svg>Avisos en el móvil</p>
+        <p>Reciba los avisos del Ayuntamiento en <a href="{{url}}">{{nombre}}<span class="sr">, se abre otra web</span></a> · <a href="{{raiz}}avisos.html#t-canal">Cómo apuntarse</a></p>
+      </div>{{/canal_avisos}}
       {{#redes.length}}<ul class="pie__redes" aria-label="Redes sociales del Ayuntamiento">
         {{#redes}}<li><a href="{{url}}">{{nombre}}</a></li>{{/redes}}
       </ul>{{/redes.length}}
