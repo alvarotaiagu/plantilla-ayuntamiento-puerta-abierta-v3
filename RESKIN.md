@@ -63,7 +63,7 @@ Fuentes que funcionaron en Ribera y Segura:
 | `corporacion` | no | `grupos` (sigla, nombre, color, trama `liso`/`rayas`/`puntos`/`cuadros`, gobierno) y `miembros` (nombre, grupo, cargo, delegación y `alcalde: true`). Sin `grupos` no sale el hemiciclo; con 13 concejales o menos, sale de una sola fila |
 | `alcaldia.saluda` | no | Con `saluda_ejemplo: true` mientras no lo escriban ellos |
 | `quien` | no | Tema, persona y cargo. Las de `portada: true` salen en la portada (4) |
-| `servicios` | sí | Nombre, teléfono, dirección, horario, `tramos`, `nota` y `grupo`. El grupo ordena el listín |
+| `servicios` | sí | Nombre, teléfono, dirección, horario, `tramos`, `nota` y `grupo`. El grupo ordena el listín. Sin teléfono (la recogida de basura, por ejemplo) sale solo con su detalle, y entonces lleva al menos `nota` u `horario` |
 | `urgencias` | no | El 112 va el primero, en rojo |
 | `listin_corto` | no | 4 nombres de `servicios` o `urgencias` para la portada |
 | `tramites.atajos`, `temas`, `momentos` | sí | Cada trámite con `id` (Gestiona), `url` u `opc` (Diputación). `tipo: "pdf"`, `"doc"` (impreso en Word) o `"documento"` cambia el aviso «se abre la sede» |

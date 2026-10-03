@@ -684,6 +684,7 @@ async function opcionales() {
     m.pueblo = { ...(m.pueblo || {}), visitas: O.pueblo.visitas };
     m.documentos = O.documentos;
     m.tramites.todos = [...m.tramites.todos, ...O.tramites_extra];
+    m.servicios = [...m.servicios, ...O.servicios_extra];
     fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(m, null, 2));
     const ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
     if (ap.status !== 0) { comprobar(false, 'opcionales: aplicar.mjs falla con los datos de muestra → ' + (ap.stderr || ap.stdout).slice(-400)); return; }
@@ -717,11 +718,16 @@ async function opcionales() {
       await page.goto(b + 'tramites.html', { waitUntil: 'networkidle' });
       const word = await page.evaluate(() => { const a = [...document.querySelectorAll('#todos-lista a')].find(x => /\.doc$/.test(x.getAttribute('href'))); return a ? { etiqueta: a.querySelector('.etiqueta-pdf').textContent, sr: a.querySelector('.sr').textContent } : null; });
       if (!word || word.etiqueta !== 'Word' || !/Word/.test(word.sr)) malos.push('impreso en Word: ' + JSON.stringify(word));
+      await page.goto(b + 'telefonos.html', { waitUntil: 'networkidle' });
+      const sinTel = await page.evaluate(n => { const f = [...document.querySelectorAll('.listin__fila')].find(x => x.querySelector('.listin__nombre').textContent.startsWith(n)); return f ? { enlace: !!f.querySelector('a'), detalle: (f.querySelector('small') || {}).textContent || '' } : null; }, O.servicios_extra[0].nombre);
+      if (!sinTel || sinTel.enlace || !sinTel.detalle.includes(O.servicios_extra[0].horario)) malos.push('servicio sin teléfono: ' + JSON.stringify(sinTel));
+      viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => 'telefonos.html: ' + v.id));
+      if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) desb.push(w + ' telefonos.html');
       await ctx.close();
     }
     srv.close();
     comprobar(!malos.length && !viol.length && !desb.length,
-      'opcionales con datos de muestra: «Normativa y documentos» (desplegables, cada enlace dice qué abre), «Para visitar» (dirección, horario, entrada y teléfono solo si constan) e impresos en Word; 0 violaciones de axe y sin scroll horizontal a 320 y 1440 px' +
+      'opcionales con datos de muestra: «Normativa y documentos» (desplegables, cada enlace dice qué abre), «Para visitar» (dirección, horario, entrada y teléfono solo si constan), impresos en Word y un servicio del listín sin teléfono; 0 violaciones de axe y sin scroll horizontal a 320 y 1440 px' +
       (malos.length ? ' → ' + malos.join(' | ') : '') + (viol.length ? ' → axe: ' + [...new Set(viol)].join(', ') : '') + (desb.length ? ' → desborda ' + desb.join(', ') : ''));
   } finally { fs.rmSync(dest, { recursive: true, force: true }); }
 }

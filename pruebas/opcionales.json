@@ -1,5 +1,5 @@
 {
-  "_leeme": "Datos de muestra, sin ningún municipio real, para que scripts/verificar.mjs pruebe las secciones opcionales que el municipio de la plantilla no usa: «Para visitar» (pueblo.visitas), «Normativa y documentos» (documentos) e impresos en Word (tramites.todos con tipo «doc»). Se mezclan en una copia; nunca se publican.",
+  "_leeme": "Datos de muestra, sin ningún municipio real, para que scripts/verificar.mjs pruebe las secciones opcionales que el municipio de la plantilla no usa: «Para visitar» (pueblo.visitas), «Normativa y documentos» (documentos), impresos en Word (tramites.todos con tipo «doc») y un servicio del listín sin teléfono. Se mezclan en una copia; nunca se publican.",
   "pueblo": {
     "visitas": [
       {
@@ -34,6 +34,9 @@
         { "titulo": "Carpeta de actas de prueba", "url": "https://example.org/actas" }
       ]
     }
+  ],
+  "servicios_extra": [
+    { "nombre": "Servicio de prueba sin teléfono", "nota": "Lunes y jueves", "horario": "De 20:00 a 22:00", "grupo": "Servicios de prueba" }
   ],
   "tramites_extra": [
     { "nombre": "Impreso de prueba en Word", "url": "https://example.org/impreso.doc", "tipo": "doc" }

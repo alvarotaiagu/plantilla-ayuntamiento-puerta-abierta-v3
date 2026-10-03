@@ -8,8 +8,8 @@
         <ul class="listin">
           {{#items}}<li class="listin__fila{{#urgente}} listin__fila--urgente{{/urgente}}">
             <span class="listin__nombre">{{nombre}}{{#detalle}}<small>{{detalle}}</small>{{/detalle}}{{#clave}}<span class="listin__estado" data-vivo="servicio" data-clave="{{clave}}">{{{estado}}}</span>{{/clave}}</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="{{tel_href}}"><span class="sr">Llamar a {{nombre}}: </span>{{telefono}}</a>
+            {{#telefono}}<span class="listin__puntos" aria-hidden="true"></span>
+            <a class="listin__numero" href="{{tel_href}}"><span class="sr">Llamar a {{nombre}}: </span>{{telefono}}</a>{{/telefono}}
           </li>
           {{/items}}
         </ul>

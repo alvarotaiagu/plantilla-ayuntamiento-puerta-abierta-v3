@@ -236,7 +236,9 @@ for (const s of [...urgencias.map(u => ({ ...u, grupo: (M.servicios.find(x => /u
   if (!g) { g = { grupo: s.grupo || 'Otros', items: [] }; gruposListin.push(g); }
   const clave = s.tramos ? slugDe(s.nombre) : null;
   if (clave) serviciosVivos[clave] = s.tramos;
-  g.items.push({ nombre: s.nombre, telefono: s.telefono, tel_href: telHref(s.telefono), urgente: !!s.urgente, clave,
+  /* un servicio sin teléfono (la recogida de basura, por ejemplo) sale con su detalle y sin enlace */
+  if (!s.telefono && !(s.nota || s.horario)) errores.push('servicios «' + s.nombre + '»: sin teléfono tiene que llevar al menos nota u horario');
+  g.items.push({ nombre: s.nombre, telefono: s.telefono || null, tel_href: s.telefono ? telHref(s.telefono) : null, urgente: !!s.urgente, clave,
     detalle: [s.nota, s.direccion, s.horario].filter(Boolean).join(' · ') || null, estado: '' });
 }
 /* el grupo de urgencias, primero, con el 112 arriba */
@@ -245,6 +247,7 @@ const todosTel = [...urgencias, ...(M.servicios || [])];
 const listinCorto = (M.listin_corto || []).map(n => {
   const s = todosTel.find(x => x.nombre === n);
   if (!s) { errores.push('listin_corto: «' + n + '» no está en servicios ni en urgencias'); return null; }
+  if (!s.telefono) { errores.push('listin_corto: «' + n + '» no tiene teléfono'); return null; }
   return { nombre: s.nombre, telefono: s.telefono, tel_href: telHref(s.telefono), urgente: !!s.urgente };
 }).filter(Boolean);
 
