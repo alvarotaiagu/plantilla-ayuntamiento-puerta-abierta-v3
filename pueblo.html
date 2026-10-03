@@ -18,9 +18,10 @@
 <link rel="manifest" href="manifest.json">
 <link rel="preload" href="fonts/besley-700-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/libre-franklin-400-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fuentes.css?v=03f84dac">
-<link rel="stylesheet" href="css/marca.css?v=8d5db81a">
-<link rel="stylesheet" href="css/base.css?v=bca59f0b">
+<link rel="stylesheet" href="css/fuentes.css?v=5c32df95">
+<link rel="stylesheet" href="css/marca.css?v=af4e3a61">
+<link rel="stylesheet" href="css/base.css?v=72ecc02c">
+<link rel="stylesheet" href="css/movimiento.css?v=19e0a3e9">
 <script>
 /* Bloqueante a propósito: lo que cambia el aspecto se decide antes del primer
    pintado, o la página arranca de una forma y salta a otra. */
@@ -68,14 +69,21 @@
   <symbol id="i-correo" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="1.5"/><path d="m3.5 6.5 8.5 7 8.5-7"/></symbol>
   <symbol id="i-documento" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6V3Z"/><path d="M14 3v4h4"/></symbol>
   <symbol id="i-abajo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-farmacia" viewBox="0 0 24 24"><path d="M9 3.5h6v5.5h5.5v6H15v5.5H9V15H3.5V9H9V3.5Z"/></symbol>
+  <symbol id="i-mas" viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h10"/><path d="M18 15v5M15.5 17.5h5"/></symbol>
+  <symbol id="i-movil" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2"/><path d="M10.5 18.5h3"/><path d="M12 7v3.5M12 12.8v.1"/></symbol>
+  <symbol id="i-padron" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1.5"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16.5a3 3 0 0 1 6 0M14 10h4M14 13.5h4"/></symbol>
+  <symbol id="i-carrito" viewBox="0 0 24 24"><path d="M3 5h2.5l1.2 3M11 4v6H6.7M6.7 8h11.8a3.5 3.5 0 0 1-3.5 4.5H9a2.5 2.5 0 0 1-2.3-1.6"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/><path d="M9.5 12.5 8.3 16M14.5 12.5l1 3.5"/></symbol>
+  <symbol id="i-volante" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6V3Z"/><path d="M14 3v4h4"/><circle cx="12" cy="13.5" r="2.5"/><path d="m10.6 15.6-1 3.4 2.4-1.2 2.4 1.2-1-3.4"/></symbol>
+  <symbol id="i-incidencia" viewBox="0 0 24 24"><path d="M5 21h6M8 21V7.5A4.5 4.5 0 0 1 12.5 3H15"/><path d="M13 7.5h6L17.5 4h-3L13 7.5Z"/><path d="M16 10.5v1.5M19.5 9.5l1 1M12.5 9.5l-1 1"/></symbol>
 </svg>
 
 <a class="saltar" href="#contenido">Saltar al contenido</a>
 <header class="cabecera">
   <div class="propuesta" data-propuesta>
-    <p class="contenedor"><b>Propuesta de diseño</b> para el Ayuntamiento de Ribera del Fresno · no es la web oficial</p>
+    <p class="contenedor"><b>Propuesta de diseño</b><span class="propuesta__largo"> para el Ayuntamiento de Ribera del Fresno</span> · no es la web oficial</p>
   </div>
-  <div class="franja-urgente" data-vivo="franja"><a class="franja-urgente__dentro contenedor" href="avisos.html#aviso-corte-agua-ejemplo" data-dato-ejemplo="aviso:corte-agua-ejemplo"><svg class="icono" aria-hidden="true"><use href="#i-aviso"/></svg><span class="franja-urgente__texto"><b>Aviso:</b> Corte de agua programado en varias calles, de 9:00 a 13:00 <span class="ejemplo">Ejemplo</span> <span class="franja-urgente__ver">Ver el aviso</span></span></a></div>
+  <div class="franja-urgente" data-vivo="franja"><a class="franja-urgente__dentro contenedor" href="avisos.html#aviso-corte-agua-ejemplo" data-dato-ejemplo="aviso:corte-agua-ejemplo"><svg class="icono" aria-hidden="true"><use href="#i-aviso"/></svg><span class="franja-urgente__texto"><b>Aviso:</b> Corte de agua programado en varias calles, de 9:00 a 13:00</span> <span class="ejemplo">Ejemplo</span> <span class="franja-urgente__ver">Ver aviso</span></a></div>
   <div class="cabecera__barra">
     <div class="contenedor cabecera__dentro">
       <a class="cabecera__marca" href="index.html">
@@ -96,7 +104,7 @@
           <li><a class="menu__enlace" href="pueblo.html" aria-current="page">El pueblo</a></li>
           <li><a class="menu__enlace" href="telefonos.html">Teléfonos</a></li>
           <li><a class="menu__enlace" href="contacto.html">Contacto</a></li>
-
+          
         </ul>
         <a class="boton boton--marca menu__sede" href="https://riberadelfresno.sedelectronica.es"><svg class="icono" aria-hidden="true"><use href="#i-sede"/></svg>Sede electrónica</a>
       </nav>
@@ -125,17 +133,23 @@
 </dialog>
 
 <main id="contenido" tabindex="-1">
-<div class="cabeza-pagina">
-  <div class="contenedor">
+<div class="cabeza-pagina cabeza-pagina--foto cabeza-pagina--grande">
+  <div class="contenedor cabeza-pagina__rejilla">
     <nav class="migas" aria-label="Usted está aquí">
       <ol>
         <li><a href="index.html">Inicio</a></li>
-
+        
         <li><span aria-current="page">El pueblo</span></li>
       </ol>
     </nav>
     <h1 class="cabeza-pagina__titulo" id="titulo-pagina">El pueblo</h1>
     <p class="entradilla">Un pueblo encalado de Tierra de Barros, con una iglesia de dos torres, un poblado prerromano en lo alto de un cerro y un poeta de la Ilustración.</p>
+    <figure class="cabeza-pagina__puerta">
+      <div class="cabeza-pagina__arco arco-opcional"><img src="media/iglesia-torres.jpg" srcset="media/iglesia-torres-800.jpg 800w, media/iglesia-torres.jpg 728w" sizes="(min-width: 64em) 34rem, (min-width: 48em) 16rem, 92vw" width="728" height="400" alt="Las dos torres blancas de la iglesia sobre los tejados del pueblo, con la sierra al fondo" style="object-position: 70% 55%" fetchpriority="high" decoding="async"></div>
+      <span class="cabeza-pagina__umbral" aria-hidden="true"></span>
+      <figcaption class="credito">Foto: cartel de DEMA y la Junta de Extremadura (2014), web del Ayuntamiento</figcaption>
+    </figure>
+    
   </div>
 </div>
 
@@ -145,13 +159,6 @@
     <h2 class="seccion__titulo" id="t-lugares">Qué ver</h2>
     <div class="carril" data-desborda role="group" aria-labelledby="t-lugares">
       <ul class="carril__lista">
-        <li class="lugar">
-          <figure class="lugar__foto arco-opcional"><img src="media/iglesia-torres-800.jpg" width="728" height="400" alt="Las dos torres de la iglesia sobre los tejados, con la sierra al fondo" loading="lazy" decoding="async"></figure>
-          
-          <h3 class="lugar__nombre">Iglesia de Nuestra Señora de Gracia</h3>
-          <p class="lugar__texto">Dos torres gemelas, un retablo barroco y un púlpito de mármol de Estremoz. En sus tejados anida el cernícalo primilla.</p>
-          <p class="credito">Foto: cartel de DEMA y la Junta de Extremadura (2014), web del Ayuntamiento</p>
-        </li>
         <li class="lugar">
           <figure class="lugar__foto arco-opcional"><img src="media/monumento-melendez-800.jpg" width="1024" height="768" alt="Busto de bronce de Meléndez Valdés sobre un pedestal" loading="lazy" decoding="async"></figure>
           
@@ -187,6 +194,13 @@
           <p class="lugar__texto">Las ruinas de sus arcos, junto al arroyo Valdemedel.</p>
           <p class="credito">Foto: Diegui57 · CC BY-SA 4.0</p>
         </li>
+        <li class="lugar">
+          <figure class="lugar__foto arco-opcional"><img src="media/iglesia-torres-800.jpg" width="728" height="400" alt="Las dos torres de la iglesia sobre los tejados, con la sierra al fondo" loading="lazy" decoding="async"></figure>
+          
+          <h3 class="lugar__nombre">Iglesia de Nuestra Señora de Gracia</h3>
+          <p class="lugar__texto">Dos torres gemelas, un retablo barroco y un púlpito de mármol de Estremoz. En sus tejados anida el cernícalo primilla.</p>
+          <p class="credito">Foto: cartel de DEMA y la Junta de Extremadura (2014), web del Ayuntamiento</p>
+        </li>
         
       </ul>
     </div>
@@ -219,39 +233,57 @@
 <section class="seccion" aria-labelledby="t-patrimonio">
   <div class="contenedor">
     <h2 class="seccion__titulo" id="t-patrimonio">Patrimonio</h2>
-    <ul class="patrimonio">
-      <li><b>Iglesia de Nuestra Señora de Gracia</b><span>Del siglo XIII-XIV, reedificada en 1745 y 1859. Dos torres gemelas, un retablo barroco de Alonso Rodríguez Lucas y un púlpito de mármol de Estremoz. C/ Iglesia, 2.</span></li>
-      <li><b>Ermita del Cristo de la Misericordia</b><span>Del siglo XVIII, con atrio, arcada lateral y torre. Guarda la imagen del Cristo, que la tradición atribuye a Pedro Roldán.</span></li>
-      <li><b>Ermita de la Aurora</b><span>En la calle Meléndez Valdés. Conserva la sillería de los Trece de la Orden de Santiago y piedras visigodas en el umbral.</span></li>
-      <li><b>Ermita del Cristo Viejo</b><span>Del siglo XVI, hoy en ruinas, con cúpula y una torre de remate bulboso.</span></li>
-      <li><b>Ermita de San Juan Macías</b><span>Levantada en 1985 en la casa natal del santo.</span></li>
-      <li><b>Ermita de San Isidro</b><span>De 1998, a unos 4 km del pueblo.</span></li>
-      <li><b>Casa natal de Juan Meléndez Valdés</b><span>En la calle Larga, con la placa que recuerda al poeta.</span></li>
-      <li><b>Monumento a Meléndez Valdés</b><span>Busto de bronce de 1985, obra del escultor pacense Luis Martínez Giraldo.</span></li>
-      <li><b>Casa de Vargas-Zúñiga</b><span>Casa-palacio de los siglos XVII y XVIII, con balcón, escudo con venera y rejas con la cruz de Santiago. Hoy es la Casa de la Cultura.</span></li>
-      <li><b>Palacio de Quintanilla</b><span>En la calle Ayuntamiento, con fachada barroca.</span></li>
-      <li><b>Casa de Bazo</b><span>Con un balcón bajo bóveda de venera.</span></li>
-      <li><b>Casas de los Olea y de los Grajera</b><span>Casas de esquina con blasones, de los siglos XVII y XVIII.</span></li>
-      <li><b>Antiguo convento de Jesús y María</b><span>Convento de clarisas fundado en 1535. Hoy es el Ayuntamiento.</span></li>
-      <li><b>Oppidum de Hornachuelos</b><span>Poblado fortificado prerromano de unas cinco hectáreas, excavado entre 1986 y 1997. Tiene centro de interpretación en la Casa de la Cultura.</span></li>
-      <li><b>Pozo de San Juan Macías</b><span>En la finca del Valle Garzón, a unos 4 km: el lugar del primer milagro del santo.</span></li>
-      <li><b>Pilar del Caño</b><span>Pilar tradicional, a las afueras del pueblo.</span></li>
-      <li><b>Los pozos rojos y blancos</b><span>Los pozos del término se pintan de rojo el cuerpo y de blanco el brocal.</span></li>
-      <li><b>Ruinas del lavadero de lanas</b><span>Arcos de ladrillo junto al arroyo Valdemedel.</span></li>
+    <div class="patrimonio-grupos">
+      <div class="patrimonio-grupo">
+        <h3 class="patrimonio-grupo__titulo">Iglesia y ermitas</h3>
+        <ul class="patrimonio">
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Iglesia de Nuestra Señora de Gracia</b><span class="patrimonio__detalle">Del siglo XIII-XIV, reedificada en 1745 y 1859. Dos torres gemelas, un retablo barroco de Alonso Rodríguez Lucas y un púlpito de mármol de Estremoz. C/ Iglesia, 2.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Ermita del Cristo de la Misericordia</b><span class="patrimonio__detalle">Del siglo XVIII, con atrio, arcada lateral y torre. Guarda la imagen del Cristo, que la tradición atribuye a Pedro Roldán.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Ermita de la Aurora</b><span class="patrimonio__detalle">En la calle Meléndez Valdés. Conserva la sillería de los Trece de la Orden de Santiago y piedras visigodas en el umbral.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Ermita del Cristo Viejo</b><span class="patrimonio__detalle">Del siglo XVI, hoy en ruinas, con cúpula y una torre de remate bulboso.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Ermita de San Juan Macías</b><span class="patrimonio__detalle">Levantada en 1985 en la casa natal del santo.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Ermita de San Isidro</b><span class="patrimonio__detalle">De 1998, a unos 4 km del pueblo.</span></li>
+          
+        </ul>
+      </div>
+      <div class="patrimonio-grupo">
+        <h3 class="patrimonio-grupo__titulo">Casas, palacios y monumentos</h3>
+        <ul class="patrimonio">
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Casa natal de Juan Meléndez Valdés</b><span class="patrimonio__detalle">En la calle Larga, con la placa que recuerda al poeta.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Monumento a Meléndez Valdés</b><span class="patrimonio__detalle">Busto de bronce de 1985, obra del escultor pacense Luis Martínez Giraldo.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Casa de Vargas-Zúñiga</b><span class="patrimonio__detalle">Casa-palacio de los siglos XVII y XVIII, con balcón, escudo con venera y rejas con la cruz de Santiago. Hoy es la Casa de la Cultura.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Palacio de Quintanilla</b><span class="patrimonio__detalle">En la calle Ayuntamiento, con fachada barroca.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Casa de Bazo</b><span class="patrimonio__detalle">Con un balcón bajo bóveda de venera.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Casas de los Olea y de los Grajera</b><span class="patrimonio__detalle">Casas de esquina con blasones, de los siglos XVII y XVIII.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Antiguo convento de Jesús y María</b><span class="patrimonio__detalle">Convento de clarisas fundado en 1535. Hoy es el Ayuntamiento.</span></li>
+          
+        </ul>
+      </div>
+      <div class="patrimonio-grupo">
+        <h3 class="patrimonio-grupo__titulo">Arqueología y campo</h3>
+        <ul class="patrimonio">
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Oppidum de Hornachuelos</b><span class="patrimonio__detalle">Poblado fortificado prerromano de unas cinco hectáreas, excavado entre 1986 y 1997. Tiene centro de interpretación en la Casa de la Cultura.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Pozo de San Juan Macías</b><span class="patrimonio__detalle">En la finca del Valle Garzón, a unos 4 km: el lugar del primer milagro del santo.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Pilar del Caño</b><span class="patrimonio__detalle">Pilar tradicional, a las afueras del pueblo.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Los pozos rojos y blancos</b><span class="patrimonio__detalle">Los pozos del término se pintan de rojo el cuerpo y de blanco el brocal.</span></li>
+          <li class="patrimonio__fila"><b class="patrimonio__nombre">Ruinas del lavadero de lanas</b><span class="patrimonio__detalle">Arcos de ladrillo junto al arroyo Valdemedel.</span></li>
+          
+        </ul>
+      </div>
       
-    </ul>
+    </div>
   </div>
 </section>
 
 <section class="seccion" aria-labelledby="t-anio">
   <div class="contenedor">
     <h2 class="seccion__titulo" id="t-anio">Fiestas</h2>
-    <ol class="anio" data-vivo="anio"><li class="mes"><p class="mes__nombre">Enero</p><p class="mes__vacio">Sin fiestas señaladas</p></li><li class="mes con-fiesta"><p class="mes__nombre">Febrero</p><ul class="mes__fiestas"><li><b>Jueves de Compadres</b><span>Dos jueves antes del Miércoles de Ceniza</span></li><li><b>Muestra de Vinos de Pitarra y Matanza</b><span>Finales de febrero</span></li></ul></li><li class="mes con-fiesta"><p class="mes__nombre">Marzo</p><ul class="mes__fiestas"><li><b>Carnaval y Semana Santa</b><span>Fecha variable</span></li></ul></li><li class="mes"><p class="mes__nombre">Abril</p><p class="mes__vacio">Sin fiestas señaladas</p></li><li class="mes con-fiesta"><p class="mes__nombre">Mayo</p><ul class="mes__fiestas"><li><b>San Isidro</b><span>15 de mayo</span></li></ul></li><li class="mes"><p class="mes__nombre">Junio</p><p class="mes__vacio">Sin fiestas señaladas</p></li><li class="mes con-fiesta"><p class="mes__nombre">Julio</p><ul class="mes__fiestas"><li><b>Festival Folklórico Internacional de la Baja Extremadura</b><span>Tercer fin de semana de julio</span></li></ul></li><li class="mes con-fiesta"><p class="mes__nombre">Agosto</p><ul class="mes__fiestas"><li><b>Festival de Teatro «Meléndez Valdés»</b><span>En verano</span></li><li><b>Jornadas Gastronómicas y Artesanales</b><span>Primer fin de semana de agosto</span></li><li><b>Fiestas del Emigrante</b><span>15 de agosto</span></li></ul></li><li class="mes con-fiesta"><p class="mes__nombre">Septiembre</p><ul class="mes__fiestas"><li><b>Día de Extremadura</b><span>8 de septiembre</span></li><li><b>Ferias y Fiestas del Cristo de la Misericordia</b> <span class="chip chip--mayor">Fiesta mayor</span><span>Desde el 14 de septiembre, cuatro días</span></li><li><b>Romería al Pozo de San Juan Macías</b><span>El domingo después de las fiestas del Cristo</span></li></ul></li><li class="mes es-mes-actual"><p class="mes__nombre">Octubre <span class="mes__ahora">Este mes</span></p><p class="mes__vacio">Sin fiestas señaladas</p></li><li class="mes con-fiesta"><p class="mes__nombre">Noviembre</p><ul class="mes__fiestas"><li><b>FEAVIR, Feria Avícola</b><span>Segunda semana de noviembre</span></li></ul></li><li class="mes"><p class="mes__nombre">Diciembre</p><p class="mes__vacio">Sin fiestas señaladas</p></li></ol>
+    <ol class="anio" data-vivo="anio"><li class="mes es-vacio"><p class="mes__nombre"><span class="mes__largo">Enero</span><span class="mes__corto" aria-hidden="true">ene</span></p><p class="mes__vacio"><span class="mes__raya" aria-hidden="true"></span><span class="mes__vacio-texto">Sin fiestas señaladas</span></p></li><li class="mes con-fiesta"><p class="mes__nombre"><span class="mes__largo">Febrero</span><span class="mes__corto" aria-hidden="true">feb</span></p><ul class="mes__fiestas"><li><b>Jueves de Compadres</b><span>Dos jueves antes del Miércoles de Ceniza</span></li><li><b>Muestra de Vinos de Pitarra y Matanza</b><span>Finales de febrero</span></li></ul></li><li class="mes con-fiesta"><p class="mes__nombre"><span class="mes__largo">Marzo</span><span class="mes__corto" aria-hidden="true">mar</span></p><ul class="mes__fiestas"><li><b>Carnaval y Semana Santa</b><span>Fecha variable</span></li></ul></li><li class="mes es-vacio"><p class="mes__nombre"><span class="mes__largo">Abril</span><span class="mes__corto" aria-hidden="true">abr</span></p><p class="mes__vacio"><span class="mes__raya" aria-hidden="true"></span><span class="mes__vacio-texto">Sin fiestas señaladas</span></p></li><li class="mes con-fiesta"><p class="mes__nombre"><span class="mes__largo">Mayo</span><span class="mes__corto" aria-hidden="true">may</span></p><ul class="mes__fiestas"><li><b>San Isidro</b><span>15 de mayo</span></li></ul></li><li class="mes es-vacio"><p class="mes__nombre"><span class="mes__largo">Junio</span><span class="mes__corto" aria-hidden="true">jun</span></p><p class="mes__vacio"><span class="mes__raya" aria-hidden="true"></span><span class="mes__vacio-texto">Sin fiestas señaladas</span></p></li><li class="mes con-fiesta"><p class="mes__nombre"><span class="mes__largo">Julio</span><span class="mes__corto" aria-hidden="true">jul</span></p><ul class="mes__fiestas"><li><b>Festival Folklórico Internacional de la Baja Extremadura</b><span>Tercer fin de semana de julio</span></li></ul></li><li class="mes con-fiesta"><p class="mes__nombre"><span class="mes__largo">Agosto</span><span class="mes__corto" aria-hidden="true">ago</span></p><ul class="mes__fiestas"><li><b>Festival de Teatro «Meléndez Valdés»</b><span>En verano</span></li><li><b>Jornadas Gastronómicas y Artesanales</b><span>Primer fin de semana de agosto</span></li><li><b>Fiestas del Emigrante</b><span>15 de agosto</span></li></ul></li><li class="mes con-fiesta"><p class="mes__nombre"><span class="mes__largo">Septiembre</span><span class="mes__corto" aria-hidden="true">sep</span></p><ul class="mes__fiestas"><li><b>Día de Extremadura</b><span>8 de septiembre</span></li><li><b>Ferias y Fiestas del Cristo de la Misericordia</b> <span class="chip chip--mayor">Fiesta mayor</span><span>Desde el 14 de septiembre, cuatro días</span></li><li><b>Romería al Pozo de San Juan Macías</b><span>El domingo después de las fiestas del Cristo</span></li></ul></li><li class="mes es-vacio es-mes-actual"><p class="mes__nombre"><span class="mes__largo">Octubre</span><span class="mes__corto" aria-hidden="true">oct</span> <span class="mes__ahora">Este mes</span></p><p class="mes__vacio"><span class="mes__raya" aria-hidden="true"></span><span class="mes__vacio-texto">Sin fiestas señaladas</span></p></li><li class="mes con-fiesta"><p class="mes__nombre"><span class="mes__largo">Noviembre</span><span class="mes__corto" aria-hidden="true">nov</span></p><ul class="mes__fiestas"><li><b>FEAVIR, Feria Avícola</b><span>Segunda semana de noviembre</span></li></ul></li><li class="mes es-vacio"><p class="mes__nombre"><span class="mes__largo">Diciembre</span><span class="mes__corto" aria-hidden="true">dic</span></p><p class="mes__vacio"><span class="mes__raya" aria-hidden="true"></span><span class="mes__vacio-texto">Sin fiestas señaladas</span></p></li></ol>
   </div>
 </section>
 
 <section class="seccion" aria-labelledby="t-gastronomia">
-  <div class="contenedor gastronomia">
+  <div class="contenedor gastronomia gastronomia--con-foto">
     <div>
       <h2 class="seccion__titulo" id="t-gastronomia">Gastronomía</h2>
       <div class="gastronomia__listas">
@@ -260,7 +292,7 @@
         <div><h3 class="gastronomia__titulo">Para beber</h3><ul class="lista-coma"><li>Vino de pitarra</li><li>Resóleo</li><li>Vino y aceite de oliva virgen extra de la tierra</li></ul></div>
       </div>
     </div>
-    <figure class="gastronomia__foto"><img src="media/dulces-800.jpg" width="1600" height="1063" alt="Bandeja de dulces típicos: flores, perrunillas y roscas" loading="lazy" decoding="async"><figcaption class="credito">Foto: web del Ayuntamiento</figcaption></figure>
+    <figure class="gastronomia__foto"><div class="gastronomia__marco arco-opcional"><img src="media/dulces-800.jpg" width="1600" height="1063" alt="Bandeja de dulces típicos: flores, perrunillas y roscas" loading="lazy" decoding="async"></div><figcaption class="credito">Foto: web del Ayuntamiento</figcaption></figure>
   </div>
 </section>
 
@@ -345,6 +377,7 @@
           <li><a href="accesibilidad.html">Declaración de accesibilidad</a></li>
         </ul>
       </nav>
+      
       <ul class="pie__redes" aria-label="Redes sociales del Ayuntamiento">
         <li><a href="https://www.facebook.com/AyuntamientodeRiberadelFresno">Facebook</a></li><li><a href="https://www.instagram.com/aytoriberadelfresno/">Instagram</a></li><li><a href="https://twitter.com/aytoribera">X (Twitter)</a></li><li><a href="https://www.youtube.com/channel/UC6OMGwPGD_SNkhk9ew5Bc-A">YouTube</a></li>
       </ul>
@@ -378,14 +411,16 @@
     <button type="button" class="mando__boton" data-paleta="a" aria-pressed="true"><span class="mando__muestra mando__muestra--a" aria-hidden="true"></span>Sinople</button>
     <button type="button" class="mando__boton" data-paleta="b" aria-pressed="false"><span class="mando__muestra mando__muestra--b" aria-hidden="true"></span>Azur</button>
     <button type="button" class="mando__boton" data-paleta="c" aria-pressed="false"><span class="mando__muestra mando__muestra--c" aria-hidden="true"></span>Almagre</button>
-
+    
   </div>
 </div>
 <!-- [MANDO DE MAQUETA] fin -->
 
-<script type="application/json" id="datos-vivos">{"slug":"ribera-del-fresno","nombre":"Ribera del Fresno","nombre_corto":"Ribera","zona":"Europe/Madrid","horario":{"texto":"Lunes a viernes, de 9:00 a 14:00","tramos":[{"dias":[1,2,3,4,5],"de":"09:00","a":"14:00"}],"ejemplo":true},"avisos":[{"id":"corte-agua-ejemplo","fecha":"2026-10-02","tema":"Agua","titulo":"Corte de agua programado en varias calles, de 9:00 a 13:00","urgente":true,"caduca":"2026-11-30","ejemplo":true,"oculto":false},{"id":"reunion-feria-comercio","fecha":"2026-10-02","tema":"Comercio","titulo":"Reunión informativa sobre la V Feria del Comercio","urgente":false,"caduca":null,"ejemplo":false,"oculto":false}],"agenda":[{"id":"reunion-feria-comercio","fecha":"2026-10-02","hora":"20:30","titulo":"Reunión de la V Feria del Comercio","lugar":"Casa de la Cultura","nota":null,"ejemplo":false,"oculto":false},{"id":"feavir-2026","fecha":"2026-11-12","hora":null,"titulo":"FEAVIR, Feria Avícola","lugar":"Segunda semana de noviembre","nota":"Fecha exacta por confirmar.","ejemplo":true,"oculto":false},{"id":"camino-pozo-san-juan","fecha":"2026-12-15","hora":null,"titulo":"Apertura del camino de peregrinación al Pozo de San Juan","lugar":"Prevista para finales de año","nota":null,"ejemplo":true,"oculto":false},{"id":"fiesta-san-isidro-2026","fecha":"2026-05-15","titulo":"San Isidro","lugar":null,"origen":"fiesta"},{"id":"fiesta-san-isidro-2027","fecha":"2027-05-15","titulo":"San Isidro","lugar":null,"origen":"fiesta"},{"id":"fiesta-fiestas-del-emigrante-2026","fecha":"2026-08-15","titulo":"Fiestas del Emigrante","lugar":null,"origen":"fiesta"},{"id":"fiesta-fiestas-del-emigrante-2027","fecha":"2027-08-15","titulo":"Fiestas del Emigrante","lugar":null,"origen":"fiesta"},{"id":"fiesta-dia-de-extremadura-2026","fecha":"2026-09-08","titulo":"Día de Extremadura","lugar":null,"origen":"fiesta"},{"id":"fiesta-dia-de-extremadura-2027","fecha":"2027-09-08","titulo":"Día de Extremadura","lugar":null,"origen":"fiesta"},{"id":"fiesta-ferias-y-fiestas-del-cristo-de-la-misericordia-2026","fecha":"2026-09-14","titulo":"Ferias y Fiestas del Cristo de la Misericordia","lugar":"Desde el 14 de septiembre, cuatro días","origen":"fiesta"},{"id":"fiesta-ferias-y-fiestas-del-cristo-de-la-misericordia-2027","fecha":"2027-09-14","titulo":"Ferias y Fiestas del Cristo de la Misericordia","lugar":"Desde el 14 de septiembre, cuatro días","origen":"fiesta"}],"noticias":[{"id":"reunion-v-feria-comercio","fecha":"2026-10-02","titulo":"Reunión informativa sobre la V Feria del Comercio","resumen":"Hoy viernes, a las 20:30, en la Casa de la Cultura.","imagen":"casa-cultura","imagen_alt":"Fachada encalada de la Casa de la Cultura","ejemplo":false},{"id":"cruz-pozo-san-juan","fecha":"2026-10-01","titulo":"Instalada una nueva cruz de 8 × 4 metros en el Pozo de San Juan","resumen":"El camino de peregrinación desde el pueblo estará listo a finales de año.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"ayudas-natalidad-2026","fecha":"2026-10-01","titulo":"Abierta la convocatoria 2026 de ayudas a la natalidad","resumen":"Las bases y la solicitud están en el tablón de la sede electrónica.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"campo-cesped-artificial","fecha":"2026-10-01","titulo":"El concejal de Deportes informa sobre el campo de césped artificial","resumen":"Andrés Bermejo explica en qué punto está el proyecto.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"grabacion-pleno-30-septiembre","fecha":"2026-10-01","titulo":"Ya se puede ver la grabación del pleno del 30 de septiembre","resumen":"El pleno ordinario, grabado entero.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"anillo-norte","fecha":"2026-09-29","titulo":"Anuncio previo de las instalaciones eléctricas «Anillo Norte»","resumen":"Publicado en el tablón antes de empezar la obra.","imagen":null,"imagen_alt":"","ejemplo":false}],"tablon":{"actualizado":"2026-10-02T16:14:39.116Z","entradas":[{"fecha":"2026-10-01","tema":"Ayudas","titulo":"CONVOCATORIA AYUDA NATALIDAD CORRECTA 2026","titulo_claro":"Convocatoria 2026 de ayudas a la natalidad","url":"https://riberadelfresno.sedelectronica.es/preview-document/02af28b6-9fdb-4b29-968c-eee1a7582f0a","oculto":false},{"fecha":"2026-09-29","tema":"Obras","titulo":"ANUNCIO PREVIO A LA CONSTRUCCIÓN DE INSTALACIÓN ELÉCTRICAS ANILLO NORTE","titulo_claro":"Anuncio previo de las instalaciones eléctricas «Anillo Norte»","url":"https://riberadelfresno.sedelectronica.es/preview-document/e93c0528-669d-435a-9c14-ea0cd2393a51","oculto":false},{"fecha":"2026-09-25","tema":"Pleno","titulo":"Anuncio celebración sesión Ordinaria Pleno 30 de septiembre de 2026","titulo_claro":"Pleno ordinario del 30 de septiembre: convocatoria","url":"https://riberadelfresno.sedelectronica.es/preview-document/38e93efa-c78c-46df-a85c-31b2cf7f017c","oculto":false},{"fecha":"2026-08-24","tema":"Impuestos","titulo":"ANUNCIO COBRANZA IAE 2026","titulo_claro":"Periodo de cobro del IAE 2026","url":"https://riberadelfresno.sedelectronica.es/preview-document/3f841651-c794-4d5f-abc7-f70773d5bb3e","oculto":false},{"fecha":"2026-08-03","tema":"Pleno","titulo":"Anuncio celebración sesión Extraordinaria Pleno 06 de agosto 2026","titulo_claro":"Pleno extraordinario del 6 de agosto: convocatoria","url":"https://riberadelfresno.sedelectronica.es/preview-document/731a9524-6eee-45c4-8078-90c16624a687","oculto":false},{"fecha":"2026-08-03","tema":"Pleno","titulo":"Anuncio incorporación nuevo punto orden del día celebración sesión Extraordinaria Pleno 06 de agosto 2026","titulo_claro":"Pleno del 6 de agosto: punto añadido al orden del día","url":"https://riberadelfresno.sedelectronica.es/preview-document/56744471-3e15-4f83-bb45-5610964f3bc8","oculto":false},{"fecha":"2026-07-16","tema":"Ayudas","titulo":"Extracto Bases Asociaciones","titulo_claro":"Subvenciones para asociaciones: extracto de las bases","url":"https://riberadelfresno.sedelectronica.es/preview-document/a18eb373-57db-40ae-9cde-4c13311f98bf","oculto":false},{"fecha":"2026-05-19","tema":"Ayudas","titulo":"B.O.P. nº. 91 - Anuncio 1752_2026 Bases reguladoras para ayudas mínimos vitales 2026","titulo_claro":"Ayudas para suministros mínimos vitales 2026: bases (BOP n.º 91)","url":"https://riberadelfresno.sedelectronica.es/preview-document/6f4c8681-90a6-46ae-a32f-c5601f49af42","oculto":false}]},"fiestas":[{"mes":2,"nombre":"Jueves de Compadres","cuando":"Dos jueves antes del Miércoles de Ceniza","mayor":false,"fecha_fija":null},{"mes":2,"nombre":"Muestra de Vinos de Pitarra y Matanza","cuando":"Finales de febrero","mayor":false,"fecha_fija":null},{"mes":3,"nombre":"Carnaval y Semana Santa","cuando":"Fecha variable","mayor":false,"fecha_fija":null},{"mes":5,"nombre":"San Isidro","cuando":"15 de mayo","mayor":false,"fecha_fija":"05-15"},{"mes":7,"nombre":"Festival Folklórico Internacional de la Baja Extremadura","cuando":"Tercer fin de semana de julio","mayor":false,"fecha_fija":null},{"mes":8,"nombre":"Festival de Teatro «Meléndez Valdés»","cuando":"En verano","mayor":false,"fecha_fija":null},{"mes":8,"nombre":"Jornadas Gastronómicas y Artesanales","cuando":"Primer fin de semana de agosto","mayor":false,"fecha_fija":null},{"mes":8,"nombre":"Fiestas del Emigrante","cuando":"15 de agosto","mayor":false,"fecha_fija":"08-15"},{"mes":9,"nombre":"Día de Extremadura","cuando":"8 de septiembre","mayor":false,"fecha_fija":"09-08"},{"mes":9,"nombre":"Ferias y Fiestas del Cristo de la Misericordia","cuando":"Desde el 14 de septiembre, cuatro días","mayor":true,"fecha_fija":"09-14"},{"mes":9,"nombre":"Romería al Pozo de San Juan Macías","cuando":"El domingo después de las fiestas del Cristo","mayor":false,"fecha_fija":null},{"mes":11,"nombre":"FEAVIR, Feria Avícola","cuando":"Segunda semana de noviembre","mayor":false,"fecha_fija":null}],"servicios":{"ayuntamiento":[{"dias":[1,2,3,4,5],"de":"09:00","a":"14:00"}],"centro-de-dia-la-ribera":[{"dias":[1,2,3,4,5],"de":"10:00","a":"18:00"}],"biblioteca-virgilio-gutierrez":[{"dias":[1,2,3,4,5],"de":"09:30","a":"14:00"}]},"tramites_sede":111,"rutas":{"tramites":"tramites.html","avisos":"avisos.html","agenda":"agenda.html","noticia":"noticia-{id}.html","media":"media/"},"hoja":null,"tablon_json":"contenido/tablon.json","v_datos":"185393ea"}</script>
-<script src="js/vivo.js?v=2aa76ce9" defer></script>
-<script src="js/main.js?v=85569bbf" defer></script>
+<script type="application/json" id="datos-vivos">{"slug":"ribera-del-fresno","nombre":"Ribera del Fresno","nombre_corto":"Ribera","zona":"Europe/Madrid","horario":{"texto":"Lunes a viernes, de 9:00 a 14:00","tramos":[{"dias":[1,2,3,4,5],"de":"09:00","a":"14:00"}],"ejemplo":true},"avisos":[{"id":"corte-agua-ejemplo","fecha":"2026-10-02","tema":"Agua","titulo":"Corte de agua programado en varias calles, de 9:00 a 13:00","urgente":true,"caduca":"2026-11-30","ejemplo":true,"oculto":false},{"id":"reunion-feria-comercio","fecha":"2026-10-02","tema":"Comercio","titulo":"Reunión informativa sobre la V Feria del Comercio","urgente":false,"caduca":null,"ejemplo":false,"oculto":false}],"agenda":[{"id":"reunion-feria-comercio","fecha":"2026-10-02","hora":"20:30","hora_fin":null,"titulo":"Reunión de la V Feria del Comercio","lugar":"Casa de la Cultura","nota":null,"ejemplo":false,"oculto":false,"tipo":null,"convocatoria":null,"convocatoria_sr":null,"grabacion":null,"grabacion_sr":null,"ics":"ics/reunion-feria-comercio.ics"},{"id":"feavir-2026","fecha":"2026-11-12","hora":null,"hora_fin":null,"titulo":"FEAVIR, Feria Avícola","lugar":"Segunda semana de noviembre","nota":"Fecha exacta por confirmar.","ejemplo":true,"oculto":false,"tipo":null,"convocatoria":null,"convocatoria_sr":null,"grabacion":null,"grabacion_sr":null,"ics":"ics/feavir-2026.ics"},{"id":"camino-pozo-san-juan","fecha":"2026-12-15","hora":null,"hora_fin":null,"titulo":"Apertura del camino de peregrinación al Pozo de San Juan","lugar":"Prevista para finales de año","nota":null,"ejemplo":true,"oculto":false,"tipo":null,"convocatoria":null,"convocatoria_sr":null,"grabacion":null,"grabacion_sr":null,"ics":"ics/camino-pozo-san-juan.ics"},{"id":"fiesta-san-isidro-2026","fecha":"2026-05-15","titulo":"San Isidro","lugar":null,"origen":"fiesta","ics":"ics/fiesta-san-isidro-2026.ics"},{"id":"fiesta-san-isidro-2027","fecha":"2027-05-15","titulo":"San Isidro","lugar":null,"origen":"fiesta","ics":"ics/fiesta-san-isidro-2027.ics"},{"id":"fiesta-fiestas-del-emigrante-2026","fecha":"2026-08-15","titulo":"Fiestas del Emigrante","lugar":null,"origen":"fiesta","ics":"ics/fiesta-fiestas-del-emigrante-2026.ics"},{"id":"fiesta-fiestas-del-emigrante-2027","fecha":"2027-08-15","titulo":"Fiestas del Emigrante","lugar":null,"origen":"fiesta","ics":"ics/fiesta-fiestas-del-emigrante-2027.ics"},{"id":"fiesta-dia-de-extremadura-2026","fecha":"2026-09-08","titulo":"Día de Extremadura","lugar":null,"origen":"fiesta","ics":"ics/fiesta-dia-de-extremadura-2026.ics"},{"id":"fiesta-dia-de-extremadura-2027","fecha":"2027-09-08","titulo":"Día de Extremadura","lugar":null,"origen":"fiesta","ics":"ics/fiesta-dia-de-extremadura-2027.ics"},{"id":"fiesta-ferias-y-fiestas-del-cristo-de-la-misericordia-2026","fecha":"2026-09-14","titulo":"Ferias y Fiestas del Cristo de la Misericordia","lugar":"Desde el 14 de septiembre, cuatro días","origen":"fiesta","ics":"ics/fiesta-ferias-y-fiestas-del-cristo-de-la-misericordia-2026.ics"},{"id":"fiesta-ferias-y-fiestas-del-cristo-de-la-misericordia-2027","fecha":"2027-09-14","titulo":"Ferias y Fiestas del Cristo de la Misericordia","lugar":"Desde el 14 de septiembre, cuatro días","origen":"fiesta","ics":"ics/fiesta-ferias-y-fiestas-del-cristo-de-la-misericordia-2027.ics"},{"id":"pleno-2026-09-30","fecha":"2026-09-30","hora":null,"titulo":"Pleno ordinario","lugar":null,"nota":null,"ejemplo":false,"oculto":false,"tipo":"pleno","convocatoria":null,"convocatoria_sr":null,"grabacion":"https://www.facebook.com/AyuntamientodeRiberadelFresno","grabacion_sr":", se abre otra web","ics":"ics/pleno-2026-09-30.ics"},{"id":"pleno-2026-12-29","fecha":"2026-12-29","hora":"20:00","titulo":"Pleno ordinario","lugar":"Salón de plenos del Ayuntamiento","nota":null,"ejemplo":true,"oculto":false,"tipo":"pleno","convocatoria":null,"convocatoria_sr":null,"grabacion":null,"grabacion_sr":null,"ics":"ics/pleno-2026-12-29.ics"}],"farmacias":{"lista":[{"id":"melendez-7","nombre":"Farmacia Meléndez Valdés 7","direccion":"C/ Meléndez Valdés, 7","localidad":null,"telefono":null},{"id":"melendez-37","nombre":"Farmacia Meléndez Valdés 37","direccion":"C/ Meléndez Valdés, 37","localidad":null,"telefono":null}],"cambio":"09:30","guardias":[],"rotacion":{"inicio":"2026-01-05","dias":7,"orden":["melendez-7","melendez-37"]},"oficial":{"nombre":"Colegio Oficial de Farmacéuticos de Badajoz","url":"https://cofbadajoz.com/farmacias-de-guardia/"},"ejemplo":true},"tiempo":{"url":"https://www.aemet.es/es/eltiempo/prediccion/municipios/ribera-del-fresno-id06113","lugar":"Ribera del Fresno"},"recogida":[{"id":"enseres","nombre":"Recogida de enseres","dias":[3],"fechas":[],"hora":null,"como":"Pídala el día antes en el Ayuntamiento","telefono":"924 536 011","tramite":null,"tramite_texto":null,"tramite_sr":null,"ejemplo":true}],"canal":null,"web":"https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-web/","noticias":[{"id":"reunion-v-feria-comercio","fecha":"2026-10-02","titulo":"Reunión informativa sobre la V Feria del Comercio","resumen":"Hoy viernes, a las 20:30, en la Casa de la Cultura.","imagen":"casa-cultura","imagen_alt":"Fachada encalada de la Casa de la Cultura","ejemplo":false},{"id":"cruz-pozo-san-juan","fecha":"2026-10-01","titulo":"Instalada una nueva cruz de 8 × 4 metros en el Pozo de San Juan","resumen":"El camino de peregrinación desde el pueblo estará listo a finales de año.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"ayudas-natalidad-2026","fecha":"2026-10-01","titulo":"Abierta la convocatoria 2026 de ayudas a la natalidad","resumen":"Las bases y la solicitud están en el tablón de la sede electrónica.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"campo-cesped-artificial","fecha":"2026-10-01","titulo":"El concejal de Deportes informa sobre el campo de césped artificial","resumen":"Andrés Bermejo explica en qué punto está el proyecto.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"grabacion-pleno-30-septiembre","fecha":"2026-10-01","titulo":"Ya se puede ver la grabación del pleno del 30 de septiembre","resumen":"El pleno ordinario, grabado entero.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"anillo-norte","fecha":"2026-09-29","titulo":"Anuncio previo de las instalaciones eléctricas «Anillo Norte»","resumen":"Publicado en el tablón antes de empezar la obra.","imagen":null,"imagen_alt":"","ejemplo":false}],"tablon":{"actualizado":"2026-10-02T16:14:39.116Z","entradas":[{"fecha":"2026-10-01","tema":"Ayudas","titulo":"CONVOCATORIA AYUDA NATALIDAD CORRECTA 2026","titulo_claro":"Convocatoria 2026 de ayudas a la natalidad","url":"https://riberadelfresno.sedelectronica.es/preview-document/02af28b6-9fdb-4b29-968c-eee1a7582f0a","oculto":false},{"fecha":"2026-09-29","tema":"Obras","titulo":"ANUNCIO PREVIO A LA CONSTRUCCIÓN DE INSTALACIÓN ELÉCTRICAS ANILLO NORTE","titulo_claro":"Anuncio previo de las instalaciones eléctricas «Anillo Norte»","url":"https://riberadelfresno.sedelectronica.es/preview-document/e93c0528-669d-435a-9c14-ea0cd2393a51","oculto":false},{"fecha":"2026-09-25","tema":"Pleno","titulo":"Anuncio celebración sesión Ordinaria Pleno 30 de septiembre de 2026","titulo_claro":"Pleno ordinario del 30 de septiembre: convocatoria","url":"https://riberadelfresno.sedelectronica.es/preview-document/38e93efa-c78c-46df-a85c-31b2cf7f017c","oculto":false},{"fecha":"2026-08-24","tema":"Impuestos","titulo":"ANUNCIO COBRANZA IAE 2026","titulo_claro":"Periodo de cobro del IAE 2026","url":"https://riberadelfresno.sedelectronica.es/preview-document/3f841651-c794-4d5f-abc7-f70773d5bb3e","oculto":false},{"fecha":"2026-08-03","tema":"Pleno","titulo":"Anuncio celebración sesión Extraordinaria Pleno 06 de agosto 2026","titulo_claro":"Pleno extraordinario del 6 de agosto: convocatoria","url":"https://riberadelfresno.sedelectronica.es/preview-document/731a9524-6eee-45c4-8078-90c16624a687","oculto":false},{"fecha":"2026-08-03","tema":"Pleno","titulo":"Anuncio incorporación nuevo punto orden del día celebración sesión Extraordinaria Pleno 06 de agosto 2026","titulo_claro":"Pleno del 6 de agosto: punto añadido al orden del día","url":"https://riberadelfresno.sedelectronica.es/preview-document/56744471-3e15-4f83-bb45-5610964f3bc8","oculto":false},{"fecha":"2026-07-16","tema":"Ayudas","titulo":"Extracto Bases Asociaciones","titulo_claro":"Subvenciones para asociaciones: extracto de las bases","url":"https://riberadelfresno.sedelectronica.es/preview-document/a18eb373-57db-40ae-9cde-4c13311f98bf","oculto":false},{"fecha":"2026-05-19","tema":"Ayudas","titulo":"B.O.P. nº. 91 - Anuncio 1752_2026 Bases reguladoras para ayudas mínimos vitales 2026","titulo_claro":"Ayudas para suministros mínimos vitales 2026: bases (BOP n.º 91)","url":"https://riberadelfresno.sedelectronica.es/preview-document/6f4c8681-90a6-46ae-a32f-c5601f49af42","oculto":false}]},"fiestas":[{"mes":2,"nombre":"Jueves de Compadres","cuando":"Dos jueves antes del Miércoles de Ceniza","mayor":false,"fecha_fija":null},{"mes":2,"nombre":"Muestra de Vinos de Pitarra y Matanza","cuando":"Finales de febrero","mayor":false,"fecha_fija":null},{"mes":3,"nombre":"Carnaval y Semana Santa","cuando":"Fecha variable","mayor":false,"fecha_fija":null},{"mes":5,"nombre":"San Isidro","cuando":"15 de mayo","mayor":false,"fecha_fija":"05-15"},{"mes":7,"nombre":"Festival Folklórico Internacional de la Baja Extremadura","cuando":"Tercer fin de semana de julio","mayor":false,"fecha_fija":null},{"mes":8,"nombre":"Festival de Teatro «Meléndez Valdés»","cuando":"En verano","mayor":false,"fecha_fija":null},{"mes":8,"nombre":"Jornadas Gastronómicas y Artesanales","cuando":"Primer fin de semana de agosto","mayor":false,"fecha_fija":null},{"mes":8,"nombre":"Fiestas del Emigrante","cuando":"15 de agosto","mayor":false,"fecha_fija":"08-15"},{"mes":9,"nombre":"Día de Extremadura","cuando":"8 de septiembre","mayor":false,"fecha_fija":"09-08"},{"mes":9,"nombre":"Ferias y Fiestas del Cristo de la Misericordia","cuando":"Desde el 14 de septiembre, cuatro días","mayor":true,"fecha_fija":"09-14"},{"mes":9,"nombre":"Romería al Pozo de San Juan Macías","cuando":"El domingo después de las fiestas del Cristo","mayor":false,"fecha_fija":null},{"mes":11,"nombre":"FEAVIR, Feria Avícola","cuando":"Segunda semana de noviembre","mayor":false,"fecha_fija":null}],"servicios":{"ayuntamiento":[{"dias":[1,2,3,4,5],"de":"09:00","a":"14:00"}],"centro-de-dia-la-ribera":[{"dias":[1,2,3,4,5],"de":"10:00","a":"18:00"}],"biblioteca-virgilio-gutierrez":[{"dias":[1,2,3,4,5],"de":"09:30","a":"14:00"}]},"tramites_sede":111,"rutas":{"tramites":"tramites.html","avisos":"avisos.html","agenda":"agenda.html","noticia":"noticia-{id}.html","media":"media/"},"hoja":null,"tablon_json":"contenido/tablon.json","horizonte_dias":60,"v_datos":"185393ea"}</script>
+<script src="js/vivo.js?v=6487b77c" defer></script>
+<script src="js/main.js?v=bdaf6641" defer></script>
+<script src="js/movimiento.js?v=54804867" defer></script>
+
 
 </body>
 </html>

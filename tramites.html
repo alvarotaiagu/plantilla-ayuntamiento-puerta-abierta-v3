@@ -18,9 +18,10 @@
 <link rel="manifest" href="manifest.json">
 <link rel="preload" href="fonts/besley-700-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/libre-franklin-400-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="css/fuentes.css?v=03f84dac">
-<link rel="stylesheet" href="css/marca.css?v=8d5db81a">
-<link rel="stylesheet" href="css/base.css?v=bca59f0b">
+<link rel="stylesheet" href="css/fuentes.css?v=5c32df95">
+<link rel="stylesheet" href="css/marca.css?v=af4e3a61">
+<link rel="stylesheet" href="css/base.css?v=72ecc02c">
+<link rel="stylesheet" href="css/movimiento.css?v=19e0a3e9">
 <script>
 /* Bloqueante a propósito: lo que cambia el aspecto se decide antes del primer
    pintado, o la página arranca de una forma y salta a otra. */
@@ -68,14 +69,21 @@
   <symbol id="i-correo" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="1.5"/><path d="m3.5 6.5 8.5 7 8.5-7"/></symbol>
   <symbol id="i-documento" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6V3Z"/><path d="M14 3v4h4"/></symbol>
   <symbol id="i-abajo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-farmacia" viewBox="0 0 24 24"><path d="M9 3.5h6v5.5h5.5v6H15v5.5H9V15H3.5V9H9V3.5Z"/></symbol>
+  <symbol id="i-mas" viewBox="0 0 24 24"><path d="M4 6.5h16M4 12h16M4 17.5h10"/><path d="M18 15v5M15.5 17.5h5"/></symbol>
+  <symbol id="i-movil" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2"/><path d="M10.5 18.5h3"/><path d="M12 7v3.5M12 12.8v.1"/></symbol>
+  <symbol id="i-padron" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1.5"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16.5a3 3 0 0 1 6 0M14 10h4M14 13.5h4"/></symbol>
+  <symbol id="i-carrito" viewBox="0 0 24 24"><path d="M3 5h2.5l1.2 3M11 4v6H6.7M6.7 8h11.8a3.5 3.5 0 0 1-3.5 4.5H9a2.5 2.5 0 0 1-2.3-1.6"/><circle cx="8" cy="18" r="2"/><circle cx="16" cy="18" r="2"/><path d="M9.5 12.5 8.3 16M14.5 12.5l1 3.5"/></symbol>
+  <symbol id="i-volante" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6V3Z"/><path d="M14 3v4h4"/><circle cx="12" cy="13.5" r="2.5"/><path d="m10.6 15.6-1 3.4 2.4-1.2 2.4 1.2-1-3.4"/></symbol>
+  <symbol id="i-incidencia" viewBox="0 0 24 24"><path d="M5 21h6M8 21V7.5A4.5 4.5 0 0 1 12.5 3H15"/><path d="M13 7.5h6L17.5 4h-3L13 7.5Z"/><path d="M16 10.5v1.5M19.5 9.5l1 1M12.5 9.5l-1 1"/></symbol>
 </svg>
 
 <a class="saltar" href="#contenido">Saltar al contenido</a>
 <header class="cabecera">
   <div class="propuesta" data-propuesta>
-    <p class="contenedor"><b>Propuesta de diseño</b> para el Ayuntamiento de Ribera del Fresno · no es la web oficial</p>
+    <p class="contenedor"><b>Propuesta de diseño</b><span class="propuesta__largo"> para el Ayuntamiento de Ribera del Fresno</span> · no es la web oficial</p>
   </div>
-  <div class="franja-urgente" data-vivo="franja"><a class="franja-urgente__dentro contenedor" href="avisos.html#aviso-corte-agua-ejemplo" data-dato-ejemplo="aviso:corte-agua-ejemplo"><svg class="icono" aria-hidden="true"><use href="#i-aviso"/></svg><span class="franja-urgente__texto"><b>Aviso:</b> Corte de agua programado en varias calles, de 9:00 a 13:00 <span class="ejemplo">Ejemplo</span> <span class="franja-urgente__ver">Ver el aviso</span></span></a></div>
+  <div class="franja-urgente" data-vivo="franja"><a class="franja-urgente__dentro contenedor" href="avisos.html#aviso-corte-agua-ejemplo" data-dato-ejemplo="aviso:corte-agua-ejemplo"><svg class="icono" aria-hidden="true"><use href="#i-aviso"/></svg><span class="franja-urgente__texto"><b>Aviso:</b> Corte de agua programado en varias calles, de 9:00 a 13:00</span> <span class="ejemplo">Ejemplo</span> <span class="franja-urgente__ver">Ver aviso</span></a></div>
   <div class="cabecera__barra">
     <div class="contenedor cabecera__dentro">
       <a class="cabecera__marca" href="index.html">
@@ -96,7 +104,7 @@
           <li><a class="menu__enlace" href="pueblo.html">El pueblo</a></li>
           <li><a class="menu__enlace" href="telefonos.html">Teléfonos</a></li>
           <li><a class="menu__enlace" href="contacto.html">Contacto</a></li>
-
+          
         </ul>
         <a class="boton boton--marca menu__sede" href="https://riberadelfresno.sedelectronica.es"><svg class="icono" aria-hidden="true"><use href="#i-sede"/></svg>Sede electrónica</a>
       </nav>
@@ -125,19 +133,22 @@
 </dialog>
 
 <main id="contenido" tabindex="-1">
-<div class="cabeza-pagina">
-  <div class="contenedor">
+<div class="cabeza-pagina cabeza-pagina--arco">
+  <div class="contenedor cabeza-pagina__rejilla">
     <nav class="migas" aria-label="Usted está aquí">
       <ol>
         <li><a href="index.html">Inicio</a></li>
-
+        
         <li><span aria-current="page">Trámites</span></li>
       </ol>
     </nav>
     <h1 class="cabeza-pagina__titulo" id="titulo-pagina">Trámites</h1>
     <p class="entradilla">Todos los trámites se hacen en la sede electrónica, a cualquier hora. Aquí le ayudamos a encontrar el suyo.</p>
+    
+    <div class="cabeza-pagina__puerta cabeza-pagina__puerta--linea" aria-hidden="true"><span class="cabeza-pagina__arco cabeza-pagina__arco--linea"></span><span class="cabeza-pagina__umbral"></span></div>
   </div>
 </div>
+
 
 <section class="seccion seccion--primera" aria-labelledby="buscar">
   <div class="contenedor">
@@ -168,7 +179,7 @@
           <li><a href="https://riberadelfresno.sedelectronica.es/catalog/t/a4806ac2-0236-4222-9c47-52bdaaa42c9e">Poner el agua a mi nombre<span class="sr">, se abre la sede electrónica</span></a></li>
           <li><a href="https://riberadelfresno.sedelectronica.es/catalog/t/a93cd417-195c-40c5-acf2-9a92b36c8809">Domiciliar los recibos<span class="sr">, se abre la sede electrónica</span></a></li>
           <li><a href="https://riberadelfresno.sedelectronica.es/catalog/t/1086e3fa-b560-4deb-9c55-66bed39d82f4">Apuntarme a cursos y actividades<span class="sr">, se abre la sede electrónica</span></a></li>
-
+          
         </ol>
       </li>
       <li class="momento">
@@ -178,7 +189,7 @@
           <li><a href="https://riberadelfresno.sedelectronica.es/catalog/t/5d383e20-32a5-4fcf-8725-e51c51e83e6a">Obra pequeña: declaración responsable<span class="sr">, se abre la sede electrónica</span></a></li>
           <li><a href="https://riberadelfresno.sedelectronica.es/catalog/t/15fabacb-83b1-47d1-b435-508245672051">Obra mayor: licencia urbanística<span class="sr">, se abre la sede electrónica</span></a></li>
           <li><a href="https://riberadelfresno.sedelectronica.es/catalog/t/b834b3fa-3690-4626-9c92-d82669d6f26f">Al terminar una vivienda: licencia de ocupación<span class="sr">, se abre la sede electrónica</span></a></li>
-
+          
         </ol>
       </li>
       <li class="momento">
@@ -189,7 +200,7 @@
           <li><a href="https://riberadelfresno.sedelectronica.es/catalog/t/a93cd417-195c-40c5-acf2-9a92b36c8809">Domiciliar para no olvidarme<span class="sr">, se abre la sede electrónica</span></a></li>
           <li><a href="https://riberadelfresno.sedelectronica.es/catalog/t/1fb37055-447d-48b6-8ea6-a670f5a9629b">Aplazar o fraccionar<span class="sr">, se abre la sede electrónica</span></a></li>
           <li><a href="https://riberadelfresno.sedelectronica.es/catalog/t/4f89832a-e472-4c39-bbd4-d519e35946dd">Pedir una bonificación<span class="sr">, se abre la sede electrónica</span></a></li>
-
+          
         </ol>
       </li>
       <li class="momento">
@@ -199,10 +210,10 @@
           <li><a href="https://riberadelfresno.sedelectronica.es/catalog/t/d643e8cf-0824-4617-a997-c523799b4a93">Avisar de la incidencia<span class="sr">, se abre la sede electrónica</span></a></li>
           <li>Si es urgente, llamar a la Policía Local: 654 338 096</li>
           <li><a href="https://riberadelfresno.sedelectronica.es/catalog/t/ae05799c-df61-43d1-be43-31943561cea9">Dejar una queja o sugerencia<span class="sr">, se abre la sede electrónica</span></a></li>
-
+          
         </ol>
       </li>
-
+      
     </ul>
   </div>
 </section>
@@ -211,79 +222,85 @@
   <div class="contenedor">
     <h2 class="seccion__titulo" id="t-temas">Por temas</h2>
     <div class="temas">
-  <details class="tema" open>
-    <summary class="tema__resumen">
-      <svg class="icono tema__icono" aria-hidden="true"><use href="#i-casa"/></svg>
-      <span class="tema__textos"><span class="tema__nombre">Vivir aquí</span><span class="tema__nota">Padrón, certificados, boda civil</span></span>
-      <svg class="icono tema__chevron" aria-hidden="true"><use href="#i-abajo"/></svg>
-    </summary>
-    <ul class="tema__lista">
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/d120f65c-c936-4a95-bd50-e7ae970ca149">Empadronarme o renovar<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/d74e17fb-69a1-4ef6-931a-d0381be7ffdc">Cambiar mis datos del padrón<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/1c74bc66-8b69-4f3c-8183-d3591f0504ed">Volante de empadronamiento<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/e268d9e6-d835-4922-be8f-a18c9738a331">Volante de convivencia<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/fe871c4e-f81e-4357-a5b8-94ef42a9da42">Casarme en el Ayuntamiento<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-
-    </ul>
-  </details>
-  <details class="tema">
-    <summary class="tema__resumen">
-      <svg class="icono tema__icono" aria-hidden="true"><use href="#i-obra"/></svg>
-      <span class="tema__textos"><span class="tema__nombre">Casa, obras y campo</span><span class="tema__nota">Licencias, agua, quemas</span></span>
-      <svg class="icono tema__chevron" aria-hidden="true"><use href="#i-abajo"/></svg>
-    </summary>
-    <ul class="tema__lista">
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/5d383e20-32a5-4fcf-8725-e51c51e83e6a">Obra pequeña: declaración responsable<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/15fabacb-83b1-47d1-b435-508245672051">Obra mayor: licencia urbanística<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/b834b3fa-3690-4626-9c92-d82669d6f26f">Licencia de ocupación<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/5697411e-7a60-4df6-9867-07258add24de">Dar de alta el agua<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/a4806ac2-0236-4222-9c47-52bdaaa42c9e">Cambiar el titular del agua<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/e8f22e0c-b09a-4c0e-8cb1-555f661bb086">Permiso para quemar rastrojos<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-
-    </ul>
-  </details>
-  <details class="tema">
-    <summary class="tema__resumen">
-      <svg class="icono tema__icono" aria-hidden="true"><use href="#i-recibo"/></svg>
-      <span class="tema__textos"><span class="tema__nombre">Pagos e impuestos</span><span class="tema__nota">Recibos, aplazamientos, bonificaciones</span></span>
-      <svg class="icono tema__chevron" aria-hidden="true"><use href="#i-abajo"/></svg>
-    </summary>
-    <ul class="tema__lista">
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/a93cd417-195c-40c5-acf2-9a92b36c8809">Domiciliar recibos<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/65228bd7-0692-484e-afd5-4f18d4faa7f5">Pagar una autoliquidación<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/1fb37055-447d-48b6-8ea6-a670f5a9629b">Aplazar o fraccionar un pago<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/4f89832a-e472-4c39-bbd4-d519e35946dd">Pedir una bonificación o exención<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-
-    </ul>
-  </details>
-  <details class="tema">
-    <summary class="tema__resumen">
-      <svg class="icono tema__icono" aria-hidden="true"><use href="#i-familia"/></svg>
-      <span class="tema__textos"><span class="tema__nombre">Familia, mayores y ocio</span><span class="tema__nota">Ayuda a domicilio, servicios sociales, cursos</span></span>
-      <svg class="icono tema__chevron" aria-hidden="true"><use href="#i-abajo"/></svg>
-    </summary>
-    <ul class="tema__lista">
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/70b01f0b-8951-4ebe-aadc-75d6de315b7e">Teleasistencia o ayuda a domicilio<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/1eadf89e-c7e0-4c8e-bdf4-4c2bb9a7ea09">Darme de alta en servicios sociales<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/1086e3fa-b560-4deb-9c55-66bed39d82f4">Apuntarme a cursos y actividades<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-
-    </ul>
-  </details>
-  <details class="tema">
-    <summary class="tema__resumen">
-      <svg class="icono tema__icono" aria-hidden="true"><use href="#i-mensaje"/></svg>
-      <span class="tema__textos"><span class="tema__nombre">Opinar y avisar</span><span class="tema__nota">Quejas, incidencias, información pública</span></span>
-      <svg class="icono tema__chevron" aria-hidden="true"><use href="#i-abajo"/></svg>
-    </summary>
-    <ul class="tema__lista">
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/d643e8cf-0824-4617-a997-c523799b4a93">Avisar de una incidencia en la calle<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/ae05799c-df61-43d1-be43-31943561cea9">Quejas y sugerencias<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/cb08f2a7-e5f7-42eb-bbfa-13a2b485e606">Pedir información pública<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/5161fa8d-970e-4b48-a506-b2ac34ceafe5">Cualquier otra solicitud<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-
-    </ul>
-  </details>
-
+  <div class="temas__columna">
+    <details class="tema">
+      <summary class="tema__resumen">
+        <svg class="icono tema__icono" aria-hidden="true"><use href="#i-casa"/></svg>
+        <span class="tema__textos"><span class="tema__nombre">Vivir aquí</span><span class="tema__nota">Padrón, certificados, boda civil</span></span>
+        <svg class="icono tema__chevron" aria-hidden="true"><use href="#i-abajo"/></svg>
+      </summary>
+      <ul class="tema__lista">
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/d120f65c-c936-4a95-bd50-e7ae970ca149">Empadronarme o renovar<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/d74e17fb-69a1-4ef6-931a-d0381be7ffdc">Cambiar mis datos del padrón<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/1c74bc66-8b69-4f3c-8183-d3591f0504ed">Volante de empadronamiento<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/e268d9e6-d835-4922-be8f-a18c9738a331">Volante de convivencia<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/fe871c4e-f81e-4357-a5b8-94ef42a9da42">Casarme en el Ayuntamiento<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        
+      </ul>
+    </details>
+    <details class="tema">
+      <summary class="tema__resumen">
+        <svg class="icono tema__icono" aria-hidden="true"><use href="#i-obra"/></svg>
+        <span class="tema__textos"><span class="tema__nombre">Casa, obras y campo</span><span class="tema__nota">Licencias, agua, quemas</span></span>
+        <svg class="icono tema__chevron" aria-hidden="true"><use href="#i-abajo"/></svg>
+      </summary>
+      <ul class="tema__lista">
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/5d383e20-32a5-4fcf-8725-e51c51e83e6a">Obra pequeña: declaración responsable<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/15fabacb-83b1-47d1-b435-508245672051">Obra mayor: licencia urbanística<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/b834b3fa-3690-4626-9c92-d82669d6f26f">Licencia de ocupación<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/5697411e-7a60-4df6-9867-07258add24de">Dar de alta el agua<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/a4806ac2-0236-4222-9c47-52bdaaa42c9e">Cambiar el titular del agua<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/e8f22e0c-b09a-4c0e-8cb1-555f661bb086">Permiso para quemar rastrojos<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        
+      </ul>
+    </details>
+    <details class="tema">
+      <summary class="tema__resumen">
+        <svg class="icono tema__icono" aria-hidden="true"><use href="#i-recibo"/></svg>
+        <span class="tema__textos"><span class="tema__nombre">Pagos e impuestos</span><span class="tema__nota">Recibos, aplazamientos, bonificaciones</span></span>
+        <svg class="icono tema__chevron" aria-hidden="true"><use href="#i-abajo"/></svg>
+      </summary>
+      <ul class="tema__lista">
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/a93cd417-195c-40c5-acf2-9a92b36c8809">Domiciliar recibos<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/65228bd7-0692-484e-afd5-4f18d4faa7f5">Pagar una autoliquidación<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/1fb37055-447d-48b6-8ea6-a670f5a9629b">Aplazar o fraccionar un pago<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/4f89832a-e472-4c39-bbd4-d519e35946dd">Pedir una bonificación o exención<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        
+      </ul>
+    </details>
+    
+  </div>
+  <div class="temas__columna">
+    <details class="tema">
+      <summary class="tema__resumen">
+        <svg class="icono tema__icono" aria-hidden="true"><use href="#i-familia"/></svg>
+        <span class="tema__textos"><span class="tema__nombre">Familia, mayores y ocio</span><span class="tema__nota">Ayuda a domicilio, servicios sociales, cursos</span></span>
+        <svg class="icono tema__chevron" aria-hidden="true"><use href="#i-abajo"/></svg>
+      </summary>
+      <ul class="tema__lista">
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/70b01f0b-8951-4ebe-aadc-75d6de315b7e">Teleasistencia o ayuda a domicilio<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/1eadf89e-c7e0-4c8e-bdf4-4c2bb9a7ea09">Darme de alta en servicios sociales<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/1086e3fa-b560-4deb-9c55-66bed39d82f4">Apuntarme a cursos y actividades<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        
+      </ul>
+    </details>
+    <details class="tema">
+      <summary class="tema__resumen">
+        <svg class="icono tema__icono" aria-hidden="true"><use href="#i-mensaje"/></svg>
+        <span class="tema__textos"><span class="tema__nombre">Opinar y avisar</span><span class="tema__nota">Quejas, incidencias, información pública</span></span>
+        <svg class="icono tema__chevron" aria-hidden="true"><use href="#i-abajo"/></svg>
+      </summary>
+      <ul class="tema__lista">
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/d643e8cf-0824-4617-a997-c523799b4a93">Avisar de una incidencia en la calle<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/ae05799c-df61-43d1-be43-31943561cea9">Quejas y sugerencias<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/cb08f2a7-e5f7-42eb-bbfa-13a2b485e606">Pedir información pública<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        <li><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/5161fa8d-970e-4b48-a506-b2ac34ceafe5">Cualquier otra solicitud<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+        
+      </ul>
+    </details>
+    
+  </div>
+  
 </div>
 
   </div>
@@ -414,7 +431,7 @@
       <li data-texto="subvenciones directas o nominativas"><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/a96835f4-5214-4258-8d8b-47439196226b">Subvenciones Directas o Nominativas<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
       <li data-texto="sustitucion de un vehiculo sujeto a una licencia de auto-taxi"><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/da566145-fd06-47cf-bed1-d146edbd688a">Sustitución de un Vehículo Sujeto a una Licencia de Auto-Taxi<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
       <li data-texto="verificacion, lectura o cambio de ubicacion de contadores de aguas"><a class="enlace-tramite" href="https://riberadelfresno.sedelectronica.es/catalog/t/8c02079a-91f2-4c82-87a4-963a73ebd40d">Verificación, Lectura o Cambio de Ubicación de Contadores de Aguas<span class="sr">, se abre la sede electrónica</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-
+      
     </ul>
   </div>
 </section>
@@ -452,6 +469,7 @@
           <li><a href="accesibilidad.html">Declaración de accesibilidad</a></li>
         </ul>
       </nav>
+      
       <ul class="pie__redes" aria-label="Redes sociales del Ayuntamiento">
         <li><a href="https://www.facebook.com/AyuntamientodeRiberadelFresno">Facebook</a></li><li><a href="https://www.instagram.com/aytoriberadelfresno/">Instagram</a></li><li><a href="https://twitter.com/aytoribera">X (Twitter)</a></li><li><a href="https://www.youtube.com/channel/UC6OMGwPGD_SNkhk9ew5Bc-A">YouTube</a></li>
       </ul>
@@ -485,14 +503,16 @@
     <button type="button" class="mando__boton" data-paleta="a" aria-pressed="true"><span class="mando__muestra mando__muestra--a" aria-hidden="true"></span>Sinople</button>
     <button type="button" class="mando__boton" data-paleta="b" aria-pressed="false"><span class="mando__muestra mando__muestra--b" aria-hidden="true"></span>Azur</button>
     <button type="button" class="mando__boton" data-paleta="c" aria-pressed="false"><span class="mando__muestra mando__muestra--c" aria-hidden="true"></span>Almagre</button>
-
+    
   </div>
 </div>
 <!-- [MANDO DE MAQUETA] fin -->
 
-<script type="application/json" id="datos-vivos">{"slug":"ribera-del-fresno","nombre":"Ribera del Fresno","nombre_corto":"Ribera","zona":"Europe/Madrid","horario":{"texto":"Lunes a viernes, de 9:00 a 14:00","tramos":[{"dias":[1,2,3,4,5],"de":"09:00","a":"14:00"}],"ejemplo":true},"avisos":[{"id":"corte-agua-ejemplo","fecha":"2026-10-02","tema":"Agua","titulo":"Corte de agua programado en varias calles, de 9:00 a 13:00","urgente":true,"caduca":"2026-11-30","ejemplo":true,"oculto":false},{"id":"reunion-feria-comercio","fecha":"2026-10-02","tema":"Comercio","titulo":"Reunión informativa sobre la V Feria del Comercio","urgente":false,"caduca":null,"ejemplo":false,"oculto":false}],"agenda":[{"id":"reunion-feria-comercio","fecha":"2026-10-02","hora":"20:30","titulo":"Reunión de la V Feria del Comercio","lugar":"Casa de la Cultura","nota":null,"ejemplo":false,"oculto":false},{"id":"feavir-2026","fecha":"2026-11-12","hora":null,"titulo":"FEAVIR, Feria Avícola","lugar":"Segunda semana de noviembre","nota":"Fecha exacta por confirmar.","ejemplo":true,"oculto":false},{"id":"camino-pozo-san-juan","fecha":"2026-12-15","hora":null,"titulo":"Apertura del camino de peregrinación al Pozo de San Juan","lugar":"Prevista para finales de año","nota":null,"ejemplo":true,"oculto":false},{"id":"fiesta-san-isidro-2026","fecha":"2026-05-15","titulo":"San Isidro","lugar":null,"origen":"fiesta"},{"id":"fiesta-san-isidro-2027","fecha":"2027-05-15","titulo":"San Isidro","lugar":null,"origen":"fiesta"},{"id":"fiesta-fiestas-del-emigrante-2026","fecha":"2026-08-15","titulo":"Fiestas del Emigrante","lugar":null,"origen":"fiesta"},{"id":"fiesta-fiestas-del-emigrante-2027","fecha":"2027-08-15","titulo":"Fiestas del Emigrante","lugar":null,"origen":"fiesta"},{"id":"fiesta-dia-de-extremadura-2026","fecha":"2026-09-08","titulo":"Día de Extremadura","lugar":null,"origen":"fiesta"},{"id":"fiesta-dia-de-extremadura-2027","fecha":"2027-09-08","titulo":"Día de Extremadura","lugar":null,"origen":"fiesta"},{"id":"fiesta-ferias-y-fiestas-del-cristo-de-la-misericordia-2026","fecha":"2026-09-14","titulo":"Ferias y Fiestas del Cristo de la Misericordia","lugar":"Desde el 14 de septiembre, cuatro días","origen":"fiesta"},{"id":"fiesta-ferias-y-fiestas-del-cristo-de-la-misericordia-2027","fecha":"2027-09-14","titulo":"Ferias y Fiestas del Cristo de la Misericordia","lugar":"Desde el 14 de septiembre, cuatro días","origen":"fiesta"}],"noticias":[{"id":"reunion-v-feria-comercio","fecha":"2026-10-02","titulo":"Reunión informativa sobre la V Feria del Comercio","resumen":"Hoy viernes, a las 20:30, en la Casa de la Cultura.","imagen":"casa-cultura","imagen_alt":"Fachada encalada de la Casa de la Cultura","ejemplo":false},{"id":"cruz-pozo-san-juan","fecha":"2026-10-01","titulo":"Instalada una nueva cruz de 8 × 4 metros en el Pozo de San Juan","resumen":"El camino de peregrinación desde el pueblo estará listo a finales de año.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"ayudas-natalidad-2026","fecha":"2026-10-01","titulo":"Abierta la convocatoria 2026 de ayudas a la natalidad","resumen":"Las bases y la solicitud están en el tablón de la sede electrónica.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"campo-cesped-artificial","fecha":"2026-10-01","titulo":"El concejal de Deportes informa sobre el campo de césped artificial","resumen":"Andrés Bermejo explica en qué punto está el proyecto.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"grabacion-pleno-30-septiembre","fecha":"2026-10-01","titulo":"Ya se puede ver la grabación del pleno del 30 de septiembre","resumen":"El pleno ordinario, grabado entero.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"anillo-norte","fecha":"2026-09-29","titulo":"Anuncio previo de las instalaciones eléctricas «Anillo Norte»","resumen":"Publicado en el tablón antes de empezar la obra.","imagen":null,"imagen_alt":"","ejemplo":false}],"tablon":{"actualizado":"2026-10-02T16:14:39.116Z","entradas":[{"fecha":"2026-10-01","tema":"Ayudas","titulo":"CONVOCATORIA AYUDA NATALIDAD CORRECTA 2026","titulo_claro":"Convocatoria 2026 de ayudas a la natalidad","url":"https://riberadelfresno.sedelectronica.es/preview-document/02af28b6-9fdb-4b29-968c-eee1a7582f0a","oculto":false},{"fecha":"2026-09-29","tema":"Obras","titulo":"ANUNCIO PREVIO A LA CONSTRUCCIÓN DE INSTALACIÓN ELÉCTRICAS ANILLO NORTE","titulo_claro":"Anuncio previo de las instalaciones eléctricas «Anillo Norte»","url":"https://riberadelfresno.sedelectronica.es/preview-document/e93c0528-669d-435a-9c14-ea0cd2393a51","oculto":false},{"fecha":"2026-09-25","tema":"Pleno","titulo":"Anuncio celebración sesión Ordinaria Pleno 30 de septiembre de 2026","titulo_claro":"Pleno ordinario del 30 de septiembre: convocatoria","url":"https://riberadelfresno.sedelectronica.es/preview-document/38e93efa-c78c-46df-a85c-31b2cf7f017c","oculto":false},{"fecha":"2026-08-24","tema":"Impuestos","titulo":"ANUNCIO COBRANZA IAE 2026","titulo_claro":"Periodo de cobro del IAE 2026","url":"https://riberadelfresno.sedelectronica.es/preview-document/3f841651-c794-4d5f-abc7-f70773d5bb3e","oculto":false},{"fecha":"2026-08-03","tema":"Pleno","titulo":"Anuncio celebración sesión Extraordinaria Pleno 06 de agosto 2026","titulo_claro":"Pleno extraordinario del 6 de agosto: convocatoria","url":"https://riberadelfresno.sedelectronica.es/preview-document/731a9524-6eee-45c4-8078-90c16624a687","oculto":false},{"fecha":"2026-08-03","tema":"Pleno","titulo":"Anuncio incorporación nuevo punto orden del día celebración sesión Extraordinaria Pleno 06 de agosto 2026","titulo_claro":"Pleno del 6 de agosto: punto añadido al orden del día","url":"https://riberadelfresno.sedelectronica.es/preview-document/56744471-3e15-4f83-bb45-5610964f3bc8","oculto":false},{"fecha":"2026-07-16","tema":"Ayudas","titulo":"Extracto Bases Asociaciones","titulo_claro":"Subvenciones para asociaciones: extracto de las bases","url":"https://riberadelfresno.sedelectronica.es/preview-document/a18eb373-57db-40ae-9cde-4c13311f98bf","oculto":false},{"fecha":"2026-05-19","tema":"Ayudas","titulo":"B.O.P. nº. 91 - Anuncio 1752_2026 Bases reguladoras para ayudas mínimos vitales 2026","titulo_claro":"Ayudas para suministros mínimos vitales 2026: bases (BOP n.º 91)","url":"https://riberadelfresno.sedelectronica.es/preview-document/6f4c8681-90a6-46ae-a32f-c5601f49af42","oculto":false}]},"fiestas":[{"mes":2,"nombre":"Jueves de Compadres","cuando":"Dos jueves antes del Miércoles de Ceniza","mayor":false,"fecha_fija":null},{"mes":2,"nombre":"Muestra de Vinos de Pitarra y Matanza","cuando":"Finales de febrero","mayor":false,"fecha_fija":null},{"mes":3,"nombre":"Carnaval y Semana Santa","cuando":"Fecha variable","mayor":false,"fecha_fija":null},{"mes":5,"nombre":"San Isidro","cuando":"15 de mayo","mayor":false,"fecha_fija":"05-15"},{"mes":7,"nombre":"Festival Folklórico Internacional de la Baja Extremadura","cuando":"Tercer fin de semana de julio","mayor":false,"fecha_fija":null},{"mes":8,"nombre":"Festival de Teatro «Meléndez Valdés»","cuando":"En verano","mayor":false,"fecha_fija":null},{"mes":8,"nombre":"Jornadas Gastronómicas y Artesanales","cuando":"Primer fin de semana de agosto","mayor":false,"fecha_fija":null},{"mes":8,"nombre":"Fiestas del Emigrante","cuando":"15 de agosto","mayor":false,"fecha_fija":"08-15"},{"mes":9,"nombre":"Día de Extremadura","cuando":"8 de septiembre","mayor":false,"fecha_fija":"09-08"},{"mes":9,"nombre":"Ferias y Fiestas del Cristo de la Misericordia","cuando":"Desde el 14 de septiembre, cuatro días","mayor":true,"fecha_fija":"09-14"},{"mes":9,"nombre":"Romería al Pozo de San Juan Macías","cuando":"El domingo después de las fiestas del Cristo","mayor":false,"fecha_fija":null},{"mes":11,"nombre":"FEAVIR, Feria Avícola","cuando":"Segunda semana de noviembre","mayor":false,"fecha_fija":null}],"servicios":{"ayuntamiento":[{"dias":[1,2,3,4,5],"de":"09:00","a":"14:00"}],"centro-de-dia-la-ribera":[{"dias":[1,2,3,4,5],"de":"10:00","a":"18:00"}],"biblioteca-virgilio-gutierrez":[{"dias":[1,2,3,4,5],"de":"09:30","a":"14:00"}]},"tramites_sede":111,"rutas":{"tramites":"tramites.html","avisos":"avisos.html","agenda":"agenda.html","noticia":"noticia-{id}.html","media":"media/"},"hoja":null,"tablon_json":"contenido/tablon.json","v_datos":"185393ea"}</script>
-<script src="js/vivo.js?v=2aa76ce9" defer></script>
-<script src="js/main.js?v=85569bbf" defer></script>
+<script type="application/json" id="datos-vivos">{"slug":"ribera-del-fresno","nombre":"Ribera del Fresno","nombre_corto":"Ribera","zona":"Europe/Madrid","horario":{"texto":"Lunes a viernes, de 9:00 a 14:00","tramos":[{"dias":[1,2,3,4,5],"de":"09:00","a":"14:00"}],"ejemplo":true},"avisos":[{"id":"corte-agua-ejemplo","fecha":"2026-10-02","tema":"Agua","titulo":"Corte de agua programado en varias calles, de 9:00 a 13:00","urgente":true,"caduca":"2026-11-30","ejemplo":true,"oculto":false},{"id":"reunion-feria-comercio","fecha":"2026-10-02","tema":"Comercio","titulo":"Reunión informativa sobre la V Feria del Comercio","urgente":false,"caduca":null,"ejemplo":false,"oculto":false}],"agenda":[{"id":"reunion-feria-comercio","fecha":"2026-10-02","hora":"20:30","hora_fin":null,"titulo":"Reunión de la V Feria del Comercio","lugar":"Casa de la Cultura","nota":null,"ejemplo":false,"oculto":false,"tipo":null,"convocatoria":null,"convocatoria_sr":null,"grabacion":null,"grabacion_sr":null,"ics":"ics/reunion-feria-comercio.ics"},{"id":"feavir-2026","fecha":"2026-11-12","hora":null,"hora_fin":null,"titulo":"FEAVIR, Feria Avícola","lugar":"Segunda semana de noviembre","nota":"Fecha exacta por confirmar.","ejemplo":true,"oculto":false,"tipo":null,"convocatoria":null,"convocatoria_sr":null,"grabacion":null,"grabacion_sr":null,"ics":"ics/feavir-2026.ics"},{"id":"camino-pozo-san-juan","fecha":"2026-12-15","hora":null,"hora_fin":null,"titulo":"Apertura del camino de peregrinación al Pozo de San Juan","lugar":"Prevista para finales de año","nota":null,"ejemplo":true,"oculto":false,"tipo":null,"convocatoria":null,"convocatoria_sr":null,"grabacion":null,"grabacion_sr":null,"ics":"ics/camino-pozo-san-juan.ics"},{"id":"fiesta-san-isidro-2026","fecha":"2026-05-15","titulo":"San Isidro","lugar":null,"origen":"fiesta","ics":"ics/fiesta-san-isidro-2026.ics"},{"id":"fiesta-san-isidro-2027","fecha":"2027-05-15","titulo":"San Isidro","lugar":null,"origen":"fiesta","ics":"ics/fiesta-san-isidro-2027.ics"},{"id":"fiesta-fiestas-del-emigrante-2026","fecha":"2026-08-15","titulo":"Fiestas del Emigrante","lugar":null,"origen":"fiesta","ics":"ics/fiesta-fiestas-del-emigrante-2026.ics"},{"id":"fiesta-fiestas-del-emigrante-2027","fecha":"2027-08-15","titulo":"Fiestas del Emigrante","lugar":null,"origen":"fiesta","ics":"ics/fiesta-fiestas-del-emigrante-2027.ics"},{"id":"fiesta-dia-de-extremadura-2026","fecha":"2026-09-08","titulo":"Día de Extremadura","lugar":null,"origen":"fiesta","ics":"ics/fiesta-dia-de-extremadura-2026.ics"},{"id":"fiesta-dia-de-extremadura-2027","fecha":"2027-09-08","titulo":"Día de Extremadura","lugar":null,"origen":"fiesta","ics":"ics/fiesta-dia-de-extremadura-2027.ics"},{"id":"fiesta-ferias-y-fiestas-del-cristo-de-la-misericordia-2026","fecha":"2026-09-14","titulo":"Ferias y Fiestas del Cristo de la Misericordia","lugar":"Desde el 14 de septiembre, cuatro días","origen":"fiesta","ics":"ics/fiesta-ferias-y-fiestas-del-cristo-de-la-misericordia-2026.ics"},{"id":"fiesta-ferias-y-fiestas-del-cristo-de-la-misericordia-2027","fecha":"2027-09-14","titulo":"Ferias y Fiestas del Cristo de la Misericordia","lugar":"Desde el 14 de septiembre, cuatro días","origen":"fiesta","ics":"ics/fiesta-ferias-y-fiestas-del-cristo-de-la-misericordia-2027.ics"},{"id":"pleno-2026-09-30","fecha":"2026-09-30","hora":null,"titulo":"Pleno ordinario","lugar":null,"nota":null,"ejemplo":false,"oculto":false,"tipo":"pleno","convocatoria":null,"convocatoria_sr":null,"grabacion":"https://www.facebook.com/AyuntamientodeRiberadelFresno","grabacion_sr":", se abre otra web","ics":"ics/pleno-2026-09-30.ics"},{"id":"pleno-2026-12-29","fecha":"2026-12-29","hora":"20:00","titulo":"Pleno ordinario","lugar":"Salón de plenos del Ayuntamiento","nota":null,"ejemplo":true,"oculto":false,"tipo":"pleno","convocatoria":null,"convocatoria_sr":null,"grabacion":null,"grabacion_sr":null,"ics":"ics/pleno-2026-12-29.ics"}],"farmacias":{"lista":[{"id":"melendez-7","nombre":"Farmacia Meléndez Valdés 7","direccion":"C/ Meléndez Valdés, 7","localidad":null,"telefono":null},{"id":"melendez-37","nombre":"Farmacia Meléndez Valdés 37","direccion":"C/ Meléndez Valdés, 37","localidad":null,"telefono":null}],"cambio":"09:30","guardias":[],"rotacion":{"inicio":"2026-01-05","dias":7,"orden":["melendez-7","melendez-37"]},"oficial":{"nombre":"Colegio Oficial de Farmacéuticos de Badajoz","url":"https://cofbadajoz.com/farmacias-de-guardia/"},"ejemplo":true},"tiempo":{"url":"https://www.aemet.es/es/eltiempo/prediccion/municipios/ribera-del-fresno-id06113","lugar":"Ribera del Fresno"},"recogida":[{"id":"enseres","nombre":"Recogida de enseres","dias":[3],"fechas":[],"hora":null,"como":"Pídala el día antes en el Ayuntamiento","telefono":"924 536 011","tramite":null,"tramite_texto":null,"tramite_sr":null,"ejemplo":true}],"canal":null,"web":"https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-web/","noticias":[{"id":"reunion-v-feria-comercio","fecha":"2026-10-02","titulo":"Reunión informativa sobre la V Feria del Comercio","resumen":"Hoy viernes, a las 20:30, en la Casa de la Cultura.","imagen":"casa-cultura","imagen_alt":"Fachada encalada de la Casa de la Cultura","ejemplo":false},{"id":"cruz-pozo-san-juan","fecha":"2026-10-01","titulo":"Instalada una nueva cruz de 8 × 4 metros en el Pozo de San Juan","resumen":"El camino de peregrinación desde el pueblo estará listo a finales de año.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"ayudas-natalidad-2026","fecha":"2026-10-01","titulo":"Abierta la convocatoria 2026 de ayudas a la natalidad","resumen":"Las bases y la solicitud están en el tablón de la sede electrónica.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"campo-cesped-artificial","fecha":"2026-10-01","titulo":"El concejal de Deportes informa sobre el campo de césped artificial","resumen":"Andrés Bermejo explica en qué punto está el proyecto.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"grabacion-pleno-30-septiembre","fecha":"2026-10-01","titulo":"Ya se puede ver la grabación del pleno del 30 de septiembre","resumen":"El pleno ordinario, grabado entero.","imagen":null,"imagen_alt":"","ejemplo":false},{"id":"anillo-norte","fecha":"2026-09-29","titulo":"Anuncio previo de las instalaciones eléctricas «Anillo Norte»","resumen":"Publicado en el tablón antes de empezar la obra.","imagen":null,"imagen_alt":"","ejemplo":false}],"tablon":{"actualizado":"2026-10-02T16:14:39.116Z","entradas":[{"fecha":"2026-10-01","tema":"Ayudas","titulo":"CONVOCATORIA AYUDA NATALIDAD CORRECTA 2026","titulo_claro":"Convocatoria 2026 de ayudas a la natalidad","url":"https://riberadelfresno.sedelectronica.es/preview-document/02af28b6-9fdb-4b29-968c-eee1a7582f0a","oculto":false},{"fecha":"2026-09-29","tema":"Obras","titulo":"ANUNCIO PREVIO A LA CONSTRUCCIÓN DE INSTALACIÓN ELÉCTRICAS ANILLO NORTE","titulo_claro":"Anuncio previo de las instalaciones eléctricas «Anillo Norte»","url":"https://riberadelfresno.sedelectronica.es/preview-document/e93c0528-669d-435a-9c14-ea0cd2393a51","oculto":false},{"fecha":"2026-09-25","tema":"Pleno","titulo":"Anuncio celebración sesión Ordinaria Pleno 30 de septiembre de 2026","titulo_claro":"Pleno ordinario del 30 de septiembre: convocatoria","url":"https://riberadelfresno.sedelectronica.es/preview-document/38e93efa-c78c-46df-a85c-31b2cf7f017c","oculto":false},{"fecha":"2026-08-24","tema":"Impuestos","titulo":"ANUNCIO COBRANZA IAE 2026","titulo_claro":"Periodo de cobro del IAE 2026","url":"https://riberadelfresno.sedelectronica.es/preview-document/3f841651-c794-4d5f-abc7-f70773d5bb3e","oculto":false},{"fecha":"2026-08-03","tema":"Pleno","titulo":"Anuncio celebración sesión Extraordinaria Pleno 06 de agosto 2026","titulo_claro":"Pleno extraordinario del 6 de agosto: convocatoria","url":"https://riberadelfresno.sedelectronica.es/preview-document/731a9524-6eee-45c4-8078-90c16624a687","oculto":false},{"fecha":"2026-08-03","tema":"Pleno","titulo":"Anuncio incorporación nuevo punto orden del día celebración sesión Extraordinaria Pleno 06 de agosto 2026","titulo_claro":"Pleno del 6 de agosto: punto añadido al orden del día","url":"https://riberadelfresno.sedelectronica.es/preview-document/56744471-3e15-4f83-bb45-5610964f3bc8","oculto":false},{"fecha":"2026-07-16","tema":"Ayudas","titulo":"Extracto Bases Asociaciones","titulo_claro":"Subvenciones para asociaciones: extracto de las bases","url":"https://riberadelfresno.sedelectronica.es/preview-document/a18eb373-57db-40ae-9cde-4c13311f98bf","oculto":false},{"fecha":"2026-05-19","tema":"Ayudas","titulo":"B.O.P. nº. 91 - Anuncio 1752_2026 Bases reguladoras para ayudas mínimos vitales 2026","titulo_claro":"Ayudas para suministros mínimos vitales 2026: bases (BOP n.º 91)","url":"https://riberadelfresno.sedelectronica.es/preview-document/6f4c8681-90a6-46ae-a32f-c5601f49af42","oculto":false}]},"fiestas":[{"mes":2,"nombre":"Jueves de Compadres","cuando":"Dos jueves antes del Miércoles de Ceniza","mayor":false,"fecha_fija":null},{"mes":2,"nombre":"Muestra de Vinos de Pitarra y Matanza","cuando":"Finales de febrero","mayor":false,"fecha_fija":null},{"mes":3,"nombre":"Carnaval y Semana Santa","cuando":"Fecha variable","mayor":false,"fecha_fija":null},{"mes":5,"nombre":"San Isidro","cuando":"15 de mayo","mayor":false,"fecha_fija":"05-15"},{"mes":7,"nombre":"Festival Folklórico Internacional de la Baja Extremadura","cuando":"Tercer fin de semana de julio","mayor":false,"fecha_fija":null},{"mes":8,"nombre":"Festival de Teatro «Meléndez Valdés»","cuando":"En verano","mayor":false,"fecha_fija":null},{"mes":8,"nombre":"Jornadas Gastronómicas y Artesanales","cuando":"Primer fin de semana de agosto","mayor":false,"fecha_fija":null},{"mes":8,"nombre":"Fiestas del Emigrante","cuando":"15 de agosto","mayor":false,"fecha_fija":"08-15"},{"mes":9,"nombre":"Día de Extremadura","cuando":"8 de septiembre","mayor":false,"fecha_fija":"09-08"},{"mes":9,"nombre":"Ferias y Fiestas del Cristo de la Misericordia","cuando":"Desde el 14 de septiembre, cuatro días","mayor":true,"fecha_fija":"09-14"},{"mes":9,"nombre":"Romería al Pozo de San Juan Macías","cuando":"El domingo después de las fiestas del Cristo","mayor":false,"fecha_fija":null},{"mes":11,"nombre":"FEAVIR, Feria Avícola","cuando":"Segunda semana de noviembre","mayor":false,"fecha_fija":null}],"servicios":{"ayuntamiento":[{"dias":[1,2,3,4,5],"de":"09:00","a":"14:00"}],"centro-de-dia-la-ribera":[{"dias":[1,2,3,4,5],"de":"10:00","a":"18:00"}],"biblioteca-virgilio-gutierrez":[{"dias":[1,2,3,4,5],"de":"09:30","a":"14:00"}]},"tramites_sede":111,"rutas":{"tramites":"tramites.html","avisos":"avisos.html","agenda":"agenda.html","noticia":"noticia-{id}.html","media":"media/"},"hoja":null,"tablon_json":"contenido/tablon.json","horizonte_dias":60,"v_datos":"185393ea"}</script>
+<script src="js/vivo.js?v=6487b77c" defer></script>
+<script src="js/main.js?v=bdaf6641" defer></script>
+<script src="js/movimiento.js?v=54804867" defer></script>
+
 
 </body>
 </html>
