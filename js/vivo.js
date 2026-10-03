@@ -122,6 +122,156 @@
       ' <span class="franja-urgente__ver">Ver el aviso</span></span></a>';
   }
 
+  /* ── lo que se añadió al panel «Hoy»: farmacia de guardia, el tiempo, el próximo
+     pleno, la recogida y el canal de avisos. Cada cosa sale solo si hay datos. ── */
+  function normalTexto(s) { return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
+  function telHref(t) { var d = String(t).replace(/\D/g, ''); return 'tel:' + (d.length === 9 ? '+34' + d : d); }
+  function diasEntre(a, b) { var p = partes(a), q = partes(b); return Math.round((Date.UTC(q.a, q.m - 1, q.d) - Date.UTC(p.a, p.m - 1, p.d)) / 864e5); }
+  function cuandoMin(iso, ahora) {      /* «mañana», «hoy» o «el martes 6 de octubre», para ir dentro de una frase */
+    if (iso === ahora.iso) return 'hoy';
+    if (iso === sumarDias(ahora.iso, 1)) return 'mañana';
+    return 'el ' + fechaLarga(iso, ahora);
+  }
+  var FUERA = '<span class="sr">, se abre otra web</span>';
+  function icono(id) { return '<svg class="icono" aria-hidden="true"><use href="#' + id + '"/></svg>'; }
+
+  /* Farmacia de guardia. Un «día de guardia» va de la hora de cambio (09:30 si no se
+     dice) a la misma hora del día siguiente: a las 9:29 del martes sigue la del lunes.
+     Primero mandan las fechas sueltas (`guardias`, también desde la hoja); si ninguna
+     cubre el día, la rotación (`rotacion`: inicio, cada cuántos días y el orden). */
+  function farmaciaDeGuardia(F, ahora) {
+    if (!F || !F.lista || !F.lista.length) return null;
+    var cambio = F.cambio || '09:30';
+    var dia = ahora.min >= aMin(cambio) ? ahora.iso : sumarDias(ahora.iso, -1);
+    function buscar(clave) {
+      var n = normalTexto(clave);
+      for (var i = 0; i < F.lista.length; i++) if (F.lista[i].id === clave || normalTexto(F.lista[i].nombre) === n) return F.lista[i];
+      return null;
+    }
+    var gs = (F.guardias || []).filter(function (g) { return g && g.desde && g.desde <= dia && (g.hasta || g.desde) >= dia && buscar(g.farmacia); })
+      .sort(function (a, b) { return b.desde.localeCompare(a.desde); });     /* la más concreta (la que empieza más tarde) gana */
+    if (gs.length) return { farmacia: buscar(gs[0].farmacia), hasta: sumarDias(gs[0].hasta || gs[0].desde, 1), cambio: cambio };
+    var R = F.rotacion;
+    if (R && R.inicio && R.orden && R.orden.length) {
+      var cada = Number(R.dias) || 7, k = Math.floor(diasEntre(R.inicio, dia) / cada);
+      var f = buscar(R.orden[((k % R.orden.length) + R.orden.length) % R.orden.length]);
+      if (f) return { farmacia: f, hasta: sumarDias(R.inicio, (k + 1) * cada), cambio: cambio };
+    }
+    return null;
+  }
+  function filaFarmacia(D, ahora) {
+    var F = D.farmacias;
+    if (!F) return '';
+    var g = farmaciaDeGuardia(F, ahora), of = F.oficial && F.oficial.url ? F.oficial : null;
+    if (!g && !of) return '';
+    var h = '<li class="hoy__fila hoy__fila--farmacia"' + (g ? marcaEjemplo(F, 'farmacia') : '') + '>' + icono('i-farmacia') + '<div><p class="hoy__etiqueta">Farmacia de guardia</p>';
+    if (g) {
+      var f = g.farmacia;
+      var donde = [f.direccion ? esc(f.direccion) + (f.localidad ? ' (' + esc(f.localidad) + ')' : '') : esc(f.localidad || ''),
+        f.telefono ? '<a href="' + telHref(f.telefono) + '">' + esc(f.telefono) + '</a>' : ''].filter(Boolean).join(' · ');
+      h += '<p><b>' + esc(f.nombre) + '</b>' + (F.ejemplo ? ' ' + EJEMPLO : '') +
+        (donde ? '<span class="hoy__nota">' + donde + '</span>' : '') +
+        '<span class="hoy__nota">De guardia hasta ' + cuandoMin(g.hasta, ahora) + ' a las ' + hora(g.cambio) + '</span>' +
+        (of ? '<span class="hoy__nota hoy__mas"><a href="' + esc(of.url) + '">Todas las guardias, en la web del ' + esc(of.nombre) + FUERA + '</a></span>' : '') + '</p>';
+    } else {
+      h += '<p><a href="' + esc(of.url) + '">Consulte la de hoy en la web del ' + esc(of.nombre) + FUERA + '</a></p>';
+    }
+    return h + '</div></li>';
+  }
+
+  /* recogida de enseres, basura, poda…: días de la semana (1 = lunes) o fechas sueltas */
+  function proximaRecogida(r, ahora) {
+    for (var n = 0; n < 92; n++) {
+      var iso = sumarDias(ahora.iso, n), ds = diaSemana(iso) || 7;
+      if ((r.dias || []).indexOf(ds) >= 0 || (r.fechas || []).indexOf(iso) >= 0) return iso;
+    }
+    return null;
+  }
+  function breveRecogida(r, ahora) {
+    var iso = proximaRecogida(r, ahora);
+    if (!iso && !r.como) return '';
+    var cuando_ = !iso ? '' : iso === ahora.iso ? 'toca hoy' + (r.hora ? ', ' + esc(r.hora) : '') : 'la próxima, ' + esc(cuandoMin(iso, ahora));
+    var como = [r.como ? esc(r.como) + (r.telefono ? ': <a href="' + telHref(r.telefono) + '">' + esc(r.telefono) + '</a>' : '') : (r.telefono ? 'Teléfono <a href="' + telHref(r.telefono) + '">' + esc(r.telefono) + '</a>' : ''),
+      r.tramite ? '<a href="' + esc(r.tramite) + '">' + esc(r.tramite_texto || 'Pedirla en la sede') + (r.tramite_sr ? '<span class="sr">' + esc(r.tramite_sr) + '</span>' : '') + '</a>' : ''].filter(Boolean).join(' · ');
+    return '<li class="hoy__breve' + (iso === ahora.iso ? ' es-hoy-recogida' : '') + '"' + marcaEjemplo(r, 'recogida:' + r.id) + '><b>' + esc(r.nombre) + ':</b> ' + cuando_ + (r.ejemplo ? ' ' + EJEMPLO : '') +
+      (como ? '<span class="hoy__nota">' + como + '</span>' : '') + '</li>';
+  }
+  function proximoPleno(D, ahora) { return proximos(D, ahora).filter(function (e) { return e.tipo === 'pleno'; })[0] || null; }
+  function brevePleno(D, ahora) {
+    var p = proximoPleno(D, ahora);
+    if (!p) return '';
+    return '<li class="hoy__breve"' + marcaEjemplo(p, 'evento:' + p.id) + '><b>Próximo pleno:</b> <a href="' + esc(enlaceEvento(p, D)) + '">' + esc(cuando(p.fecha, ahora)) + (p.hora ? ', ' + hora(p.hora) : '') + '<span class="sr">, ' + esc(p.titulo) + '</span></a>' + (p.ejemplo ? ' ' + EJEMPLO : '') +
+      '<span class="hoy__nota">' + esc(p.titulo) + (p.lugar ? '<span class="hoy__mas"> · ' + esc(p.lugar) + '</span>' : '') +
+      (p.convocatoria ? ' · <a href="' + esc(p.convocatoria) + '">Convocatoria<span class="sr"> del pleno' + esc(p.convocatoria_sr || ', se abre otra web') + '</span></a>' : '') +
+      ' · ' + icsHtml(p, D, true) + '</span></li>';
+  }
+  function filaMasHoy(D, ahora) {
+    var breves = [];
+    if (D.tiempo && D.tiempo.url) breves.push('<li class="hoy__breve"><b>El tiempo:</b> <a href="' + esc(D.tiempo.url) + '">previsión de AEMET para ' + esc(D.tiempo.lugar) + FUERA + '</a></li>');
+    breves.push(brevePleno(D, ahora));
+    (D.recogida || []).slice(0, 2).forEach(function (r) { breves.push(breveRecogida(r, ahora)); });
+    breves = breves.filter(Boolean);
+    if (!breves.length) return '';
+    return '<li class="hoy__fila hoy__fila--mas">' + icono('i-mas') + '<div><p class="hoy__etiqueta">Más hoy</p><ul class="hoy__breves">' + breves.join('') + '</ul></div></li>';
+  }
+  function canalHoy(D) {
+    var c = D.canal;
+    if (!c || !c.url) return '';
+    return '<p class="hoy__canal">' + icono('i-movil') + '<span>Reciba los avisos en el móvil con <a href="' + esc(c.url) + '">' + esc(c.nombre) + FUERA + '</a>' +
+      ' · <a href="' + esc(D.rutas.avisos) + '#t-canal">Cómo apuntarse</a></span></p>';
+  }
+
+  /* ── «Añadir a mi calendario»: un .ics por evento (RFC 5545) ──
+     aplicar.mjs escribe ics/<id>.ics con esta misma función; los eventos que llegan de
+     la hoja de cálculo no tienen archivo y main.js lo genera con un Blob al pulsar. */
+  var VTIMEZONE = ['BEGIN:VTIMEZONE', 'TZID:Europe/Madrid', 'BEGIN:DAYLIGHT', 'TZOFFSETFROM:+0100', 'TZOFFSETTO:+0200', 'TZNAME:CEST', 'DTSTART:19700329T020000',
+    'RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU', 'END:DAYLIGHT', 'BEGIN:STANDARD', 'TZOFFSETFROM:+0200', 'TZOFFSETTO:+0100', 'TZNAME:CET', 'DTSTART:19701025T030000',
+    'RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU', 'END:STANDARD', 'END:VTIMEZONE'];
+  function icsTexto(s) { return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+  function octetos(ch) { var c = ch.codePointAt(0); return c < 0x80 ? 1 : c < 0x800 ? 2 : c < 0x10000 ? 3 : 4; }
+  function plegar(linea) {       /* como mucho 75 octetos por línea; se sigue con CRLF + espacio, sin partir un carácter */
+    var out = [], actual = '', n = 0;
+    Array.from(linea).forEach(function (ch) {
+      var o = octetos(ch);
+      if (n + o > 75) { out.push(actual); actual = ' '; n = 1; }
+      actual += ch; n += o;
+    });
+    out.push(actual);
+    return out.join('\r\n');
+  }
+  function icsFecha(iso) { return iso.replace(/-/g, ''); }
+  function archivoIcs(e) { return normalTexto(e.id).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 80) + '.ics'; }
+  function ics(e, D, sello) {
+    var s = (sello || new Date()).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    var l = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Ayuntamiento de ' + icsTexto(D.nombre) + '//Agenda//ES', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+    if (e.hora) l = l.concat(VTIMEZONE);
+    l.push('BEGIN:VEVENT', 'UID:' + archivoIcs(e).replace(/\.ics$/, '') + '@' + (D.slug || 'ayuntamiento') + '.agenda', 'DTSTAMP:' + s);
+    if (e.hora) {
+      var ini = aMin(e.hora), fin = e.hora_fin && aMin(e.hora_fin) > ini ? aMin(e.hora_fin) : ini + 60;
+      var diaFin = sumarDias(e.fecha, Math.floor(fin / 1440)), mFin = fin % 1440;
+      var hhmm = function (m) { return String(Math.floor(m / 60)).padStart(2, '0') + String(m % 60).padStart(2, '0') + '00'; };
+      l.push('DTSTART;TZID=Europe/Madrid:' + icsFecha(e.fecha) + 'T' + hhmm(ini), 'DTEND;TZID=Europe/Madrid:' + icsFecha(diaFin) + 'T' + hhmm(mFin));
+    } else {
+      l.push('DTSTART;VALUE=DATE:' + icsFecha(e.fecha), 'DTEND;VALUE=DATE:' + icsFecha(sumarDias(e.fecha, 1)));
+    }
+    l.push('SUMMARY:' + icsTexto(e.titulo));
+    if (e.lugar) l.push('LOCATION:' + icsTexto(e.lugar + ', ' + D.nombre));
+    var desc = [e.nota, e.convocatoria ? 'Convocatoria: ' + e.convocatoria : ''].filter(Boolean).join('\n');
+    if (desc) l.push('DESCRIPTION:' + icsTexto(desc));
+    if (D.web) l.push('URL:' + D.web + D.rutas.agenda + '#evento-' + encodeURIComponent(e.id));
+    l.push('END:VEVENT', 'END:VCALENDAR');
+    return l.map(plegar).join('\r\n') + '\r\n';
+  }
+  /* enlace al archivo si lo escribió aplicar.mjs; si no (viene de la hoja), un botón */
+  function icsHtml(e, D, enFrase) {
+    /* en el panel, corto; el nombre accesible dice siempre qué evento y que es un archivo .ics */
+    var dentro = 'Añadir a mi calendario ' + (enFrase ? '<span class="sr">(archivo .ics)</span>' : '<span class="evento__ics-tipo">(archivo .ics)</span>') + '<span class="sr">: «' + esc(e.titulo) + '»</span>';
+    var clase = enFrase ? 'enlace-ics' : 'evento__ics';
+    var ic = enFrase ? '' : icono('i-calendario');
+    return e.ics ? '<a class="' + clase + '" href="' + esc(e.ics) + '" download="' + esc(archivoIcs(e)) + '">' + ic + '<span>' + dentro + '</span></a>'
+      : '<button type="button" class="' + clase + '" data-ics="' + esc(e.id) + '">' + ic + '<span>' + dentro + '</span></button>';
+  }
+
   /* ── panel «Hoy en …» ── */
   function hoy(D, ahora) {
     var h = '<h2 class="hoy__titulo" id="hoy-titulo">Hoy en ' + esc(D.nombre_corto) + ' <span class="hoy__fecha">' + esc(fechaLarga(ahora.iso)) + '</span></h2><ul class="hoy__lista">';
@@ -131,8 +281,11 @@
       '<p class="hoy__etiqueta">Ayuntamiento</p>' +
       (e ? '<p class="hoy__estado ' + (e.abierto ? 'esta-abierto' : 'esta-cerrado') + '"><span class="estado__punto" aria-hidden="true"></span><b>' + e.texto + '</b>' + (e.detalle ? ' · ' + e.detalle : '') + '</p>' : '') +
       '<p class="hoy__nota">' + esc(D.horario.texto) + (D.horario.ejemplo ? ' ' + EJEMPLO : '') + '</p></div></li>';
-    /* agenda: 1 en la versión cargada, 3 en la sobria (CSS oculta .hoy__mas) */
-    var prox = proximos(D, ahora, 3);
+    /* farmacia de guardia: lo segundo que más se busca un domingo */
+    h += filaFarmacia(D, ahora);
+    /* agenda: 1 en la versión cargada, 3 en la sobria (CSS oculta .hoy__mas).
+       Los plenos van en «Más hoy», no aquí, para no salir dos veces */
+    var prox = proximos(D, ahora).filter(function (ev) { return ev.tipo !== 'pleno'; }).slice(0, 3);
     h += '<li class="hoy__fila"><svg class="icono" aria-hidden="true"><use href="#i-calendario"/></svg><div><p class="hoy__etiqueta">Lo próximo en la agenda</p>';
     if (!prox.length) h += '<p>No hay nada anunciado estos días.</p>';
     else {
@@ -149,10 +302,12 @@
         '<p><a href="' + esc(ult.href) + '">' + esc(ult.titulo) + (ult.oficial ? SEDE : '') + '</a>' + (ult.ejemplo ? ' ' + EJEMPLO : '') +
         '<span class="hoy__cuando">' + esc(cuando(ult.fecha, ahora)) + (ult.oficial ? ' · Tablón oficial' : '') + '</span></p></div></li>';
     }
+    /* el tiempo, el próximo pleno y la recogida: una sola fila de líneas cortas */
+    h += filaMasHoy(D, ahora);
     /* solo en la sobria: el dato en vez del dibujo */
     h += '<li class="hoy__fila solo-sobria"><svg class="icono" aria-hidden="true"><use href="#i-sede"/></svg><div><p class="hoy__etiqueta">Sede electrónica</p>' +
       '<p><a href="' + esc(D.rutas.tramites) + '"><b>' + D.tramites_sede + ' trámites</b> en la sede, las 24 horas</a></p></div></li>';
-    return h + '</ul>';
+    return h + '</ul>' + canalHoy(D);
   }
 
   /* avisos propios + anuncios del tablón oficial, lo más nuevo primero */
@@ -230,11 +385,18 @@
 
   /* ── página de agenda ── */
   function evento(e, D, ahora) {
+    var pendiente = eventoPendiente(e, ahora);
+    /* pleno: la convocatoria mientras viene; la grabación cuando ya pasó */
+    var enlace = pendiente ? (e.convocatoria ? { url: e.convocatoria, texto: 'Convocatoria y orden del día', sr: e.convocatoria_sr } : null)
+      : (e.grabacion ? { url: e.grabacion, texto: 'Ver la grabación', sr: e.grabacion_sr } : null);
     return '<li class="evento" id="evento-' + esc(e.id) + '"' + marcaEjemplo(e, 'evento:' + e.id) + '>' +
       '<p class="evento__fecha"><time datetime="' + e.fecha + '">' + esc(cuando(e.fecha, ahora)) + (e.hora ? ', ' + hora(e.hora) : '') + '</time>' +
-      (e.origen === 'fiesta' ? '<span class="chip">Fiesta</span>' : '') + (e.ejemplo ? EJEMPLO : '') + '</p>' +
+      (e.origen === 'fiesta' ? '<span class="chip">Fiesta</span>' : '') + (e.tipo === 'pleno' ? '<span class="chip">Pleno</span>' : '') + (e.ejemplo ? EJEMPLO : '') + '</p>' +
       '<h3 class="evento__titulo">' + esc(e.titulo) + '</h3>' +
-      (e.lugar ? '<p class="evento__lugar">' + esc(e.lugar) + '</p>' : '') + (e.nota ? '<p class="evento__nota">' + esc(e.nota) + '</p>' : '') + '</li>';
+      (e.lugar ? '<p class="evento__lugar">' + esc(e.lugar) + '</p>' : '') + (e.nota ? '<p class="evento__nota">' + esc(e.nota) + '</p>' : '') +
+      (enlace || pendiente ? '<p class="evento__acciones">' +
+        (enlace ? '<a class="evento__enlace" href="' + esc(enlace.url) + '">' + esc(enlace.texto) + '<span class="sr">: ' + esc(e.titulo) + esc(enlace.sr || ', se abre otra web') + '</span></a>' : '') +
+        (pendiente ? icsHtml(e, D) : '') + '</p>' : '') + '</li>';
   }
   function agenda(D, ahora) {
     var p = proximos(D, ahora);
@@ -255,6 +417,7 @@
   raiz.Vivo = {
     ahoraEn: ahoraEn, estado: estado, fechaLarga: fechaLarga, fechaCorta: fechaCorta,
     urgentes: urgentes, proximos: proximos, ultimos: ultimos,
+    farmaciaDeGuardia: farmaciaDeGuardia, proximaRecogida: proximaRecogida, proximoPleno: proximoPleno, ics: ics, archivoIcs: archivoIcs,
     pintar: function (nombre, D, ahora, op) { return BLOQUES[nombre](D, ahora, op || {}); },
     bloques: Object.keys(BLOQUES)
   };

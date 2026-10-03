@@ -164,7 +164,8 @@ Estado comprobado el 02/10/2026.
 | Feeds de la web | <https://riberadelfresno.es/atomnoticias.php> · <https://riberadelfresno.es/atomtablon.php> · <https://riberadelfresno.es/atomagenda.php> | 200 |
 | OAR | <http://cervantes.dip-badajoz.es/contenidos/> | 200 |
 | Vida laboral | <https://sede.seg-social.gob.es/Sede_1/ServiciosenLinea/Ciudadanos/168694> | 200 |
-| El tiempo (AEMET) | <http://www.aemet.es/es/eltiempo/prediccion/municipios/ribera-del-fresno-id06113> | 200 |
+| El tiempo (AEMET) | <http://www.aemet.es/es/eltiempo/prediccion/municipios/ribera-del-fresno-id06113> | 200. INE **06113** (`municipio.json → ine`), el mismo que el DIR3 L0106113**4**. Comprobado el 03/10/2026: AEMET decide el pueblo por el número (con otro nombre en la URL sigue saliendo Ribera) |
+| Farmacias de guardia (Colegio Oficial de Farmacéuticos de Badajoz) | <https://cofbadajoz.com/farmacias-de-guardia/> | 200 (03/10/2026). Es un buscador provincial; `cofbadajoz.es` no responde. El calendario de guardias de Ribera no consta: la rotación de la web es de **ejemplo** |
 | Observatorio socioeconómico | <https://portalestadistico.com/municipioencifras/?pn=dip-badajoz&pc=WRC03&id_territorio=06113> | 200 |
 | Vídeo promocional | <https://youtu.be/DV9DXcXjrYY> | 200 |
 | Web de Meléndez Valdés | <http://www.juanmelendezvaldes.es/> | 200 |

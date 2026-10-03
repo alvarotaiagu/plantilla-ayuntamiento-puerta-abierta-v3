@@ -20,7 +20,7 @@ node scripts/verificar.mjs         # todas las comprobaciones (≈ 10 min; --rap
 La web es una puerta de medio punto encalada que da paso a lo que pasa hoy en el pueblo. El arco es el único motivo dibujado; todo lo demás es tipografía, datos y orden. Un solo arco, una puerta: nunca una arcada (eso es `restaurante-gabi-zafra-web`).
 
 **Por qué esta versión:**
-- **Responde sin hacer buscar.** El panel «Hoy en Ribera» dice si el Ayuntamiento está abierto (se calcula), qué es lo próximo de la agenda y cuál es el último aviso.
+- **Responde sin hacer buscar.** El panel «Hoy en Ribera» dice si el Ayuntamiento está abierto (se calcula), qué farmacia está de guardia, qué es lo próximo de la agenda y cuál es el último aviso. Debajo, «Más hoy»: el tiempo (enlace a AEMET), el próximo pleno y la recogida de enseres. Si hay canal de avisos (Bandomóvil o similar), cierra el panel con el acceso y «Cómo apuntarse».
 - **Aguanta sin fotos buenas.** El arco recorta cualquier foto y disimula su poca resolución. Ribera no tiene una foto decente de la iglesia ni de la plaza.
 - **Es la más fácil de reskinear.** El arco y la cal valen para cualquier pueblo extremeño; el escudo solo aporta el color.
 - **Nunca parece abandonada.** Las webs de la zona están feas porque **nadie publica**. Aquí lo vivo se mueve solo:
@@ -64,7 +64,7 @@ El RD 1112/2018 obliga a cumplir WCAG 2.1 AA. Por eso esta plantilla **rompe a p
 | `ayuntamiento.html` | Alcaldía (retrato como hueco diseñado y saluda de ejemplo). Quién se ocupa de qué. El pleno en hemiciclo (color, trama y rótulo). Concejalías. Horario y contacto. Enlace a las grabaciones de pleno |
 | `avisos.html` | Avisos propios y el tablón completo con filtros |
 | `noticias.html` y `noticia-*.html` | Lista y detalle de cada noticia |
-| `agenda.html` | Lo que viene (con las fiestas de fecha fija), lo que pasó y el año en fiestas |
+| `agenda.html` | Lo que viene (con las fiestas de fecha fija y los plenos), lo que pasó y el año en fiestas. Cada evento que viene lleva «Añadir a mi calendario (archivo .ics)»; un pleno, su convocatoria o, ya celebrado, su grabación |
 | `telefonos.html` | El listín completo, con el 112 el primero y el «abierto ahora» de la biblioteca y el centro de día |
 | `pueblo.html` | Carril de lugares con fotos en arco, la placa de la casa natal de Meléndez Valdés, historia, patrimonio, fiestas, gastronomía, personajes, rutas y créditos de las fotos |
 | `contacto.html` | Dirección, horario, mapa bajo clic, instancia general y quejas (en la sede), y datos de la entidad |
@@ -113,11 +113,16 @@ Cada paso funciona igual que en la veterinaria:
 | **Tablón oficial** | `node scripts/tablon.mjs` lee `/board` de la sede, quita lo que lleva datos personales y conserva el `titulo_claro` que haya puesto una persona. La web refresca `contenido/tablon.json` al cargar | Una tarea diaria (ver abajo) + una persona para el lenguaje claro |
 | **Fiestas** | `municipio.json → pueblo.fiestas`. Las de `fecha_fija` entran solas en la agenda | Una vez al año |
 | **Abierto ahora, «hoy», mes actual** | Se calculan en el navegador con la hora de Madrid | Nadie |
+| **Farmacia de guardia** | `municipio.json → farmacias`: rotación (semanal, por ejemplo) y/o fechas sueltas, también desde la pestaña `Farmacias` de la hoja. Cambia sola a la hora del relevo (`cambio`, 09:30) | El Ayuntamiento, una vez al año con el calendario del Colegio |
+| **Próximo pleno y recogida** | `municipio.json → plenos` (o la agenda con `tipo` «pleno») y `recogida` (días de la semana o fechas) | El Ayuntamiento |
+| **Calendarios (.ics)** | `aplicar.mjs` escribe `ics/<id>.ics` para cada evento; los de la hoja se generan en el navegador al pulsar | Nadie |
 
 **La hoja de cálculo** (memoria «hoja de cálculo como CMS»):
 1. Crea una hoja de Google con tres pestañas: `Avisos`, `Agenda` y `Noticias`.
    - En la primera fila van los nombres de columna (`id`, `fecha`, `tema`, `titulo`, `texto`, `urgente`, `caduca`, `hora`, `lugar`, `resumen`, `estado`).
    - Un `estado` «oculto» o «borrador» la oculta.
+   - En `Agenda` también valen `hora_fin`, `tipo` («pleno»: sale como «Próximo pleno» en el panel), `convocatoria` y `grabacion`. Una celda de solo hora se lee bien («20:30»).
+   - **Opcional, pestaña `Farmacias`** (las guardias): columnas `desde`, `hasta` y `farmacia` (el `id` o el nombre exacto de `municipio.json → farmacias.lista`). Mandan sobre la rotación. Se activa con `"farmacias": "Farmacias"` en `hoja.pestanas`.
 2. Archivo → Compartir → Publicar en la web.
 3. Pon su id en `municipio.json → hoja.id`.
 
@@ -217,7 +222,10 @@ Todas tienen enlace a su ficha en `media/creditos.json` y en la página «El pue
 - [ ] **Fotos propias**: la iglesia, la plaza y las fiestas, y **autorización** para usar las de su web.
 - [ ] **El escudo**: el Pleno abrió en 2024 un expediente para cambiarlo y crear bandera. Si se aprueba, se rehace con `scripts/escudo.mjs` y los colores salen solos.
 - [ ] **Fechas de FEAVIR 2026 y de la V Feria del Comercio.** FEAVIR sale como ejemplo (12 de noviembre); también la apertura del camino al Pozo de San Juan.
-- [ ] Si usan **Bandomóvil** u otra app de avisos (para enlazarla o no duplicar).
+- [ ] Si usan **Bandomóvil** u otra app de avisos (para enlazarla o no duplicar). Con el canal y los pasos para apuntarse, sale en la portada, en el pie y en «Avisos».
+- [ ] **Farmacias y calendario de guardias** (nombre, dirección, teléfono, si la guardia se comparte con otros pueblos y a qué hora cambia). Ahora salen las dos de la C/ Meléndez Valdés (fuente secundaria) con una rotación semanal **de ejemplo** y sin teléfono. El enlace al buscador del Colegio de Farmacéuticos de Badajoz sí es real.
+- [ ] **Plenos**: la fecha del próximo (sale uno de ejemplo, el 29 de diciembre a las 20:00) y dónde se cuelga la convocatoria.
+- [ ] **Recogida de enseres**: qué día pasa y cómo se pide. Ahora sale de ejemplo «los miércoles, pídala el día antes en el Ayuntamiento».
 - [ ] Enlazar su **Instagram** (`@aytoriberadelfresno`): su web actual apunta a plus.google.com. Esta propuesta ya lo enlaza en el pie y en contacto.
 - [ ] **Dirección del registro**: C/ Ayuntamiento n.º 1 (web) o n.º 2 (directorio DIR3 de la sede).
 - [ ] El **saluda** de la alcaldía: el texto actual es de ejemplo.
@@ -241,6 +249,11 @@ Los datos de cada página tienen su fuente en **[DATOS.md](DATOS.md)**.
   - se retira sin GSAP y sin `cortina.js`;
   - se salta con la rueda.
 - **«Abierto ahora»** con la fecha simulada: un martes a las 10:00 y un domingo.
+- **Panel «Hoy»** (vivo.js en Node con fechas simuladas, y el navegador con el reloj de Playwright):
+  - sin datos no sale ni la farmacia, ni «Más hoy», ni el canal;
+  - la farmacia de guardia en 8 fechas, con la frontera del relevo (a las 9:29 sigue la de ayer, a las 9:30 la nueva), una fecha suelta que manda sobre la rotación y, sin farmacia propia, el enlace oficial;
+  - el tiempo (el INE manda y casa con el DIR3; si no, `aplicar.mjs` se niega), el próximo pleno (no repetido en la agenda), «toca hoy» / «la próxima, mañana» en la recogida y el canal con «Cómo apuntarse»;
+  - los `.ics`: CRLF, líneas de ≤ 75 octetos sin partir tildes, UID estable y único, DTSTAMP, DTSTART con zona o de día entero, escapado de `,` `;` `\` y saltos, un enlace por evento; y un evento de la hoja que se descarga como `.ics` generado con un Blob.
 - **Tablón**:
   - los filtros cuentan filas visibles;
   - las exclusiones se prueban con entradas de prueba;
@@ -248,9 +261,9 @@ Los datos de cada página tienen su fuente en **[DATOS.md](DATOS.md)**.
   - la hoja de cálculo se prueba en los dos sentidos;
   - la sede caída no rompe nada.
 - **Reskin** a Segura de León sin restos de Ribera, y la banda de propuesta que se apaga con `"propuesta": false`.
-- **Secciones opcionales** que Ribera no usa («Para visitar», «Normativa y documentos» e impresos en Word, añadidas para Fuente de Cantos): se prueban en una copia con los datos de muestra de `pruebas/opcionales.json`, con axe y a 320 px.
+- **Secciones opcionales** que Ribera no usa («Para visitar», «Normativa y documentos» e impresos en Word, añadidas para Fuente de Cantos; el canal de avisos con sus pasos, farmacias con teléfono, dos recogidas y un pleno a 10 días): se prueban en una copia con los datos de muestra de `pruebas/opcionales.json`, con axe y a 320 px.
 - **Contenido**:
-  - «Ejemplo» exactamente en los 5 datos marcados;
+  - «Ejemplo» exactamente en los 8 datos marcados;
   - banda y `noindex` en todas las páginas;
   - los 302 enlaces de la sede con el patrón de Gestiona.
 - **Checklist**: cookies con `:not([hidden])`, menú con `height: 100dvh`, la receta de borrado del mando, la medida de la letra, las zonas táctiles y la estructura (un `h1`, títulos sin saltos, landmarks).

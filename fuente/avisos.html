@@ -3,6 +3,8 @@
   <div class="contenedor">
     <h2 class="seccion__titulo" id="t-canal">Reciba los avisos en el móvil</h2>
     <p>{{#texto}}{{texto}} {{/texto}}<a class="boton boton--marca" href="{{url}}"><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg>{{nombre}}<span class="sr">, se abre otra web</span></a></p>
+    {{#pasos.length}}<h3 class="canal-avisos__como" id="t-canal-como">Cómo apuntarse</h3>
+    <ol class="canal-avisos__pasos">{{#pasos}}<li>{{.}}</li>{{/pasos}}</ol>{{/pasos.length}}
     {{#otros.length}}<p class="canal-avisos__otros">También en:</p>
     <ul class="lista-enlaces">{{#otros}}<li><a href="{{url}}">{{nombre}}<span class="sr">, se abre otra web</span></a></li>{{/otros}}</ul>{{/otros.length}}
   </div>

@@ -8,7 +8,7 @@
      media/ + creditos.json    fotos con su autor y licencia
 
    Genera las páginas (desde fuente/), css/marca.css, js/tramites-datos.js,
-   favicon, manifest y assets/og.jpg.
+   favicon, manifest, assets/og.jpg e ics/<id>.ics (un calendario por evento).
 
      node scripts/aplicar.mjs                  todo
      node scripts/aplicar.mjs --sin-og         sin la imagen para compartir
@@ -347,11 +347,78 @@ for (const f of fiestas.filter(x => x.fecha_fija)) for (const anio of [ahora.ani
   const soloFecha = /^\d{1,2}( y \d{1,2})? de [a-záéíóú]+$/i.test(f.cuando.trim());
   agendaFiestas.push({ id: 'fiesta-' + slugDe(f.nombre) + '-' + anio, fecha: anio + '-' + f.fecha_fija, titulo: f.nombre, lugar: soloFecha ? null : f.cuando, origen: 'fiesta' });
 }
+/* ── lo nuevo del panel «Hoy»: farmacia de guardia, el tiempo, plenos, recogida y canal ── */
+const ISO = /^\d{4}-\d{2}-\d{2}$/;
+/* plenos: entran en la agenda como eventos de tipo «pleno» (y con su .ics) */
+const plenosAgenda = (M.plenos || []).map(p => {
+  if (!p.fecha || !ISO.test(p.fecha)) errores.push('plenos: cada pleno lleva «fecha» AAAA-MM-DD');
+  if (p.hora && !HORA.test(p.hora)) errores.push('plenos ' + p.fecha + ': «hora» como "20:00"');
+  const tipo = p.tipo ? String(p.tipo).toLowerCase() : null;
+  return { id: 'pleno-' + p.fecha + (p.id ? '-' + slugDe(p.id) : ''), fecha: p.fecha, hora: p.hora || null, titulo: p.titulo || ('Pleno' + (tipo ? ' ' + tipo : '')),
+    lugar: p.lugar || null, nota: p.nota || null, ejemplo: !!p.ejemplo, oculto: !!p.oculto, tipo: 'pleno',
+    convocatoria: p.convocatoria || null, convocatoria_sr: p.convocatoria ? srDe(p.convocatoria) : null,
+    grabacion: p.grabacion || null, grabacion_sr: p.grabacion ? srDe(p.grabacion) : null };
+});
+/* farmacias: lista + guardias por fechas y/o rotación + fuente oficial */
+let farmacias = null;
+if (M.farmacias && ((M.farmacias.lista || []).length || (M.farmacias.oficial && M.farmacias.oficial.url))) {
+  const F = M.farmacias, ids = new Set((F.lista || []).map(f => f.id));
+  for (const f of F.lista || []) {
+    if (!f.id || !f.nombre) errores.push('farmacias.lista: cada farmacia lleva «id» y «nombre»');
+    if (f.telefono && !TEL.test(f.telefono)) errores.push('Teléfono «' + f.telefono + '» (farmacia ' + f.nombre + '): escríbelo como «924 536 011»');
+  }
+  if (F.cambio && !HORA.test(F.cambio)) errores.push('farmacias.cambio: la hora del cambio de guardia como "09:30"');
+  for (const g of F.guardias || []) {
+    if (!ISO.test(g.desde || '') || (g.hasta && !ISO.test(g.hasta))) errores.push('farmacias.guardias: «desde» (y «hasta») como AAAA-MM-DD');
+    if (!ids.has(g.farmacia) && !(F.lista || []).some(f => normal(f.nombre) === normal(String(g.farmacia || '')))) errores.push('farmacias.guardias: «' + g.farmacia + '» no está en farmacias.lista');
+  }
+  if (F.rotacion) {
+    if (!ISO.test(F.rotacion.inicio || '') || !(F.rotacion.orden || []).length) errores.push('farmacias.rotacion: {inicio: "AAAA-MM-DD", dias: 7, orden: [ids]}');
+    for (const id of F.rotacion.orden || []) if (!ids.has(id)) errores.push('farmacias.rotacion: «' + id + '» no está en farmacias.lista');
+  }
+  if (F.oficial && F.oficial.url && !F.oficial.nombre) errores.push('farmacias.oficial: con «url» va «nombre» (de quién es la web)');
+  farmacias = {
+    lista: (F.lista || []).map(f => ({ id: f.id, nombre: f.nombre, direccion: f.direccion || null, localidad: f.localidad || null, telefono: f.telefono || null })),
+    cambio: F.cambio || '09:30', guardias: (F.guardias || []).map(g => ({ desde: g.desde, hasta: g.hasta || null, farmacia: g.farmacia })),
+    rotacion: F.rotacion || null, oficial: F.oficial && F.oficial.url ? { nombre: F.oficial.nombre, url: F.oficial.url } : null, ejemplo: !!F.ejemplo
+  };
+}
+/* el tiempo: el enlace de AEMET sale del código INE, y de ningún otro sitio. El código de
+   municipio del DIR3 (L01 + INE + dígito de control) lo confirma: en otro reskin el INE
+   estaba mal y AEMET enseñaba otro pueblo */
+let tiempo = null;
+if (M.ine != null && M.ine !== '') {
+  const ine = String(M.ine);
+  if (!/^\d{5}$/.test(ine)) errores.push('ine: el código INE del municipio, 5 cifras («06113»), sin el dígito de control');
+  const dir3 = /^L01(\d{5})\d$/.exec((M.legal && M.legal.dir3) || '');
+  if (dir3 && dir3[1] !== ine) errores.push(`ine «${ine}» no casa con legal.dir3 «${M.legal.dir3}» (que dice ${dir3[1]}): AEMET enseñaría otro pueblo`);
+  tiempo = { url: `https://www.aemet.es/es/eltiempo/prediccion/municipios/${slugDe(M.nombre)}-id${ine}`, lugar: M.nombre };
+}
+/* recogida de enseres, basura, poda…: días de la semana (1 = lunes) o fechas sueltas */
+const recogida = (M.recogida || []).map(x => {
+  if (!x.id || !x.nombre) errores.push('recogida: cada una lleva «id» y «nombre»');
+  if (!(x.dias || []).length && !(x.fechas || []).length && !x.como) errores.push('recogida «' + x.nombre + '»: hace falta «dias», «fechas» o al menos «como»');
+  if ((x.dias || []).some(d => d < 1 || d > 7)) errores.push('recogida «' + x.nombre + '»: «dias» del 1 (lunes) al 7');
+  if ((x.fechas || []).some(f => !ISO.test(f))) errores.push('recogida «' + x.nombre + '»: «fechas» como AAAA-MM-DD');
+  if (x.telefono && !TEL.test(x.telefono)) errores.push('Teléfono «' + x.telefono + '» (recogida ' + x.nombre + '): escríbelo como «924 536 011»');
+  const tramite = x.tramite ? (typeof x.tramite === 'object' ? S.tramite(x.tramite) : x.tramite) : null;
+  return { id: x.id, nombre: x.nombre, dias: x.dias || [], fechas: x.fechas || [], hora: x.hora || null, como: x.como || null, telefono: x.telefono || null,
+    tramite, tramite_texto: x.tramite_texto || null, tramite_sr: tramite ? srDe(tramite) : null, ejemplo: !!x.ejemplo };
+});
+const canalAvisos = M.canal_avisos && M.canal_avisos.url ? { nombre: M.canal_avisos.nombre, url: M.canal_avisos.url, texto: M.canal_avisos.texto || null,
+  pasos: (M.canal_avisos.pasos || []).length ? M.canal_avisos.pasos : null, otros: M.canal_avisos.otros || [] } : null;
+if (canalAvisos && !canalAvisos.nombre) errores.push('canal_avisos: con «url» va «nombre»');
+/* cada evento con su .ics (lo escribe más abajo; los de la hoja los genera el navegador) */
+const conIcs = e => ({ ...e, ics: 'ics/' + Vivo.archivoIcs(e) });
+
 const D = {
   slug: marcaConf.slug, nombre: M.nombre, nombre_corto: M.nombre_corto, zona: 'Europe/Madrid',
   horario: { texto: M.horario.texto, tramos: M.horario.tramos || [], ejemplo: !!M.horario.ejemplo },
   avisos: C.avisos.map(a => ({ id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, urgente: !!a.urgente, caduca: a.caduca || null, ejemplo: !!a.ejemplo, oculto: !!a.oculto })),
-  agenda: [...C.agenda.map(e => ({ id: e.id, fecha: e.fecha, hora: e.hora || null, titulo: e.titulo, lugar: e.lugar || null, nota: e.nota || null, ejemplo: !!e.ejemplo, oculto: !!e.oculto })), ...agendaFiestas],
+  agenda: [...C.agenda.map(e => ({ id: e.id, fecha: e.fecha, hora: e.hora || null, hora_fin: e.hora_fin || null, titulo: e.titulo, lugar: e.lugar || null, nota: e.nota || null, ejemplo: !!e.ejemplo, oculto: !!e.oculto,
+    tipo: e.tipo ? String(e.tipo).toLowerCase() : null, convocatoria: e.convocatoria || null, convocatoria_sr: e.convocatoria ? srDe(e.convocatoria) : null,
+    grabacion: e.grabacion || null, grabacion_sr: e.grabacion ? srDe(e.grabacion) : null })), ...agendaFiestas, ...plenosAgenda].map(conIcs),
+  farmacias, tiempo, recogida, canal: canalAvisos ? { nombre: canalAvisos.nombre, url: canalAvisos.url } : null, web: M.url ? M.url.replace(/\/?$/, '/') : null,
   noticias: noticias.map(n => ({ id: n.id, fecha: n.fecha, titulo: n.titulo, resumen: n.resumen, imagen: n.imagen, imagen_alt: n.imagen_alt, ejemplo: n.ejemplo })),
   tablon: { actualizado: C.tablon.actualizado || null, entradas: (C.tablon.entradas || []).map(e => ({ fecha: e.fecha, tema: e.tema, titulo: e.titulo, titulo_claro: e.titulo_claro || '', url: e.url, oculto: !!e.oculto })) },
   fiestas, servicios: serviciosVivos, tramites_sede: tramitesSede,
@@ -466,6 +533,14 @@ function escribir(rel, contenido) {
 for (const f of fs.readdirSync(RAIZ)) if (/^noticia-.*\.html$/.test(f) && !PAGINAS.some(p => p.archivo === f)) fs.rmSync(r(f));
 
 escribir('css/marca.css', cssMarca());
+/* «Añadir a mi calendario»: un .ics por evento de la agenda (también fiestas y plenos).
+   Se borran los de eventos que ya no están */
+{
+  const icsVivos = new Set(D.agenda.filter(e => !e.oculto).map(e => e.ics));
+  fs.mkdirSync(r('ics'), { recursive: true });
+  for (const f of fs.readdirSync(r('ics'))) if (f.endsWith('.ics') && !icsVivos.has('ics/' + f)) fs.rmSync(r('ics', f));
+  for (const e of D.agenda.filter(x => !x.oculto)) escribir(e.ics, Vivo.ics(e, D, fechaBuild));
+}
 escribir('js/tramites-datos.js', '/* GENERADO por scripts/aplicar.mjs desde municipio.json → tramites. Lo carga el buscador. */\n' +
   'window.TRAMITES = ' + jsonEnScript(lista.map(t => ({ n: t.nombre, h: t.href, s: t.sr, c: [...(claros.get(t.href) || [])] }))) + ';\n' +
   'window.SINONIMOS = ' + jsonEnScript(M.tramites.sinonimos || {}) + ';\n');
@@ -492,7 +567,7 @@ const comun = {
   contacto: { ...M.contacto, tel_href: telHref(M.contacto.telefono), fax: M.contacto.fax || null },
   horario: { ...M.horario, ejemplo: !!M.horario.ejemplo },
   redes: M.redes || [], plenos_video: M.plenos_video || null, lema: M.lema || null,
-  canal_avisos: M.canal_avisos && M.canal_avisos.url ? { nombre: M.canal_avisos.nombre, url: M.canal_avisos.url, texto: M.canal_avisos.texto || null, otros: M.canal_avisos.otros || [] } : null,
+  canal_avisos: canalAvisos,
   escudo: { ancho160: e160.ancho, ancho480: e480.ancho },
   vivo, datos_vivos: jsonEnScript({ ...D, v_datos: v.datos }),
   paletas: paletas.map((p, i) => ({ clave: p.clave, nombre: nombreMatiz(p.col.marca), pulsado: i === 0 ? 'true' : 'false' })),
