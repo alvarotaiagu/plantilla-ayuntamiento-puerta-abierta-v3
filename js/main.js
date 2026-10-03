@@ -269,6 +269,34 @@
       .slice(0, 10).map(function (x) { return x.t; });
   }
   function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  /* v3 · lo encontrado va marcado con <mark>. Se compara igual que busca el buscador (sin tildes ni
+     mayúsculas, con sus variantes y sinónimos) y se marca la palabra entera del texto original:
+     «empad» marca «Empadronamiento», «boda» marca «Matrimonio» */
+  function terminos(q) {
+    var t = [];
+    normal(q).split(/[^a-z0-9ñ@]+/).filter(function (p) { return p.length > 1 && VACIAS.indexOf(' ' + p + ' ') < 0; })
+      .forEach(function (p) { variantes(p).forEach(function (v) { if (v.length > 1 && t.indexOf(v) < 0) t.push(v); }); });
+    return t;
+  }
+  var LETRA = /[\p{L}\p{N}]/u;
+  function conMarcas(texto, ts) {
+    var plano = '', mapa = [], rangos = [];
+    for (var i = 0; i < texto.length; i++) { var n = normal(texto[i]); for (var j = 0; j < n.length; j++) { plano += n[j]; mapa.push(i); } }
+    ts.forEach(function (t) {
+      for (var k = plano.indexOf(t); k >= 0; k = plano.indexOf(t, k + t.length)) {
+        var a = mapa[k], b = mapa[k + t.length - 1] + 1;
+        while (a > 0 && LETRA.test(texto[a - 1])) a--;
+        while (b < texto.length && LETRA.test(texto[b])) b++;
+        rangos.push([a, b]);
+      }
+    });
+    if (!rangos.length) return escHtml(texto);
+    rangos.sort(function (x, y) { return x[0] - y[0]; });
+    var out = '', pos = 0, unidos = [];
+    rangos.forEach(function (r) { var u = unidos[unidos.length - 1]; if (u && r[0] <= u[1]) u[1] = Math.max(u[1], r[1]); else unidos.push(r.slice()); });
+    unidos.forEach(function (r) { out += escHtml(texto.slice(pos, r[0])) + '<mark>' + escHtml(texto.slice(r[0], r[1])) + '</mark>'; pos = r[1]; });
+    return out + escHtml(texto.slice(pos));
+  }
   function montarBuscador(caja) {
     var campo = $('[data-buscador-campo]', caja), lista = $('[data-buscador-resultados]', caja), cuenta = $('[data-buscador-cuenta]', caja);
     if (!campo) return;
@@ -281,11 +309,11 @@
         var q = campo.value.trim();
         if (!q) { lista.innerHTML = ''; cuenta.textContent = ''; return; }
         cargarDatosTramites(function () {
-          var todos = buscar(q), r = max ? todos.slice(0, max) : todos;
+          var todos = buscar(q), r = max ? todos.slice(0, max) : todos, ts = terminos(q);
           lista.innerHTML = r.map(function (t) {
             var claro = (t.c && t.c[0]) ? t.c[0].split(' · ')[0] : '';
-            return '<li><a href="' + escHtml(t.h) + '"><span class="resultado__nombre">' + escHtml(claro || t.n) + '</span>' +
-              (claro && normal(claro) !== normal(t.n) ? '<span class="resultado__oficial">' + escHtml(t.n) + '</span>' : '') +
+            return '<li><a href="' + escHtml(t.h) + '"><span class="resultado__nombre">' + conMarcas(claro || t.n, ts) + '</span>' +
+              (claro && normal(claro) !== normal(t.n) ? '<span class="resultado__oficial">' + conMarcas(t.n, ts) + '</span>' : '') +
               '<span class="sr">' + escHtml(t.s) + '</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>';
           }).join('');
           cuenta.textContent = todos.length > r.length ? todos.length + ' trámites encontrados; aquí, los ' + r.length + ' primeros. «Buscar» los enseña todos.'

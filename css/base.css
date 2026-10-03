@@ -282,7 +282,9 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .resultado__nombre { font-weight: 600; color: var(--marca); }
 .resultado__oficial { grid-column: 1; color: var(--apagado); font-size: .9375rem; }
 .resultados .icono { grid-row: 1 / span 2; grid-column: 2; color: var(--marca); }
-.resultados mark { background: var(--marca-tenue); color: inherit; border-radius: 2px; }
+/* lo encontrado (main.js): el fondo tenue de la marca y en negrita, para que no dependa solo del
+   color de fondo (un subrayado lo confundia con un enlace). El texto sigue en su color: --marca y --apagado pasan AA sobre --marca-tenue */
+.resultados mark { background: var(--marca-tenue); color: inherit; border-radius: 2px; padding-inline: .1em; font-weight: 700; }
 
 /* ═══════════════ PORTADA: HERO «HOY» ═══════════════ */
 .hero { padding-block: clamp(1rem, 2.5vw, 2.75rem) clamp(2.5rem, 5vw, 4.5rem); }
