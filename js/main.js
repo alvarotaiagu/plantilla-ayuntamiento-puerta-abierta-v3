@@ -364,6 +364,33 @@
     });
   });
 
+  /* ═══ v3 · índice «En esta página»: aria-current en la sección que se está leyendo.
+     IntersectionObserver sobre cada h2 con umbral 0 y la franja del 30 % de arriba (memoria
+     «IntersectionObserver en sección alta»: nunca un % de una sección alta); la cuenta se hace
+     con la posición de los h2. Al llegar al pie, la última. Es contenido, no movimiento: también
+     con movimiento reducido ═══ */
+  (function () {
+    var enlaces = $$('.indice__lista a[href^="#"]');
+    if (!enlaces.length || !('IntersectionObserver' in window)) return;
+    var titulos = [];
+    enlaces.forEach(function (a) { var t = document.getElementById(a.getAttribute('href').slice(1)); if (t && titulos.indexOf(t) < 0) titulos.push(t); });
+    if (!titulos.length) return;
+    var pie = $('footer'), pieVisible = false;
+    function marcar() {
+      var limite = innerHeight * 0.3, actual = titulos[0], ultimo = titulos[titulos.length - 1];
+      titulos.forEach(function (t) { if (t.getBoundingClientRect().top <= limite) actual = t; });
+      if (pieVisible && ultimo.getBoundingClientRect().top < innerHeight * 0.85) actual = ultimo;
+      enlaces.forEach(function (a) {
+        if (a.getAttribute('href') === '#' + actual.id) a.setAttribute('aria-current', 'location');
+        else a.removeAttribute('aria-current');
+      });
+    }
+    var io = new IntersectionObserver(marcar, { rootMargin: '0px 0px -70% 0px', threshold: 0 });
+    titulos.forEach(function (t) { io.observe(t); });
+    if (pie) new IntersectionObserver(function (e) { pieVisible = e[e.length - 1].isIntersecting; marcar(); }, { threshold: 0 }).observe(pie);
+    marcar();
+  })();
+
   /* ═══ contenedores que desbordan: focusables solo si desbordan (PLIEGO §5) ═══ */
   function revisarDesborde(el) {
     if (el.scrollWidth > el.clientWidth + 1) el.setAttribute('tabindex', '0'); else el.removeAttribute('tabindex');

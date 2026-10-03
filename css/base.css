@@ -1034,6 +1034,34 @@ a.calendario__dia:focus-visible { outline-offset: 1px; }
 .creditos { font-size: 1rem; padding-left: 1.1rem; }
 .creditos li { margin-bottom: .4rem; }
 
+/* ── v3 · índice «En esta página» de las páginas largas ──
+   Escritorio: una columna a la izquierda, fija al bajar, con la sección que se está leyendo marcada
+   (aria-current, con el filete de oro). Móvil: un desplegable arriba, plegado. Las secciones del
+   cuerpo pierden su propio margen lateral: ya lo pone la rejilla */
+.con-indice { display: grid; grid-template-columns: minmax(0, 1fr); }
+.con-indice__cuerpo { min-width: 0; }
+.con-indice__cuerpo .contenedor { padding-inline: 0; max-width: none; }
+.con-indice__cuerpo .texto-largo, .con-indice__cuerpo .articulo { max-width: 46rem; }
+.con-indice__cuerpo .placa-rejilla { max-width: 52rem; margin-inline: 0; }
+.con-indice__cuerpo .carril { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; }
+.con-indice__cuerpo > .seccion:first-child { border-top: 0; padding-top: clamp(1.75rem, 3.5vw, 2.75rem); }
+.indice__lista { list-style: none; margin: 0; padding: 0; }
+.indice__lista a { display: flex; align-items: center; min-height: 44px; padding: .3rem .75rem; border-left: 3px solid var(--linea); color: var(--tinta); font-size: 1rem; line-height: 1.3; text-decoration: none; }
+.indice__lista a:hover { color: var(--marca); text-decoration: underline; }
+.indice__lista a[aria-current] { border-left-color: var(--oro); color: var(--marca); font-weight: 700; }
+.indice--lateral { display: none; }
+.indice--movil { margin-top: 1.25rem; }
+.indice__plegable { background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); }
+.indice__resumen { display: flex; align-items: center; min-height: 48px; padding: .5rem 1rem; font-weight: 600; cursor: pointer; }
+.indice__plegable[open] .indice__resumen { border-bottom: 1px solid var(--linea); }
+.indice__plegable .indice__lista { padding: .5rem 1rem .75rem; }
+@media (min-width: 64em) {
+  .con-indice { grid-template-columns: 13.5rem minmax(0, 1fr); column-gap: clamp(2rem, 4vw, 4rem); }
+  .indice--movil { display: none; }
+  .indice--lateral { display: block; position: sticky; top: 1.5rem; align-self: start; max-height: calc(100vh - 3rem); overflow-y: auto; margin-top: clamp(1.75rem, 3.5vw, 2.75rem); padding: 0 .25rem .25rem 0; }
+  .indice__titulo { margin: 0 0 .6rem; color: var(--apagado); font-size: .8125rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; }
+}
+
 /* ── legal y 404 ── */
 .legal { overflow-wrap: break-word; }
 .legal h2 { font-size: 1.5rem; margin-top: 2.25rem; }

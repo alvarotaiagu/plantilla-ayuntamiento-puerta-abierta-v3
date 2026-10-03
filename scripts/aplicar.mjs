@@ -680,6 +680,33 @@ const conParciales = (src, n = 0) => {
   if (n > 6) throw new Error('Parciales anidados demasiado hondo');
   return src.replace(/\{\{>\s*([\w-]+)\s*\}\}/g, (m, nombre) => conParciales(leer('fuente/_' + nombre + '.html'), n + 1));
 };
+/* v3 · índice lateral de las páginas largas. Fuera: la portada, la 404, Trámites (tiene su índice
+   A–Z y su buscador), Noticias (sus h2 son las tarjetas) y las páginas de otras zonas de la v3
+   (El Ayuntamiento y Teléfonos): para dárselo, quitarlas de aquí */
+const SIN_INDICE = new Set(['inicio', 'error', 'tramites', 'noticias', 'ayuntamiento', 'telefonos']);
+const textoPlano = h => h.replace(/<span class="sr">[\s\S]*?<\/span>/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+  .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+const cuerpoMain = html => { const i = html.indexOf('<main'), f = html.lastIndexOf('</main>'); return i < 0 || f < 0 ? null : [i, f]; };
+/* los h2 del cuerpo sin id (los textos legales) reciben uno a partir de su texto */
+function conIdsEnH2(html) {
+  const c = cuerpoMain(html);
+  if (!c) return html;
+  const usados = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
+  const dentro = html.slice(c[0], c[1]).replace(/<h2((?:(?!\bid=)[^>])*)>([\s\S]*?)<\/h2>/g, (m, attrs, txt) => {
+    let id = 's-' + slugDe(textoPlano(txt)).slice(0, 48), n = 2;
+    while (usados.has(id)) id = id.replace(/-\d+$/, '') + '-' + n++;
+    usados.add(id);
+    return `<h2${attrs} id="${id}">${txt}</h2>`;
+  });
+  return html.slice(0, c[0]) + dentro + html.slice(c[1]);
+}
+function h2sDelCuerpo(html) {
+  const c = cuerpoMain(html);
+  if (!c) return [];
+  return [...html.slice(c[0], c[1]).matchAll(/<h2([^>]*)>([\s\S]*?)<\/h2>/g)]
+    .filter(([, attrs]) => !/class="[^"]*\bsr\b/.test(attrs))
+    .map(([, attrs, txt]) => ({ id: (attrs.match(/\bid="([^"]+)"/) || [])[1], texto: textoPlano(txt) })).filter(x => x.id && x.texto);
+}
 for (const p of PAGINAS) {
   const pagina = { ...p, titulo_doc: p.titulo_doc || `${p.titulo} · Ayuntamiento de ${N}`, entradilla: p.entradilla || null, migas: p.migas || [], cortina: !!p.cortina, es_inicio: !!p.es_inicio,
     /* la 404 ya lleva su propio arco en el cuerpo: una puerta por página */
@@ -692,7 +719,16 @@ for (const p of PAGINAS) {
     nav: NAV.map(([id, texto]) => ({ id, texto, href: id + '.html', actual: id === p.id })),
     base_404: p.archivo === '404.html' && M.url ? new URL(M.url).pathname.replace(/\/?$/, '/') : null
   };
-  let html = renderizar(conParciales(leer('fuente/' + (p.fuente || p.archivo))), datos);
+  pagina.indice = null;
+  const plantilla = conParciales(leer('fuente/' + (p.fuente || p.archivo)));
+  let html = renderizar(plantilla, datos);
+  /* v3 · índice lateral «En esta página» en las páginas largas (≥ 4 h2 en el cuerpo): se pinta una
+     vez, se leen sus h2 y, si salen, se vuelve a pintar con el índice */
+  if (!SIN_INDICE.has(p.id)) {
+    html = conIdsEnH2(html);
+    const h2s = h2sDelCuerpo(html);
+    if (h2s.length >= 4) { pagina.indice = h2s; html = conIdsEnH2(renderizar(plantilla, datos)); }
+  }
   html = html.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+\n/g, '\n');
   escribir(p.archivo, html);
 }
