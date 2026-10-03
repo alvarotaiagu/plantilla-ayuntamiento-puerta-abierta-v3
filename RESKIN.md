@@ -43,6 +43,9 @@ Fuentes que funcionaron en Ribera y Segura:
 | Teléfonos | su web, guardiacivil.es, educarex, el directorio de bibliotecas y el catálogo del SES |
 | Fiestas | su web, la ficha de la Diputación y Turismo de Extremadura |
 | Fotos | Wikimedia Commons, con autor y licencia |
+| Código INE | INE (nomenclátor) o el DIR3 de la sede: `L01` + **INE** + dígito de control. Abre el enlace de AEMET y mira que sale tu pueblo |
+| Farmacias y guardias | El Ayuntamiento o las propias farmacias (el calendario de guardias lo reparte el Colegio cada año); el buscador del Colegio provincial como `farmacias.oficial` |
+| Plenos | Convocatorias en el tablón de la sede; las grabaciones, en su Facebook o YouTube |
 
 ## 3. `municipio.json`
 
@@ -60,7 +63,7 @@ Fuentes que funcionaron en Ribera y Segura:
 | `sede` | sí | Ver §4 |
 | `tablon_autorizado` | — | `false` hasta que el Ayuntamiento autorice por escrito leer su tablón (ver §7) |
 | `tablon_max` | no | Cuántos anuncios del tablón enseña la web (40 si no se dice). Hace falta en las sedes que guardan años de tablón (Diputación) |
-| `hoja` | no | `{id, pestanas}` de la hoja de Google publicada (ver README) |
+| `hoja` | no | `{id, pestanas: {avisos, agenda, noticias, farmacias}}` de la hoja de Google publicada (ver README). `farmacias` es opcional: la pestaña de guardias |
 | `legal` | sí | `titular`, `nif` y `dir3` |
 | `escudo_credito` | sí | Autor, licencia y URL de la ficha de Commons |
 | `corporacion` | no | `grupos` (sigla, nombre, color, trama `liso`/`rayas`/`puntos`/`cuadros`, gobierno) y `miembros` (nombre, grupo, cargo, delegación y `alcalde: true`). Sin `grupos` no sale el hemiciclo; con 13 concejales o menos, sale de una sola fila |
@@ -77,7 +80,11 @@ Fuentes que funcionaron en Ribera y Segura:
 | `documentos` | no | Lo que su web tenía colgado y no es un trámite: ordenanzas, actas, decretos. Lista de `{grupo, nota, items: [{titulo, url, tipo: "pdf"\|"doc", fecha}]}`. Sale en «El Ayuntamiento → Normativa y documentos», un desplegable por grupo |
 | `pueblo.establecimientos` | no | Lo que su web tenía de bares, restaurantes, alojamientos o área de autocaravanas: `[{grupo, nota, items: [{nombre, direccion, telefono, nota}]}]`. Sale en «El pueblo → Dónde comer y dormir», con la forma del listín. Son negocios privados: **`pueblo.establecimientos_fuente` es obligatorio** («Datos de la web municipal, actualizados en 2022.») y sale debajo, con el aviso de que el Ayuntamiento no responde de ellos |
 | `instalaciones` | no | Instalaciones municipales y alojamiento municipal: `[{grupo, items: [{nombre, texto, direccion, horario, precio, telefono, nota, url, url_texto}]}]`. Sale en «Teléfonos y servicios → Instalaciones municipales», un bloque de fichas por grupo (Deporte, Parques, Alojamiento municipal…). Cada dato solo aparece si está; con `url` va `url_texto`, que dice qué abre (por ejemplo, «Reservar en su sistema actual»). Lo privado (bares, casas rurales) va en `pueblo.establecimientos` |
-| `canal_avisos` | no | Si el Ayuntamiento ya publica avisos en Bandomóvil, Telegram o WhatsApp: `{nombre, url, texto, otros: [{nombre, url}]}`. Sale arriba de «Avisos» («Reciba los avisos en el móvil») y en «Contacto». Que lo sigan usando: la web no lo sustituye |
+| `canal_avisos` | no | Si el Ayuntamiento ya publica avisos en Bandomóvil, Telegram o WhatsApp: `{nombre, url, texto, pasos: ["Descargue…", "Busque…"], otros: [{nombre, url}]}`. Sale arriba de «Avisos» («Reciba los avisos en el móvil», con los `pasos` como «Cómo apuntarse»), al pie del panel «Hoy» de la portada, en el pie de todas las páginas y en «Contacto». Que lo sigan usando: la web no lo sustituye. **No se inventa**: sin canal confirmado, no se pone |
+| `ine` | no | Código INE del municipio, **5 cifras** sin el dígito de control (`"06113"`). Es la **única** fuente del enlace «El tiempo» del panel «Hoy» (`aemet.es/…/municipios/<nombre>-id<ine>`; AEMET decide el pueblo por el número, no por el nombre). `aplicar.mjs` se niega si no casa con `legal.dir3` (L01 + INE + control): en otro reskin el INE estaba mal y AEMET enseñaba otro pueblo. Compruébalo abriendo el enlace |
+| `farmacias` | no | Farmacia de guardia en el panel «Hoy»: `{lista: [{id, nombre, direccion, localidad, telefono}], cambio: "09:30", guardias: [{desde, hasta, farmacia}], rotacion: {inicio, dias, orden: [ids]}, oficial: {nombre, url}, ejemplo}`. Un día de guardia va de `cambio` (09:30 si no se dice) a la misma hora del día siguiente. Mandan las `guardias` por fechas (también desde la pestaña `Farmacias` de la hoja); si ninguna cubre el día, la `rotacion` (`inicio` es el primer día de la primera de `orden`; `dias`, 7 = semanal). `localidad` solo si la guardia cae en otro pueblo de la zona. `oficial` es el buscador del Colegio de Farmacéuticos (Badajoz: `https://cofbadajoz.com/farmacias-de-guardia/`): sin farmacia propia, la fila es solo ese enlace. Sin `lista` ni `oficial`, no sale |
+| `plenos` | no | `[{fecha, hora, tipo, lugar, convocatoria, grabacion, ejemplo}]`. Entran en la agenda (chip «Pleno», con su .ics) y el próximo sale en «Más hoy». Mientras viene enlaza la `convocatoria`; cuando ya pasó, la `grabacion`. También vale una fila de la agenda con `"tipo": "pleno"` |
+| `recogida` | no | `[{id, nombre, dias: [1..7], fechas: ["AAAA-MM-DD"], hora, como, telefono, tramite, tramite_texto, ejemplo}]` (enseres, poda, voluminosos). En «Más hoy» dice «toca hoy» o «la próxima, el …» y cómo pedirla. `tramite` es una URL o `{id}` del catálogo de la sede. Salen las 2 primeras |
 | `fotos.hero` | no | `archivo`, `alt` y `posicion` (CSS). Sin foto, el arco queda como hueco diseñado con el escudo apagado |
 
 ## 4. La sede: dos familias
@@ -143,7 +150,9 @@ python scripts/fotos.py --lote media/_lote.json          # recorte + gradación 
 
 ## 7. Contenido y tablón
 
-- `contenido/avisos.json`, `agenda.json` y `noticias.json`: lo real de su Facebook o de su web, con fecha. Las fiestas con `fecha_fija` entran solas en la agenda.
+- `contenido/avisos.json`, `agenda.json` y `noticias.json`: lo real de su Facebook o de su web, con fecha. Las fiestas con `fecha_fija` entran solas en la agenda, y los `plenos` también.
+  - En `agenda.json`, además de `id, fecha, hora, titulo, lugar, nota`: `hora_fin` (para el .ics; si no, dura una hora), `tipo: "pleno"`, `convocatoria` y `grabacion`.
+  - **«Añadir a mi calendario»**: `aplicar.mjs` escribe un `ics/<id>.ics` por evento (RFC 5545: UID estable `<id>@<slug>.agenda`, Europe/Madrid con su VTIMEZONE, o día entero con `VALUE=DATE`) y borra los que sobran. `ics/` es **generado**: se publica con las páginas. Un evento que llega de la hoja no tiene archivo: el navegador lo genera al pulsar.
 - `contenido/tablon.json`:
   - con autorización: `node scripts/tablon.mjs`;
   - para la maqueta: guarda su `/board` una vez a mano y ejecuta `node scripts/tablon.mjs --desde copia.html`.
