@@ -7,8 +7,10 @@
    pide movimiento reducido, la página se queda exactamente como viene.
      · window.Movimiento.transicion(fn, caja): los filtros del tablón con
        document.startViewTransition (lo llama main.js; sin soporte, fn() a secas)
-     · las filas del panel «Hoy» entran escalonadas: al acabar la cortina o,
-       si no la hay, una vez al cargar
+     · las fichas de la tira «Hoy» entran escalonadas cuando la tira asoma
+       (y nunca mientras está la cortina)
+     · (la entrada del hero sin cortina es CSS: html.entrada-hero, en
+       css/movimiento.css; la pone el <head>)
      · los escaños del hemiciclo aparecen en orden al entrar en pantalla
      · la foto de la noticia que se abre desde la portada se transforma en la
        del artículo (pageswap / pagereveal de las View Transitions) */
@@ -43,32 +45,36 @@
 
   if (!hayMovimiento()) return;
 
-  /* ═══ 21. las filas de «Hoy» entran escalonadas ═══
-     Con cortina: se preparan ya (en pausa, con su «desde») y arrancan cuando
-     la cortina se va, venga de cortina.js, de main.js o de la red de seguridad
-     del <head>. Sin cortina: al cargar. Sin medir nada (getBoundingClientRect
-     forzaría un layout dentro de la tarea de carga): una fila oculta o fuera de
-     pantalla anima sin que se vea, y no cuesta. */
-  function filasHoy() {
-    return $$('.hoy__fila').map(function (f, i) {
-      if (typeof f.animate !== 'function') return null;
-      return f.animate([{ transform: 'translateY(12px)' }, { transform: 'none' }],
-        { duration: 480, delay: 90 + i * 70, easing: SALIDA, fill: 'backwards' });
-    }).filter(Boolean);
+  /* ═══ 21. las fichas de «Hoy» entran escalonadas ═══
+     La tira va bajo el hero: las fichas suben 12 px una tras otra cuando la tira
+     asoma, y nunca mientras está la cortina (esperan a que se vaya, venga de
+     cortina.js, de main.js o de la red de seguridad del <head>). Las animaciones
+     se crean al vuelo en ese momento: hasta entonces no hay nada puesto, así que
+     si la tira se pasa de largo con la rueda o el observador no llega a avisar,
+     las fichas siguen en su sitio. Total: 90 + 3 × 70 + 480 = 780 ms como mucho */
+  function animarFichas() {
+    $$('.hoy__fila').forEach(function (f, i) {
+      if (typeof f.animate !== 'function') return;
+      f.animate([{ transform: 'translateY(12px)' }, { transform: 'none' }],
+        { duration: 480, delay: 90 + Math.min(i, 3) * 70, easing: SALIDA, fill: 'backwards' });
+    });
   }
-  var anims = filasHoy();
-  if (html.classList.contains('con-cortina') && anims.length) {
-    anims.forEach(function (a) { a.pause(); });
-    var soltar = function () {
-      if (!anims) return;
-      anims.forEach(function (a) { a.play(); });
-      anims = null;
-      obs.disconnect();
-      clearTimeout(red);
+  var tira = document.querySelector('.hoy-tira');
+  if (tira && 'IntersectionObserver' in window) {
+    var asoma = false, hecho = false;
+    var probar = function () {
+      if (hecho || !asoma || html.classList.contains('con-cortina')) return;
+      hecho = true;
+      vigia.disconnect(); obsCortina.disconnect();
+      animarFichas();
     };
-    var obs = new MutationObserver(function () { if (!html.classList.contains('con-cortina')) soltar(); });
-    obs.observe(html, { attributes: true, attributeFilter: ['class'] });
-    var red = setTimeout(soltar, 3000);   /* pase lo que pase, a los 3 s están en su sitio */
+    /* umbral 0 y 40 px de margen por abajo: en cuanto asoma de verdad (memoria
+       «IntersectionObserver en sección alta») */
+    var vigia = new IntersectionObserver(function (e) { asoma = e.some(function (x) { return x.isIntersecting; }); probar(); },
+      { rootMargin: '0px 0px -40px 0px', threshold: 0 });
+    vigia.observe(tira);
+    var obsCortina = new MutationObserver(probar);
+    obsCortina.observe(html, { attributes: true, attributeFilter: ['class'] });
   }
 
   /* ═══ 23. escaños del hemiciclo, en orden, una vez ═══ */

@@ -205,6 +205,19 @@
     .tema[open]::details-content { block-size: auto; }
   }
 
+  /* ═══ 24. Entrada del hero sin cortina (ya se vio en la sesión) ═══
+     El <head> pone html.entrada-hero solo si no hay cortina y no se pide movimiento reducido. El
+     nombre sube 8 px palabra a palabra (solo transform: el texto se ve siempre entero) y la foto se
+     asienta de 1,06 a 1, como al final de la cortina. backwards: el «desde» solo cuenta mientras
+     espera su turno; el reposo es el final. Todo acaba antes de 600 ms */
+  html.entrada-hero .hero__palabra {
+    animation: mov-palabra .4s var(--curva-salida) backwards;
+    animation-delay: calc(min(var(--n, 0), 4) * 45ms);
+  }
+  html.entrada-hero #arco-hero img { animation: mov-asienta .56s cubic-bezier(.33, 1, .68, 1) backwards; }
+  @keyframes mov-palabra { from { translate: 0 8px; } }
+  @keyframes mov-asienta { from { scale: 1.06; } }
+
   /* ═══ 20. «Abierto ahora»: un anillo que late 3 veces y para ═══ */
   .esta-abierto .estado__punto { position: relative; }
   .esta-abierto .estado__punto::after {
