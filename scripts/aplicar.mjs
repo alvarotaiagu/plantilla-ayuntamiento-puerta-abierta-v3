@@ -67,7 +67,8 @@ if (!existe('css/fuentes.css')) errores.push('Falta css/fuentes.css: ejecuta nod
 
 const TEL = /^(\d{3} \d{3} \d{3}|\d{3})$/;
 const telefonos = [M.contacto.telefono, ...(M.servicios || []).map(s => s.telefono), ...(M.urgencias || []).map(s => s.telefono),
-  ...((M.pueblo && M.pueblo.visitas) || []).map(v => v.telefono)].filter(Boolean);
+  ...((M.pueblo && M.pueblo.visitas) || []).map(v => v.telefono),
+  ...((M.pueblo && M.pueblo.establecimientos) || []).flatMap(g => (g.items || []).map(e => e.telefono))].filter(Boolean);
 for (const t of telefonos) if (!TEL.test(t)) errores.push('Teléfono «' + t + '»: escríbelo como «924 536 011»');
 const HORA = /^\d{2}:\d{2}$/;
 const tramosOk = tr => (tr || []).every(t => Array.isArray(t.dias) && t.dias.every(d => d >= 1 && d <= 7) && HORA.test(t.de) && HORA.test(t.a));
@@ -363,8 +364,19 @@ const pueblo = {
     const datos = [['Dirección', v.direccion], ['Horario', v.horario], ['Entrada', v.precio]].filter(([, x]) => x).map(([dt, dd]) => ({ dt, dd }));
     return { nombre: v.nombre, texto: v.texto || null, datos, telefono: v.telefono || null, tel_href: v.telefono ? telHref(v.telefono) : null,
       nota: v.nota || null, url: v.url || null, url_texto: v.url_texto || 'Más información' };
+  }),
+  /* dónde comer y dormir: negocios privados, así que cada grupo lleva de dónde salen los datos */
+  establecimientos: (P.establecimientos || []).map(g => {
+    if (!g.grupo || !(g.items || []).length) errores.push('pueblo.establecimientos: cada grupo lleva «grupo» e «items»');
+    return { grupo: g.grupo, nota: g.nota || null, items: (g.items || []).map(e => {
+      if (!e.nombre) errores.push('pueblo.establecimientos «' + g.grupo + '»: cada uno lleva «nombre»');
+      return { nombre: e.nombre, telefono: e.telefono || null, tel_href: e.telefono ? telHref(e.telefono) : null,
+        detalle: [e.direccion, e.nota].filter(Boolean).join(' · ') || null };
+    }) };
   })
 };
+if (P.establecimientos && P.establecimientos.length && !P.establecimientos_fuente) errores.push('pueblo.establecimientos_fuente: di de dónde salen los datos y de cuándo (son negocios privados)');
+pueblo.establecimientos_fuente = P.establecimientos_fuente || null;
 const creditos = [...usadas.values()];
 
 /* ───────────────────────── legal ───────────────────────── */
@@ -458,6 +470,7 @@ const comun = {
   contacto: { ...M.contacto, tel_href: telHref(M.contacto.telefono), fax: M.contacto.fax || null },
   horario: { ...M.horario, ejemplo: !!M.horario.ejemplo },
   redes: M.redes || [], plenos_video: M.plenos_video || null, lema: M.lema || null,
+  canal_avisos: M.canal_avisos && M.canal_avisos.url ? { nombre: M.canal_avisos.nombre, url: M.canal_avisos.url, texto: M.canal_avisos.texto || null, otros: M.canal_avisos.otros || [] } : null,
   escudo: { ancho160: e160.ancho, ancho480: e480.ancho },
   vivo, datos_vivos: jsonEnScript({ ...D, v_datos: v.datos }),
   paletas: paletas.map((p, i) => ({ clave: p.clave, nombre: nombreMatiz(p.col.marca), pulsado: i === 0 ? 'true' : 'false' })),

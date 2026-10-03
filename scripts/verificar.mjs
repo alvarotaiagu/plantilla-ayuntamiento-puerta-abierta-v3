@@ -619,8 +619,13 @@ function copiar() {
 }
 async function reskin() {
   const pruebas = path.join(RAIZ, 'pruebas');
-  const otro = fs.existsSync(pruebas) ? fs.readdirSync(pruebas).find(d => fs.existsSync(path.join(pruebas, d, 'municipio.json'))) : null;
-  if (!otro) { comprobar(false, 'reskin: falta pruebas/<municipio>/municipio.json'); return; }
+  /* otro municipio de verdad: en la copia de un pueblo que ya estaba en pruebas/, ese no sirve
+     (sería reskinearlo sobre sí mismo y todo serían «restos») */
+  const otro = fs.existsSync(pruebas) ? fs.readdirSync(pruebas).find(d => {
+    const f = path.join(pruebas, d, 'municipio.json');
+    return fs.existsSync(f) && JSON.parse(fs.readFileSync(f, 'utf8')).nombre !== M.nombre;
+  }) : null;
+  if (!otro) { comprobar(false, 'reskin: falta pruebas/<otro municipio>/municipio.json (uno distinto de ' + M.nombre + ')'); return; }
   const dest = copiar();
   try {
     for (const d of ['marca', 'media', 'contenido']) { fs.rmSync(path.join(dest, d), { recursive: true, force: true }); fs.cpSync(path.join(pruebas, otro, d), path.join(dest, d), { recursive: true }); }
@@ -677,15 +682,19 @@ async function opcionales() {
   const muestra = path.join(RAIZ, 'pruebas', 'opcionales.json');
   if (!fs.existsSync(muestra)) { comprobar(false, 'opcionales: falta pruebas/opcionales.json'); return; }
   const O = JSON.parse(fs.readFileSync(muestra, 'utf8'));
-  const propio = { visitas: ((M.pueblo || {}).visitas || []).length, documentos: (M.documentos || []).length };
+  const propio = { visitas: ((M.pueblo || {}).visitas || []).length, documentos: (M.documentos || []).length,
+    establecimientos: ((M.pueblo || {}).establecimientos || []).length, canal: !!(M.canal_avisos && M.canal_avisos.url) };
   /* en la web real: cada sección sale solo si el municipio tiene datos */
   const ayto = leer(RAIZ, 'ayuntamiento.html'), pue = leer(RAIZ, 'pueblo.html');
   comprobar(/id="t-documentos"/.test(ayto) === propio.documentos > 0 && /id="t-visitas"/.test(pue) === propio.visitas > 0,
     `opcionales: «Normativa y documentos» y «Para visitar» salen solo con datos (aquí ${propio.documentos} grupos de documentos y ${propio.visitas} visitas)`);
+  comprobar(/id="t-establecimientos"/.test(pue) === propio.establecimientos > 0 && /id="t-canal"/.test(leer(RAIZ, 'avisos.html')) === propio.canal,
+    `opcionales: «Dónde comer y dormir» y «Reciba los avisos en el móvil» salen solo con datos (aquí ${propio.establecimientos} grupos y ${propio.canal ? 'con' : 'sin'} canal de avisos)`);
   const dest = copiar();
   try {
     const m = JSON.parse(fs.readFileSync(path.join(dest, 'municipio.json'), 'utf8'));
-    m.pueblo = { ...(m.pueblo || {}), visitas: O.pueblo.visitas };
+    m.pueblo = { ...(m.pueblo || {}), visitas: O.pueblo.visitas, establecimientos: O.pueblo.establecimientos, establecimientos_fuente: O.pueblo.establecimientos_fuente };
+    m.canal_avisos = O.canal_avisos;
     m.documentos = O.documentos;
     m.tramites.todos = [...m.tramites.todos, ...O.tramites_extra];
     m.servicios = [...m.servicios, ...O.servicios_extra];
@@ -716,9 +725,17 @@ async function opcionales() {
       const vis = await page.evaluate(() => [...document.querySelectorAll('.visita')].map(v => ({ titulo: v.querySelector('h3').textContent, datos: v.querySelectorAll('dt').length, tel: !!v.querySelector('a[href^="tel:"]') })));
       const esperadas = O.pueblo.visitas.map(v => ({ titulo: v.nombre, datos: ['direccion', 'horario', 'precio'].filter(k => v[k]).length, tel: !!v.telefono }));
       if (JSON.stringify(vis) !== JSON.stringify(esperadas)) malos.push(`${w} px: visitas ${JSON.stringify(vis)}`);
+      const est = await page.evaluate(() => { const s = document.querySelector('[aria-labelledby="t-establecimientos"]'); return s ? { grupos: s.querySelectorAll('.listin-grupo').length, filas: [...s.querySelectorAll('.listin__fila')].filter(f => f.getBoundingClientRect().height > 0).length, tel: s.querySelectorAll('a[href^="tel:"]').length, fuente: s.querySelector(':scope > .contenedor > .nota-fuente').textContent } : null; });
+      const filasEst = O.pueblo.establecimientos.reduce((n, g) => n + g.items.length, 0), telEst = O.pueblo.establecimientos.reduce((n, g) => n + g.items.filter(e => e.telefono).length, 0);
+      if (!est || est.grupos !== O.pueblo.establecimientos.length || est.filas !== filasEst || est.tel !== telEst || !est.fuente.includes(O.pueblo.establecimientos_fuente)) malos.push(`${w} px: establecimientos ${JSON.stringify(est)}`);
       viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => 'pueblo.html: ' + v.id));
       if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) desb.push(w + ' pueblo.html');
       if (CAPTURAS && w === 320) await page.screenshot({ path: captura('opcionales-visitas-m.png'), fullPage: true });
+      await page.goto(b + 'avisos.html', { waitUntil: 'networkidle' });
+      const canal = await page.evaluate(() => { const s = document.querySelector('.canal-avisos'); return s ? [...s.querySelectorAll('a')].map(a => ({ h: a.getAttribute('href'), sr: a.querySelector('.sr').textContent })) : null; });
+      if (!canal || canal.length !== 1 + (O.canal_avisos.otros || []).length || canal[0].h !== O.canal_avisos.url || !canal.every(a => /otra web/.test(a.sr))) malos.push('canal de avisos: ' + JSON.stringify(canal));
+      viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => 'avisos.html: ' + v.id));
+      if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) desb.push(w + ' avisos.html');
       await page.goto(b + 'tramites.html', { waitUntil: 'networkidle' });
       const word = await page.evaluate(() => { const a = [...document.querySelectorAll('#todos-lista a')].find(x => /\.doc$/.test(x.getAttribute('href'))); return a ? { etiqueta: a.querySelector('.etiqueta-pdf').textContent, sr: a.querySelector('.sr').textContent } : null; });
       if (!word || word.etiqueta !== 'Word' || !/Word/.test(word.sr)) malos.push('impreso en Word: ' + JSON.stringify(word));
@@ -731,7 +748,7 @@ async function opcionales() {
     }
     srv.close();
     comprobar(!malos.length && !viol.length && !desb.length,
-      'opcionales con datos de muestra: «Normativa y documentos» (desplegables, cada enlace dice qué abre), «Para visitar» (dirección, horario, entrada y teléfono solo si constan), impresos en Word y un servicio del listín sin teléfono; 0 violaciones de axe y sin scroll horizontal a 320 y 1440 px' +
+      'opcionales con datos de muestra: «Normativa y documentos» (desplegables, cada enlace dice qué abre), «Para visitar» (dirección, horario, entrada y teléfono solo si constan), «Dónde comer y dormir» (grupos, teléfonos y fuente), el canal de avisos, impresos en Word y un servicio del listín sin teléfono; 0 violaciones de axe y sin scroll horizontal a 320 y 1440 px' +
       (malos.length ? ' → ' + malos.join(' | ') : '') + (viol.length ? ' → axe: ' + [...new Set(viol)].join(', ') : '') + (desb.length ? ' → desborda ' + desb.join(', ') : ''));
   } finally { fs.rmSync(dest, { recursive: true, force: true }); }
 }

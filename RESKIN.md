@@ -22,6 +22,8 @@ rm -rf .git screenshots _scratch && git init
 npm install                      # Playwright y axe-core, solo para los scripts
 ```
 
+La prueba de reskin de `verificar.mjs` aplica sobre una copia el primer municipio de `pruebas/` **distinto del tuyo**. Si tu municipio es justo el de `pruebas/` (le pasa a Segura de León), pon allí el de la plantilla (`municipio.json`, `marca/`, `media/` y `contenido/` del original) para que la prueba siga teniendo otro pueblo con el que comparar.
+
 ## 2. Reunir los datos (con fuente)
 
 Guárdalos en un `DATOS.md` como el de Ribera: un dato por fila y su fuente. Las reglas del prompt común se aplican igual:
@@ -73,6 +75,8 @@ Fuentes que funcionaron en Ribera y Segura:
 | `pueblo.*` | no | Entradilla, historia, lugares (con foto), visitas (ver abajo), placa, patrimonio, fiestas (`mes`, `fecha_fija: "MM-DD"` y `mayor`), gastronomía, personajes y rutas. Cada bloque vacío desaparece |
 | `pueblo.visitas` | no | Lo que se visita por dentro (museo, casa natal, centro de interpretación): `nombre`, `texto`, `direccion`, `horario`, `precio`, `telefono`, `nota`, `url` y `url_texto`. Sale en «El pueblo → Para visitar». Cada dato solo aparece si está: **si el horario no está confirmado, no se pone**; se dice en `nota` cómo preguntarlo |
 | `documentos` | no | Lo que su web tenía colgado y no es un trámite: ordenanzas, actas, decretos. Lista de `{grupo, nota, items: [{titulo, url, tipo: "pdf"\|"doc", fecha}]}`. Sale en «El Ayuntamiento → Normativa y documentos», un desplegable por grupo |
+| `pueblo.establecimientos` | no | Lo que su web tenía de bares, restaurantes, alojamientos o área de autocaravanas: `[{grupo, nota, items: [{nombre, direccion, telefono, nota}]}]`. Sale en «El pueblo → Dónde comer y dormir», con la forma del listín. Son negocios privados: **`pueblo.establecimientos_fuente` es obligatorio** («Datos de la web municipal, actualizados en 2022.») y sale debajo, con el aviso de que el Ayuntamiento no responde de ellos |
+| `canal_avisos` | no | Si el Ayuntamiento ya publica avisos en Bandomóvil, Telegram o WhatsApp: `{nombre, url, texto, otros: [{nombre, url}]}`. Sale arriba de «Avisos» («Reciba los avisos en el móvil») y en «Contacto». Que lo sigan usando: la web no lo sustituye |
 | `fotos.hero` | no | `archivo`, `alt` y `posicion` (CSS). Sin foto, el arco queda como hueco diseñado con el escudo apagado |
 
 ## 4. La sede: dos familias

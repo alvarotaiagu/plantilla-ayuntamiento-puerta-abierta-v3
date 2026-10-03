@@ -1,5 +1,5 @@
 {
-  "_leeme": "Datos de muestra, sin ningún municipio real, para que scripts/verificar.mjs pruebe las secciones opcionales que el municipio de la plantilla no usa: «Para visitar» (pueblo.visitas), «Normativa y documentos» (documentos), impresos en Word (tramites.todos con tipo «doc») y un servicio del listín sin teléfono. Se mezclan en una copia; nunca se publican.",
+  "_leeme": "Datos de muestra, sin ningún municipio real, para que scripts/verificar.mjs pruebe las secciones opcionales que el municipio de la plantilla no usa: «Para visitar» (pueblo.visitas), «Normativa y documentos» (documentos), «Dónde comer y dormir» (pueblo.establecimientos), el canal de avisos (canal_avisos), impresos en Word (tramites.todos con tipo «doc») y un servicio del listín sin teléfono. Se mezclan en una copia; nunca se publican.",
   "pueblo": {
     "visitas": [
       {
@@ -17,28 +17,89 @@
         "texto": "Solo abre en sus fiestas.",
         "nota": "Para visitarla fuera de esas fechas, pregunte en el Ayuntamiento."
       }
-    ]
+    ],
+    "establecimientos": [
+      {
+        "grupo": "Restaurantes y bares",
+        "items": [
+          {
+            "nombre": "Restaurante de prueba",
+            "direccion": "C/ Mayor, 3",
+            "telefono": "900 000 001"
+          },
+          {
+            "nombre": "Bar de prueba sin teléfono",
+            "direccion": "Plaza Mayor"
+          }
+        ]
+      },
+      {
+        "grupo": "Casas rurales",
+        "nota": "Reserva directa con cada casa.",
+        "items": [
+          {
+            "nombre": "Casa rural de prueba",
+            "direccion": "C/ Nueva, 7",
+            "telefono": "600 000 002",
+            "nota": "6 plazas"
+          }
+        ]
+      }
+    ],
+    "establecimientos_fuente": "Datos de prueba de enero de 2026."
   },
   "documentos": [
     {
       "grupo": "Ordenanzas fiscales",
       "nota": "Impuestos y tasas",
       "items": [
-        { "titulo": "Ordenanza de prueba del impuesto de bienes inmuebles", "url": "https://example.org/ordenanza-1.pdf", "tipo": "pdf", "fecha": "2024" },
-        { "titulo": "Ordenanza de prueba de la tasa de basuras", "url": "https://example.org/ordenanza-2.pdf", "tipo": "pdf" }
+        {
+          "titulo": "Ordenanza de prueba del impuesto de bienes inmuebles",
+          "url": "https://example.org/ordenanza-1.pdf",
+          "tipo": "pdf",
+          "fecha": "2024"
+        },
+        {
+          "titulo": "Ordenanza de prueba de la tasa de basuras",
+          "url": "https://example.org/ordenanza-2.pdf",
+          "tipo": "pdf"
+        }
       ]
     },
     {
       "grupo": "Actas de los plenos",
       "items": [
-        { "titulo": "Carpeta de actas de prueba", "url": "https://example.org/actas" }
+        {
+          "titulo": "Carpeta de actas de prueba",
+          "url": "https://example.org/actas"
+        }
       ]
     }
   ],
   "servicios_extra": [
-    { "nombre": "Servicio de prueba sin teléfono", "nota": "Lunes y jueves", "horario": "De 20:00 a 22:00", "grupo": "Servicios de prueba" }
+    {
+      "nombre": "Servicio de prueba sin teléfono",
+      "nota": "Lunes y jueves",
+      "horario": "De 20:00 a 22:00",
+      "grupo": "Servicios de prueba"
+    }
   ],
   "tramites_extra": [
-    { "nombre": "Impreso de prueba en Word", "url": "https://example.org/impreso.doc", "tipo": "doc" }
-  ]
+    {
+      "nombre": "Impreso de prueba en Word",
+      "url": "https://example.org/impreso.doc",
+      "tipo": "doc"
+    }
+  ],
+  "canal_avisos": {
+    "nombre": "Canal de prueba",
+    "url": "https://example.org/avisos",
+    "texto": "El Ayuntamiento publica aquí cortes, plazos y actividades.",
+    "otros": [
+      {
+        "nombre": "Telegram de prueba",
+        "url": "https://example.org/telegram"
+      }
+    ]
+  }
 }

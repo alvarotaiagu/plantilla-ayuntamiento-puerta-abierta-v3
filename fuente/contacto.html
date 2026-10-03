@@ -45,6 +45,8 @@
     </dl>
     {{#redes.length}}<h3 class="subtitulo">Redes sociales</h3>
     <ul class="lista-enlaces">{{#redes}}<li><a href="{{url}}">{{nombre}}</a></li>{{/redes}}</ul>{{/redes.length}}
+    {{#canal_avisos}}<h3 class="subtitulo">Avisos en el móvil</h3>
+    <ul class="lista-enlaces"><li><a href="{{url}}">{{nombre}}<span class="sr">, se abre otra web</span></a></li>{{#otros}}<li><a href="{{url}}">{{nombre}}<span class="sr">, se abre otra web</span></a></li>{{/otros}}</ul>{{/canal_avisos}}
   </div>
 </section>
 {{> documento_abajo}}
