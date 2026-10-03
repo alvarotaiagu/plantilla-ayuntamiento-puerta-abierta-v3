@@ -68,7 +68,8 @@ if (!existe('css/fuentes.css')) errores.push('Falta css/fuentes.css: ejecuta nod
 const TEL = /^(\d{3} \d{3} \d{3}|\d{3})$/;
 const telefonos = [M.contacto.telefono, ...(M.servicios || []).map(s => s.telefono), ...(M.urgencias || []).map(s => s.telefono),
   ...((M.pueblo && M.pueblo.visitas) || []).map(v => v.telefono),
-  ...((M.pueblo && M.pueblo.establecimientos) || []).flatMap(g => (g.items || []).map(e => e.telefono))].filter(Boolean);
+  ...((M.pueblo && M.pueblo.establecimientos) || []).flatMap(g => (g.items || []).map(e => e.telefono)),
+  ...(M.instalaciones || []).flatMap(g => (g.items || []).map(i => i.telefono))].filter(Boolean);
 for (const t of telefonos) if (!TEL.test(t)) errores.push('Teléfono «' + t + '»: escríbelo como «924 536 011»');
 const HORA = /^\d{2}:\d{2}$/;
 const tramosOk = tr => (tr || []).every(t => Array.isArray(t.dias) && t.dias.every(d => d >= 1 && d <= 7) && HORA.test(t.de) && HORA.test(t.a));
@@ -310,6 +311,20 @@ const documentos = (M.documentos || []).map(g => {
   });
   return { grupo: g.grupo, nota: g.nota || null, items, cuenta: items.length + (items.length === 1 ? ' documento' : ' documentos') };
 });
+
+/* instalaciones municipales: polideportivo, piscina, parques, mercado, alojamiento municipal…
+   En grupos; cada dato solo sale si consta. Vacío, la sección no sale */
+const instalaciones = (M.instalaciones || []).map(g => {
+  if (!g.grupo || !(g.items || []).length) errores.push('instalaciones: cada grupo lleva «grupo» e «items»');
+  const items = (g.items || []).map(i => {
+    if (!i.nombre) errores.push('instalaciones «' + g.grupo + '»: cada instalación lleva «nombre»');
+    if (i.url && !i.url_texto) errores.push('instalaciones «' + i.nombre + '»: con «url» va «url_texto» (qué abre el enlace)');
+    const datos = [['Dirección', i.direccion], ['Horario', i.horario], ['Precio', i.precio]].filter(([, x]) => x).map(([dt, dd]) => ({ dt, dd }));
+    return { nombre: i.nombre, texto: i.texto || null, datos, telefono: i.telefono || null, tel_href: i.telefono ? telHref(i.telefono) : null,
+      nota: i.nota || null, url: i.url || null, url_texto: i.url_texto || null, sr: i.url ? srDe(i.url) : '' };
+  });
+  return { grupo: g.grupo, id: 'instalaciones-' + slugDe(g.grupo), items };
+});
 const quien = (M.quien || []).map(q => ({ ...q, iniciales: iniciales(q.nombre) }));
 
 /* ───────────────────────── contenido ───────────────────────── */
@@ -476,7 +491,7 @@ const comun = {
   paletas: paletas.map((p, i) => ({ clave: p.clave, nombre: nombreMatiz(p.col.marca), pulsado: i === 0 ? 'true' : 'false' })),
   tramites, listin_corto: listinCorto, listin_grupos: gruposListin,
   quien, quien_portada: quien.filter(q => q.portada), fiestas,
-  pleno, concejalias, alcalde, alcaldia: M.alcaldia || {}, documentos,
+  pleno, concejalias, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },
   pueblo, creditos, hay_creditos_fotos: creditos.length > 0, hero_foto: heroFoto,

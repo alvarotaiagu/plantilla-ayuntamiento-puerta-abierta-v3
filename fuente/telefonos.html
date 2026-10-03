@@ -19,4 +19,26 @@
     <p class="nota-fuente">Solo aparecen los teléfonos confirmados. Si echa en falta uno, llame al Ayuntamiento: <a href="{{contacto.tel_href}}">{{contacto.telefono}}</a>.</p>
   </div>
 </section>
+
+{{#instalaciones.length}}<section class="seccion" id="instalaciones" aria-labelledby="t-instalaciones">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-instalaciones">Instalaciones municipales</h2>
+    {{#instalaciones}}<div class="instalaciones-grupo" role="group" aria-labelledby="{{id}}">
+      <h3 class="listin-grupo__titulo" id="{{id}}">{{grupo}}</h3>
+      <ul class="fichas visitas">
+        {{#items}}<li class="ficha visita instalacion">
+          <h4 class="ficha__titulo">{{nombre}}</h4>
+          {{#texto}}<p class="visita__texto">{{texto}}</p>{{/texto}}
+          {{#datos.length}}<dl class="datos visita__datos">{{#datos}}<div><dt>{{dt}}</dt><dd>{{dd}}</dd></div>{{/datos}}</dl>{{/datos.length}}
+          {{#nota}}<p class="visita__nota">{{nota}}</p>{{/nota}}
+          {{#telefono}}<p class="visita__enlace"><a href="{{tel_href}}"><svg class="icono" aria-hidden="true"><use href="#i-telefono"/></svg><span class="sr">Llamar a {{nombre}}: </span>{{telefono}}</a></p>{{/telefono}}
+          {{#url}}<p class="visita__enlace"><a href="{{url}}">{{url_texto}}<span class="sr">: {{nombre}}{{sr}}</span></a></p>{{/url}}
+        </li>
+        {{/items}}
+      </ul>
+    </div>
+    {{/instalaciones}}
+    <p class="nota-fuente">Para reservar una instalación o preguntar por sus horarios, llame al Ayuntamiento: <a href="{{contacto.tel_href}}">{{contacto.telefono}}</a>.</p>
+  </div>
+</section>{{/instalaciones.length}}
 {{> documento_abajo}}

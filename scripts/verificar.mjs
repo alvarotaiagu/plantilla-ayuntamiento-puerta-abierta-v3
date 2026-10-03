@@ -683,11 +683,11 @@ async function opcionales() {
   if (!fs.existsSync(muestra)) { comprobar(false, 'opcionales: falta pruebas/opcionales.json'); return; }
   const O = JSON.parse(fs.readFileSync(muestra, 'utf8'));
   const propio = { visitas: ((M.pueblo || {}).visitas || []).length, documentos: (M.documentos || []).length,
-    establecimientos: ((M.pueblo || {}).establecimientos || []).length, canal: !!(M.canal_avisos && M.canal_avisos.url) };
+    establecimientos: ((M.pueblo || {}).establecimientos || []).length, canal: !!(M.canal_avisos && M.canal_avisos.url), instalaciones: (M.instalaciones || []).length };
   /* en la web real: cada sección sale solo si el municipio tiene datos */
-  const ayto = leer(RAIZ, 'ayuntamiento.html'), pue = leer(RAIZ, 'pueblo.html');
-  comprobar(/id="t-documentos"/.test(ayto) === propio.documentos > 0 && /id="t-visitas"/.test(pue) === propio.visitas > 0,
-    `opcionales: «Normativa y documentos» y «Para visitar» salen solo con datos (aquí ${propio.documentos} grupos de documentos y ${propio.visitas} visitas)`);
+  const ayto = leer(RAIZ, 'ayuntamiento.html'), pue = leer(RAIZ, 'pueblo.html'), tel = leer(RAIZ, 'telefonos.html');
+  comprobar(/id="t-documentos"/.test(ayto) === propio.documentos > 0 && /id="t-visitas"/.test(pue) === propio.visitas > 0 && /id="t-instalaciones"/.test(tel) === propio.instalaciones > 0,
+    `opcionales: «Normativa y documentos», «Para visitar» e «Instalaciones municipales» salen solo con datos (aquí ${propio.documentos} grupos de documentos, ${propio.visitas} visitas y ${propio.instalaciones} grupos de instalaciones)`);
   comprobar(/id="t-establecimientos"/.test(pue) === propio.establecimientos > 0 && /id="t-canal"/.test(leer(RAIZ, 'avisos.html')) === propio.canal,
     `opcionales: «Dónde comer y dormir» y «Reciba los avisos en el móvil» salen solo con datos (aquí ${propio.establecimientos} grupos y ${propio.canal ? 'con' : 'sin'} canal de avisos)`);
   const dest = copiar();
@@ -696,6 +696,7 @@ async function opcionales() {
     m.pueblo = { ...(m.pueblo || {}), visitas: O.pueblo.visitas, establecimientos: O.pueblo.establecimientos, establecimientos_fuente: O.pueblo.establecimientos_fuente };
     m.canal_avisos = O.canal_avisos;
     m.documentos = O.documentos;
+    m.instalaciones = O.instalaciones;
     m.tramites.todos = [...m.tramites.todos, ...O.tramites_extra];
     m.servicios = [...m.servicios, ...O.servicios_extra];
     fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(m, null, 2));
@@ -742,13 +743,20 @@ async function opcionales() {
       await page.goto(b + 'telefonos.html', { waitUntil: 'networkidle' });
       const sinTel = await page.evaluate(n => { const f = [...document.querySelectorAll('.listin__fila')].find(x => x.querySelector('.listin__nombre').textContent.startsWith(n)); return f ? { enlace: !!f.querySelector('a'), detalle: (f.querySelector('small') || {}).textContent || '' } : null; }, O.servicios_extra[0].nombre);
       if (!sinTel || sinTel.enlace || !sinTel.detalle.includes(O.servicios_extra[0].horario)) malos.push('servicio sin teléfono: ' + JSON.stringify(sinTel));
+      const ins = await page.evaluate(() => [...document.querySelectorAll('#instalaciones .instalaciones-grupo')].map(g => ({ grupo: g.querySelector('h3').textContent,
+        items: [...g.querySelectorAll('.instalacion')].map(i => ({ titulo: i.querySelector('h4').textContent, datos: i.querySelectorAll('dt').length, tel: !!i.querySelector('a[href^="tel:"]'),
+          web: (i.querySelector('a:not([href^="tel:"]) .sr') || {}).textContent || null })) })));
+      const insEsperadas = O.instalaciones.map(g => ({ grupo: g.grupo, items: g.items.map(i => ({ titulo: i.nombre, datos: ['direccion', 'horario', 'precio'].filter(k => i[k]).length, tel: !!i.telefono,
+        web: i.url ? ': ' + i.nombre + ', se abre otra web' : null })) }));
+      if (JSON.stringify(ins) !== JSON.stringify(insEsperadas)) malos.push(`${w} px: instalaciones ${JSON.stringify(ins)}`);
+      if (CAPTURAS && w === 320) await page.screenshot({ path: captura('opcionales-instalaciones-m.png'), fullPage: true });
       viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => 'telefonos.html: ' + v.id));
       if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) desb.push(w + ' telefonos.html');
       await ctx.close();
     }
     srv.close();
     comprobar(!malos.length && !viol.length && !desb.length,
-      'opcionales con datos de muestra: «Normativa y documentos» (desplegables, cada enlace dice qué abre), «Para visitar» (dirección, horario, entrada y teléfono solo si constan), «Dónde comer y dormir» (grupos, teléfonos y fuente), el canal de avisos, impresos en Word y un servicio del listín sin teléfono; 0 violaciones de axe y sin scroll horizontal a 320 y 1440 px' +
+      'opcionales con datos de muestra: «Normativa y documentos» (desplegables, cada enlace dice qué abre), «Para visitar» (dirección, horario, entrada y teléfono solo si constan), «Dónde comer y dormir» (grupos, teléfonos y fuente), el canal de avisos, impresos en Word, un servicio del listín sin teléfono e «Instalaciones municipales» (grupos de fichas, cada dato solo si consta, el enlace dice qué abre); 0 violaciones de axe y sin scroll horizontal a 320 y 1440 px' +
       (malos.length ? ' → ' + malos.join(' | ') : '') + (viol.length ? ' → axe: ' + [...new Set(viol)].join(', ') : '') + (desb.length ? ' → desborda ' + desb.join(', ') : ''));
   } finally { fs.rmSync(dest, { recursive: true, force: true }); }
 }

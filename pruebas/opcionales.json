@@ -1,5 +1,5 @@
 {
-  "_leeme": "Datos de muestra, sin ningún municipio real, para que scripts/verificar.mjs pruebe las secciones opcionales que el municipio de la plantilla no usa: «Para visitar» (pueblo.visitas), «Normativa y documentos» (documentos), «Dónde comer y dormir» (pueblo.establecimientos), el canal de avisos (canal_avisos), impresos en Word (tramites.todos con tipo «doc») y un servicio del listín sin teléfono. Se mezclan en una copia; nunca se publican.",
+  "_leeme": "Datos de muestra, sin ningún municipio real, para que scripts/verificar.mjs pruebe las secciones opcionales que el municipio de la plantilla no usa: «Para visitar» (pueblo.visitas), «Normativa y documentos» (documentos), «Dónde comer y dormir» (pueblo.establecimientos), el canal de avisos (canal_avisos), impresos en Word (tramites.todos con tipo «doc») y un servicio del listín sin teléfono. Se mezclan en una copia; nunca se publican. También «Instalaciones municipales» (instalaciones).",
   "pueblo": {
     "visitas": [
       {
@@ -101,5 +101,35 @@
         "url": "https://example.org/telegram"
       }
     ]
-  }
+  },
+  "instalaciones": [
+    {
+      "grupo": "Deporte de prueba",
+      "items": [
+        {
+          "nombre": "Piscina de prueba",
+          "texto": "Abre en verano.",
+          "direccion": "C/ Mayor, 2",
+          "horario": "Junio a septiembre, de 12:00 a 20:00",
+          "precio": "Entrada: 2 €",
+          "telefono": "900 000 001"
+        },
+        {
+          "nombre": "Pista de prueba"
+        }
+      ]
+    },
+    {
+      "grupo": "Alojamiento de prueba",
+      "items": [
+        {
+          "nombre": "Albergue de prueba",
+          "precio": "20 € la noche",
+          "nota": "Se reserva en línea.",
+          "url": "https://example.org/reservas",
+          "url_texto": "Reservar"
+        }
+      ]
+    }
+  ]
 }
