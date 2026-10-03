@@ -223,6 +223,10 @@ const tramitesSede = lista.filter(t => enSede(t.href)).length;
 const DESTINO = { pdf: 'Impreso en PDF', doc: 'Impreso en Word', documento: 'Documento en el tablón de la sede' };
 /* iconos del sprite (fuente/_iconos.html): un atajo con un icono que no existe sería un hueco */
 const ICONOS = new Set([...leer('fuente/_iconos.html').matchAll(/id="i-([\w-]+)"/g)].map(m => m[1]));
+/* pictogramas de las cabeceras interiores (fuente/_pictogramas.html): van EN LÍNEA dentro del arco,
+   cada trazo con pathLength="1" para que css/movimiento.css lo dibuje (dentro de un <use> no se puede) */
+const PICTOS = Object.fromEntries([...leer('fuente/_pictogramas.html').matchAll(/<symbol id="p-([\w-]+)" viewBox="0 0 24 24">([\s\S]*?)<\/symbol>/g)]
+  .map(([, id, dentro]) => [id, dentro.trim().replace(/\s*\n\s*/g, '').replace(/<path /g, '<path pathLength="1" ')]));
 const temasDatos = (M.tramites.temas || []).map(tm => ({ ...tm, tramites: tm.tramites.map(conHref) }));
 /* temas en dos columnas que se apilan (sin huecos al abrir un desplegable): la primera mitad a
    la izquierda, así el orden de lectura y de tabulación baja por cada columna */
@@ -576,6 +580,17 @@ const PAGINAS = [
     migas: [{ href: 'noticias.html', texto: 'Noticias' }], descripcion: n.resumen || n.titulo, noticia: n }))
 ];
 for (const n of noticias) if (!/^[a-z0-9-]+$/.test(n.id)) errores.push('noticias.json: id «' + n.id + '» solo con a-z, 0-9 y guiones');
+/* v3 · el pictograma de cada cabecera sin foto: lo elige la plantilla por página, no los datos.
+   Una página interior nueva sin pictograma es un error (sería otra vez el arco vacío) */
+const PICTO_DE = { 'tramites.html': 'tramites', 'ayuntamiento.html': 'ayuntamiento', 'avisos.html': 'megafono', 'noticias.html': 'periodico',
+  'agenda.html': 'calendario', 'telefonos.html': 'telefono', 'pueblo.html': 'pueblo', 'contacto.html': 'sobre',
+  'aviso-legal.html': 'balanza', 'privacidad.html': 'candado', 'cookies.html': 'galleta', 'accesibilidad.html': 'accesibilidad' };
+const pictoDe = p => PICTO_DE[p.archivo] || (p.id === 'noticia' ? 'periodico' : null);
+for (const p of PAGINAS) {
+  if (p.id === 'inicio' || p.id === 'error') continue;
+  if (!pictoDe(p)) errores.push(p.archivo + ': sin pictograma para la cabecera (PICTO_DE en aplicar.mjs)');
+  else if (!PICTOS[pictoDe(p)]) errores.push(p.archivo + ': no hay pictograma «' + pictoDe(p) + '» en fuente/_pictogramas.html');
+}
 
 if (errores.length && !FORZAR) {
   console.error('\n✗ No se escribe nada. Arregla esto:\n  - ' + errores.join('\n  - ') + '\n');
@@ -651,6 +666,9 @@ for (const p of PAGINAS) {
   const pagina = { ...p, titulo_doc: p.titulo_doc || `${p.titulo} · Ayuntamiento de ${N}`, entradilla: p.entradilla || null, migas: p.migas || [], cortina: !!p.cortina, es_inicio: !!p.es_inicio,
     /* la 404 ya lleva su propio arco en el cuerpo: una puerta por página */
     cabecera: cabeceras[p.id] || null, cabeza_grande: p.id === 'pueblo' && !!cabeceras[p.id], cabeza_arco: p.id !== 'error' && !cabeceras[p.id] };
+  /* v3 · dentro del arco de línea, el pictograma de la página (con foto, manda la foto) */
+  pagina.picto = pagina.cabeza_arco && pictoDe(p) ? pictoDe(p) : null;
+  pagina.pictograma = pagina.picto ? PICTOS[pagina.picto] : null;
   const datos = {
     ...comun, pagina, noticia: p.noticia || null,
     nav: NAV.map(([id, texto]) => ({ id, texto, href: id + '.html', actual: id === p.id })),

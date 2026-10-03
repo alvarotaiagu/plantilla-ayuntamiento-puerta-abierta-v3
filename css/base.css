@@ -688,7 +688,16 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas: "migas migas" "titulo titulo" "entradilla puerta";
 }
-.cabeza-pagina__puerta--linea { width: 3.25rem; align-self: end; justify-self: end; margin-bottom: calc(-1 * var(--cabeza-pie) - 1px); }
+.cabeza-pagina__puerta--linea { width: 4.25rem; align-self: end; justify-self: end; margin-bottom: calc(-1 * var(--cabeza-pie) - 1px); }
+/* v3 · el arco ya no está vacío: lleva el pictograma de la página (fuente/_pictogramas.html), un
+   dibujo de línea en la marca con el trazo de los iconos. Va en la parte recta de la puerta,
+   centrado, y el grosor se da en unidades de la rejilla de 24 para que salga ≈ 1,6-2 px */
+.cabeza-pagina__arco--linea { position: relative; }
+.cabeza-pagina__picto {
+  position: absolute; left: 19%; top: 37%; width: 62%; height: auto; aspect-ratio: 1; overflow: visible;
+  fill: none; stroke: var(--marca); stroke-width: 1.05; stroke-linecap: round; stroke-linejoin: round;
+}
+@media (min-width: 48em) { .cabeza-pagina__picto { stroke-width: .72; } }
 .cabeza-pagina__puerta--linea .cabeza-pagina__umbral { height: 4px; margin-inline: -14%; }
 @media (min-width: 48em) {
   .cabeza-pagina--arco .cabeza-pagina__rejilla {

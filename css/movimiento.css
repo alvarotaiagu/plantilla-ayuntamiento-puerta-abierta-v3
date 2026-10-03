@@ -42,6 +42,29 @@
   ::view-transition-old(root) { animation: mov-funde-sale .16s ease-in both; }
   ::view-transition-new(root) { animation: mov-entra-pagina .34s var(--curva-salida) .06s both; }
 
+  /* v3 · M1 «la puerta se queda, cambia lo que hay dentro». El arco de la cabecera interior (con su
+     umbral) tiene su propio grupo y no se anima: entre páginas interiores se queda donde está y no
+     funde con el resto. Lo que cambia es el pictograma de dentro, que el nuevo documento TRAZA al
+     cargar (la instantánea nueva es viva, así que el trazado se ve durante la transición). Sin View
+     Transitions (Firefox) el trazado ocurre igual al cargar. Reposo = trazo entero y sin dasharray:
+     el «desde» solo existe mientras corre (fill backwards). Total ≤ 600 ms. */
+  .cabeza-pagina__puerta { view-transition-name: puerta-cabecera; }
+  ::view-transition-group(puerta-cabecera) { animation: none; }
+  ::view-transition-old(puerta-cabecera) { display: none; }
+  ::view-transition-new(puerta-cabecera) { animation: none; }
+  .cabeza-pagina__picto > path {
+    animation: mov-picto-traza .42s var(--curva-salida) backwards;
+    animation-delay: calc(var(--mov-picto, 0) * 30ms + 60ms);
+  }
+  .cabeza-pagina__picto > path:nth-child(2) { --mov-picto: 1; }
+  .cabeza-pagina__picto > path:nth-child(3) { --mov-picto: 2; }
+  .cabeza-pagina__picto > path:nth-child(4) { --mov-picto: 3; }
+  .cabeza-pagina__picto > path:nth-child(n+5) { --mov-picto: 4; }
+  @keyframes mov-picto-traza {
+    from { stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+    to { stroke-dasharray: 1 1; stroke-dashoffset: 0; }
+  }
+
   .noticia__foto, .articulo__foto, .linea__foto { view-transition-class: foto-noticia; }
   ::view-transition-group(*.foto-noticia) { animation-duration: .42s; animation-timing-function: var(--curva-salida); }
   ::view-transition-old(*.foto-noticia),

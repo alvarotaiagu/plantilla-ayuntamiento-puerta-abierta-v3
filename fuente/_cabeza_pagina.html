@@ -14,6 +14,6 @@
       <span class="cabeza-pagina__umbral" aria-hidden="true"></span>
       {{#credito}}<figcaption class="credito">{{credito}}</figcaption>{{/credito}}
     </figure>{{/pagina.cabecera}}
-    {{#pagina.cabeza_arco}}<div class="cabeza-pagina__puerta cabeza-pagina__puerta--linea" aria-hidden="true"><span class="cabeza-pagina__arco cabeza-pagina__arco--linea"></span><span class="cabeza-pagina__umbral"></span></div>{{/pagina.cabeza_arco}}
+    {{#pagina.cabeza_arco}}<div class="cabeza-pagina__puerta cabeza-pagina__puerta--linea" aria-hidden="true"><span class="cabeza-pagina__arco cabeza-pagina__arco--linea">{{#pagina.pictograma}}<svg class="cabeza-pagina__picto" viewBox="0 0 24 24" focusable="false" data-picto="{{pagina.picto}}">{{{pagina.pictograma}}}</svg>{{/pagina.pictograma}}</span><span class="cabeza-pagina__umbral"></span></div>{{/pagina.cabeza_arco}}
   </div>
 </div>
