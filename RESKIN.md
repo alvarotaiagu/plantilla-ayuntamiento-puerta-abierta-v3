@@ -19,7 +19,8 @@ Prueba real: `pruebas/segura-de-leon/` es Segura de León completo (otro escudo,
 cp -r plantilla-ayuntamiento-puerta-abierta-web <municipio>-ayuntamiento-web
 cd <municipio>-ayuntamiento-web
 rm -rf .git screenshots _scratch && git init
-rm -f marca/perfil.* marca/plano.*    # el perfil y el plano son del pueblo de origen (ver §6 bis)
+rm -f marca/perfil.* marca/plano.* marca/termino.*    # perfil, plano y mapa del término son del pueblo de origen (§6 bis y §6 ter)
+rm -f contenido/pueblo.*.json media/originales/*      # las traducciones de «El pueblo» y los originales de las fotos, también (§6 quater y §6)
 npm install                      # Playwright y axe-core, solo para los scripts
 ```
 
@@ -226,6 +227,52 @@ node scripts/plano.mjs --radio 170           # metros del Ayuntamiento al borde 
 - El User-Agent es el del proyecto, sin datos de nadie. Si Overpass está ocupado, prueba otros dos servidores. Con `--guardar copia.json` y `--desde copia.json` se redibuja sin red.
 - Se ejecuta una vez al montar la web (o si cambian las calles). El plano enlaza a «Contacto», donde está el mapa de Google, que solo se carga si se pide.
 
+### El plano se dibuja (v3b)
+
+Al asomar, el plano del pie se traza una vez **desde el Ayuntamiento hacia fuera** (600 ms en total). No hay que hacer nada: `aplicar.mjs` parte cada tramo de calle de `marca/plano.svg` en su propio trazo con `pathLength="1"`, empezando por su punta más cercana al centro del lienzo (que `plano.mjs` pone en el Ayuntamiento), y le da su distancia en `--plano-d` (0 el más cercano, 1 el más lejano). Con movimiento reducido, sin JavaScript o sin soporte, el plano está entero desde el principio. Un `plano.svg` dibujado a mano vale si el Ayuntamiento está en el centro del `viewBox`.
+
+## 6 ter. El mapa del término en «El pueblo» (v3b)
+
+Un mapa propio del término municipal, con los lugares de «Qué ver» y del patrimonio que estén en OpenStreetMap. Como el plano, se baja **al montar la web**: la página no pide nada a nadie.
+
+```bash
+node scripts/termino.mjs                                    # busca el término (admin_level=8) por el nombre de municipio.json
+node scripts/termino.mjs --relacion 344567                  # si hay dos con el mismo nombre, el id de la relación
+node scripts/termino.mjs --lugar "Ermita del Cristo Viejo=node/123"   # fija un lugar a mano (repetible)
+node scripts/termino.mjs --guardar copia.json               # guarda lo que devuelve Overpass
+node scripts/termino.mjs --desde copia.json                 # sin red: redibuja desde la copia
+node scripts/aplicar.mjs
+```
+
+- Escribe `marca/termino.svg` (el contorno, el casco, las carreteras con su matrícula, las rutas que haya como relaciones `route=hiking/foot/bicycle` y una escala; sin colores, como el plano) y `marca/termino.json` (la fuente, la fecha, los ids de OSM de todo lo usado y, por cada lugar encontrado, su elemento y su posición).
+- **Los lugares se buscan por nombre** entre los de `pueblo.lugares` y `pueblo.patrimonio`, y **solo dentro del término** (así son los de este pueblo, no los de otro con el mismo nombre). Vale si todas las palabras de nuestro nombre están en el de OSM (sin contar «de», «la», «san»…), o al revés si el de OSM no es solo genérico («Ermita», «Pozo»). Si un elemento encaja con dos lugares («Ermita del Cristo» en OSM, con dos ermitas del Cristo en el pueblo) o un lugar con dos elementos, **no se pone** y el script lo dice: búscalo en openstreetmap.org y fíjalo con `--lugar`. Los fijados quedan en `termino.json` (`"fijado": true`) y se respetan la próxima vez.
+- En la página: un punto numerado por lugar que enlaza a su ficha (`#lugar-<nombre>`: la del carril «Qué ver» o la fila del patrimonio, que ahora llevan ancla), la misma lista en texto debajo (para el teclado y el lector de pantalla: el dibujo es `aria-hidden`), la leyenda en palabras (límite discontinuo, casco sombreado, carreteras gruesas, rutas de puntos; no solo color), la escala y «© colaboradores de OpenStreetMap» con su enlace. **ODbL**: `aplicar.mjs` se niega si `termino.json` no trae la atribución, y si el mapa es de otro municipio.
+- **Sin los dos archivos, la sección no sale.** Un lugar que ya no está en `municipio.json` pierde su punto (con aviso).
+- `pruebas/termino/muestra-overpass.json` es una muestra **sintética** (contorno, carreteras «XX-1» y posiciones inventados, ids falsos) solo para `verificar.mjs`, que la aplica en una copia. Nunca la pases a `marca/` del pueblo de verdad: sale con la etiqueta «Ejemplo».
+- User-Agent del proyecto, sin datos de nadie; si Overpass está ocupado, prueba otros dos servidores. Si en tu red no se llega a Overpass, ejecuta el script en otra máquina y sube `marca/termino.*`.
+
+## 6 quater. «El pueblo» en otros idiomas (v3b)
+
+Solo la página turística. Por cada `contenido/pueblo.<lang>.json` completo sale `pueblo-<lang>.html` (Ribera: `en` y `pt`), con su `lang`, los `hreflang` entre todas (y `x-default` a la de castellano) y un selector de idioma visible **solo en esas páginas**. La cabecera, el menú y el pie siguen en castellano (marcados `lang="es"`), con el aviso corto del idioma («The rest of the site is in Spanish.»).
+
+Copia `contenido/pueblo.en.json` de Ribera y cambia los textos. Lo que lleva:
+
+| Clave | Qué |
+|---|---|
+| `nombre_idioma`, `og_locale` | «English», «en_GB» |
+| `pagina` | `titulo`, `titulo_doc`, `entradilla` (si hay) y `descripcion` |
+| `cabecera_alt` | el `alt` de la foto grande, si la tiene |
+| `ui` | las etiquetas de la página (los títulos de sección, la leyenda del mapa, «Inicio», «En esta página»…). La lista completa, con su texto en castellano, está en `T_ES` de `aplicar.mjs`; `idiomas` y `aviso_idioma` son obligatorias |
+| `pueblo.historia`, `platos`, `dulces`, `bebidas` | listas **con el mismo número de elementos** que en `municipio.json` |
+| `pueblo.lugares`, `patrimonio`, `fiestas`, `personajes`, `rutas` | objetos **por el nombre en castellano** de `municipio.json`: `{ "texto"/"detalle"/"cuando"/"resumen": …, "nombre": … (solo si cambia), "alt": … (los lugares con foto) }` |
+| `pueblo.grupos`, `placa`, `gastronomia_alt` | los títulos de los grupos del patrimonio, la placa (`titulo`, `pie`, `texto`; las líneas de la placa se quedan en castellano, con `lang="es"`) y el `alt` de la foto de la gastronomía |
+| `creditos` | por foto: `titulo` y, si hace falta, `autor` y `nota` traducidos |
+
+- **No se traducen** los nombres propios ni los topónimos (Oppidum de Hornachuelos, Calle Larga, Cañada Real Leonesa); un plato o una fiesta con nombre propio se deja y se explica entre paréntesis.
+- **Si falta una traducción** de algo que sale en la página, esa página no se genera y `aplicar.mjs` dice qué falta. Un lugar nuevo en castellano deja la traducción fuera hasta que se traduzca: no rompe la web.
+- «Para visitar» y «Dónde comer y dormir» (horarios, precios y negocios) no salen en otros idiomas.
+- Sin ningún `contenido/pueblo.<lang>.json`, ni páginas traducidas, ni selector, ni `hreflang`.
+
 ### La hoja de teléfonos
 
 `telefonos.html` tiene «Imprimir los teléfonos» (solo con JavaScript) y `css/imprimir.css` la deja en **una hoja A4**: escudo y «Teléfonos útiles de …», urgencias arriba y en grande, el resto en dos columnas, la fecha de los datos (`municipio.json → fecha_datos`), la de impresión y la web (`url`). `verificar.mjs` imprime el PDF y falla si pasa de una hoja: con un listín mucho más largo que el de Ribera (17 números), reduce los tamaños de `css/imprimir.css` o quita detalles del listín.
@@ -287,5 +334,5 @@ Mira las capturas, sobre todo estas:
 Avisa antes, porque son horas y no minutos:
 - Quieren otra estructura: sede propia, cita previa con agenda, área de usuario o blog.
 - El municipio tiene **pedanías** con servicios propios.
-- Necesitan otro idioma, aparte del castellano.
+- Necesitan otro idioma, aparte del castellano, en algo más que «El pueblo» (§6 quater).
 - El escudo solo existe en una foto mala: hay que redibujarlo (o pedirles el vectorial) antes de sacar colores.

@@ -82,6 +82,7 @@ El RD 1112/2018 obliga a cumplir WCAG 2.1 AA. Por eso esta plantilla **rompe a p
 | `agenda.html` | Lo que viene (con las fiestas de fecha fija y los plenos), lo que pasó y el año en fiestas. Cada evento que viene lleva «Añadir a mi calendario (archivo .ics)»; un pleno, su convocatoria o, ya celebrado, su grabación |
 | `telefonos.html` | El listín completo, con el 112 el primero y el «abierto ahora» de la biblioteca y el centro de día. «Imprimir los teléfonos» (con JavaScript) da una hoja A4 para la nevera: escudo, urgencias en grande, los números en dos columnas, fechas y la web |
 | `pueblo.html` | Cabecera grande con la foto de las dos torres en arco (y su crédito), carril de lugares con fotos en arco, la placa de la casa natal de Meléndez Valdés, historia, patrimonio en tres grupos, fiestas, gastronomía con foto, personajes, rutas y créditos de las fotos |
+| `pueblo-en.html`, `pueblo-pt.html` (v3b) | «El pueblo» en inglés y en portugués, desde `contenido/pueblo.<lang>.json`: selector de idioma solo en estas tres páginas, `hreflang` entre ellas y el aviso «The rest of the site is in Spanish». Sin traducción completa, no se generan (RESKIN.md §6 quater) |
 | `contacto.html` | Dirección, horario, mapa bajo clic, instancia general y quejas (en la sede), y datos de la entidad |
 | `aviso-legal.html`, `privacidad.html`, `cookies.html`, `accesibilidad.html`, `404.html` | Lo legal y la página de error |
 
@@ -100,6 +101,9 @@ scripts/                aplicar, escudo, marca-desde-escudo, fuentes, medir-letr
 pruebas/segura-de-leon/ el reskin de prueba (otro municipio real)
 marca/perfil.*          el perfil del pueblo (perfil.json → scripts/perfil.mjs → perfil.svg)
 marca/plano.*           el plano del pie (scripts/plano.mjs, desde OpenStreetMap)
+marca/termino.*         el mapa del término en «El pueblo» (scripts/termino.mjs, desde OpenStreetMap; sin él, no sale)
+media/originales/       las fotos antes de igualarlas (scripts/fotos-igualar.py, el mismo color para todas)
+contenido/pueblo.*.json «El pueblo» traducido (en, pt)
 css/imprimir.css        la web en papel y la hoja de teléfonos para la nevera
 ```
 
