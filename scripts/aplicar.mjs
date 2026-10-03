@@ -386,7 +386,8 @@ const quienAyto = [
 
 /* ───────────────────────── contenido ───────────────────────── */
 const avisosOrden = C.avisos.filter(a => !a.oculto).slice().sort((a, b) => b.fecha.localeCompare(a.fecha))
-  .map(a => ({ ...a, fecha_texto: fechaTexto(a.fecha), urgente: Vivo.gravedad(a) === 'urgente', ejemplo: !!a.ejemplo, enlace: a.enlace || null }));
+  .map(a => ({ ...a, fecha_texto: fechaTexto(a.fecha), urgente: Vivo.gravedad(a) === 'urgente', gravedad: Vivo.gravedad(a), programado: Vivo.gravedad(a) === 'programado', ejemplo: !!a.ejemplo, enlace: a.enlace || null,
+    plazo_inicio: a.plazo_inicio || null, plazo_fin: a.plazo_fin || null, plazo_html: null }));
 /* gravedad de los avisos: «urgente» (rojo), «programado» o «informativo» (ámbar; el de por defecto).
    En la franja de arriba, en móvil, el título tiene que caber en dos líneas: si es largo, `titulo_corto` */
 for (const a of C.avisos) {
@@ -470,19 +471,29 @@ const recogida = (M.recogida || []).map(x => {
 const canalAvisos = M.canal_avisos && M.canal_avisos.url ? { nombre: M.canal_avisos.nombre, url: M.canal_avisos.url, texto: M.canal_avisos.texto || null,
   pasos: (M.canal_avisos.pasos || []).length ? M.canal_avisos.pasos : null, otros: M.canal_avisos.otros || [] } : null;
 if (canalAvisos && !canalAvisos.nombre) errores.push('canal_avisos: con «url» va «nombre»');
+/* v3b · plazos (avisos y anuncios del tablón): `plazo_inicio` y `plazo_fin` opcionales, AAAA-MM-DD.
+   Solo se ponen si la fuente da la fecha; si no consta, con `plazo_ejemplo: true` (sale «Ejemplo»).
+   Van a null explícito si faltan: el Mustache y vivo.js no los buscan fuera */
+const conPlazo = x => {
+  const ini = x.plazo_inicio || null, fin = x.plazo_fin || null, quien = x.id || x.expediente || x.titulo;
+  if ((ini && !ISO.test(ini)) || (fin && !ISO.test(fin))) errores.push('plazo de «' + quien + '»: «plazo_inicio» y «plazo_fin» como AAAA-MM-DD');
+  if (ini && fin && ini > fin) errores.push('plazo de «' + quien + '»: «plazo_inicio» va antes que «plazo_fin»');
+  if (x.plazo_ejemplo && !ini && !fin) errores.push('plazo de «' + quien + '»: «plazo_ejemplo» sin plazo');
+  return { plazo_inicio: ini, plazo_fin: fin, plazo_ejemplo: !!(x.plazo_ejemplo && (ini || fin)) };
+};
 /* cada evento con su .ics (lo escribe más abajo; los de la hoja los genera el navegador) */
 const conIcs = e => ({ ...e, ics: 'ics/' + Vivo.archivoIcs(e) });
 
 const D = {
   slug: marcaConf.slug, nombre: M.nombre, nombre_corto: M.nombre_corto, zona: 'Europe/Madrid',
   horario: { texto: M.horario.texto, tramos: M.horario.tramos || [], ejemplo: !!M.horario.ejemplo },
-  avisos: C.avisos.map(a => ({ id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, titulo_corto: a.titulo_corto || null, urgente: !!a.urgente, gravedad: a.gravedad ? String(a.gravedad).toLowerCase().trim() : null, caduca: a.caduca || null, ejemplo: !!a.ejemplo, oculto: !!a.oculto })),
+  avisos: C.avisos.map(a => ({ id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, titulo_corto: a.titulo_corto || null, urgente: !!a.urgente, gravedad: a.gravedad ? String(a.gravedad).toLowerCase().trim() : null, caduca: a.caduca || null, ejemplo: !!a.ejemplo, oculto: !!a.oculto, ...conPlazo(a) })),
   agenda: [...C.agenda.map(e => ({ id: e.id, fecha: e.fecha, hora: e.hora || null, hora_fin: e.hora_fin || null, titulo: e.titulo, lugar: e.lugar || null, nota: e.nota || null, ejemplo: !!e.ejemplo, oculto: !!e.oculto,
     tipo: e.tipo ? String(e.tipo).toLowerCase() : null, convocatoria: e.convocatoria || null, convocatoria_sr: e.convocatoria ? srDe(e.convocatoria) : null,
     grabacion: e.grabacion || null, grabacion_sr: e.grabacion ? srDe(e.grabacion) : null })), ...agendaFiestas, ...plenosAgenda].map(conIcs),
   farmacias, tiempo, recogida, canal: canalAvisos ? { nombre: canalAvisos.nombre, url: canalAvisos.url, pasos: canalAvisos.pasos } : null, web: M.url ? M.url.replace(/\/?$/, '/') : null,
   noticias: noticias.map(n => ({ id: n.id, fecha: n.fecha, titulo: n.titulo, resumen: n.resumen, imagen: n.imagen, imagen_alt: n.imagen_alt, ejemplo: n.ejemplo })),
-  tablon: { actualizado: C.tablon.actualizado || null, entradas: (C.tablon.entradas || []).map(e => ({ fecha: e.fecha, tema: e.tema, titulo: e.titulo, titulo_claro: e.titulo_claro || '', url: e.url, oculto: !!e.oculto })) },
+  tablon: { actualizado: C.tablon.actualizado || null, entradas: (C.tablon.entradas || []).map(e => ({ fecha: e.fecha, tema: e.tema, titulo: e.titulo, titulo_claro: e.titulo_claro || '', url: e.url, oculto: !!e.oculto, expediente: e.expediente || null, ...conPlazo(e) })) },
   fiestas, servicios: serviciosVivos, tramites_sede: tramitesSede,
   rutas: { tramites: 'tramites.html', avisos: 'avisos.html', agenda: 'agenda.html', noticia: 'noticia-{id}.html', media: 'media/' },
   hoja: M.hoja && M.hoja.id ? M.hoja : null,
@@ -494,8 +505,11 @@ for (const e of D.tablon.entradas) if (!enSede(e.url)) errores.push('tablon.json
 const pintar = (b, op) => Vivo.pintar(b, D, ahora, op);
 const vivo = {
   franja: pintar('franja'), hoy: pintar('hoy'), tablon_portada: pintar('tablon', { limite: 6 }), tablon_todo: pintar('tablon'),
-  linea: pintar('linea'), anio: pintar('anio'), lado: pintar('lado'), agenda: pintar('agenda'), estado_ayto: pintar('servicio', { clave: 'ayuntamiento' })
+  linea: pintar('linea'), anio: pintar('anio'), lado: pintar('lado'), agenda: pintar('agenda'), estado_ayto: pintar('servicio', { clave: 'ayuntamiento' }),
+  plazos: pintar('plazos')
 };
+/* v3b · el chip del plazo de cada aviso en «Avisos» (lo repinta vivo.js con la fecha real) */
+for (const a of avisosOrden) a.plazo_html = a.plazo_inicio || a.plazo_fin ? pintar('plazo', { clave: a.id }) : null;
 gruposListin.forEach(g => g.items.forEach(i => { if (i.clave) i.estado = pintar('servicio', { clave: i.clave }); }));
 
 /* ───────────────────────── el pueblo y las fotos ───────────────────────── */

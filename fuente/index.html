@@ -71,6 +71,15 @@
     </div>
   </section>
 
+  <!-- v3b · «Plazos abiertos»: los avisos y anuncios con el plazo abierto, lo que cierra antes
+       primero (vivo.js → plazos). Sin ninguno, la sección no sale (hidden) ni deja hueco; main.js
+       la enseña o la esconde al repintar con la fecha real -->
+  <section class="plazos-tira" aria-labelledby="t-plazos"{{^vivo.plazos}} hidden{{/vivo.plazos}}>
+    <div class="contenedor">
+      <div class="plazos" data-vivo="plazos">{{{vivo.plazos}}}</div>
+    </div>
+  </section>
+
   <section class="seccion" aria-labelledby="t-tramites">
     <div class="contenedor">
       <div class="seccion__cabeza">

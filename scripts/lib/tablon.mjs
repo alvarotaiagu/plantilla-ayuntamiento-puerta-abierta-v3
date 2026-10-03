@@ -152,7 +152,11 @@ export function fusionar(nuevas, previas) {
       tema: p.tema_manual ? p.tema : temaDe(n),
       tema_manual: !!p.tema_manual,
       titulo_claro: p.titulo_claro || '',
-      oculto: !!p.oculto
+      oculto: !!p.oculto,
+      /* v3b · el plazo lo pone una persona leyendo el anuncio: se conserva al refrescar */
+      ...(p.plazo_inicio ? { plazo_inicio: p.plazo_inicio } : {}),
+      ...(p.plazo_fin ? { plazo_fin: p.plazo_fin } : {}),
+      ...(p.plazo_ejemplo ? { plazo_ejemplo: true } : {})
     };
   });
 }

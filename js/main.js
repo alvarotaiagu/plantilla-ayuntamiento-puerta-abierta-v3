@@ -29,6 +29,8 @@
       if ((el.__pintado != null ? el.__pintado : el.innerHTML) !== nuevo) el.innerHTML = nuevo;
       el.__pintado = nuevo;
       if (bloque === 'franja') el.hidden = !nuevo;
+      /* v3b · «Plazos abiertos»: sin ninguno abierto, la sección entera fuera (sin hueco) */
+      if (bloque === 'plazos' && el.closest('section')) el.closest('section').hidden = !nuevo;
       if (bloque === 'tablon') montarTablon(el);
       if (bloque === 'agenda') montarCalendario(el);
     });

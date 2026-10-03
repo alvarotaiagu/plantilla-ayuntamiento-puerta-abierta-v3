@@ -13,8 +13,10 @@
   <div class="contenedor">
     <h2 class="seccion__titulo" id="t-avisos">Avisos del Ayuntamiento</h2>
     <ol class="avisos">
-      {{#avisos}}<li class="aviso{{#urgente}} aviso--urgente{{/urgente}}" id="aviso-{{id}}"{{#ejemplo}} data-dato-ejemplo="aviso:{{id}}"{{/ejemplo}}>
-        <p class="aviso__meta"><span class="chip">{{tema}}</span><time datetime="{{fecha}}">{{fecha_texto}}</time>{{#urgente}}<span class="chip chip--urgente">Urgente</span>{{/urgente}}{{#ejemplo}}<span class="ejemplo">Ejemplo</span>{{/ejemplo}}</p>
+      <!-- v3b: la franja de la izquierda con la gravedad (rojo, solo lo urgente) y el chip del plazo,
+           que vivo.js repinta con la fecha real (data-vivo="plazo") -->
+      {{#avisos}}<li class="aviso aviso--{{gravedad}}{{#urgente}} aviso--urgente{{/urgente}}" id="aviso-{{id}}"{{#ejemplo}} data-dato-ejemplo="aviso:{{id}}"{{/ejemplo}}>
+        <p class="aviso__meta"><span class="chip">{{tema}}</span><time datetime="{{fecha}}">{{fecha_texto}}</time>{{#urgente}}<span class="chip chip--urgente">Urgente</span>{{/urgente}}{{#programado}}<span class="chip chip--programado">Programado</span>{{/programado}}{{#plazo_html}}<span class="aviso__plazo" data-vivo="plazo" data-clave="{{id}}">{{{plazo_html}}}</span>{{/plazo_html}}{{#ejemplo}}<span class="ejemplo">Ejemplo</span>{{/ejemplo}}</p>
         <h3 class="aviso__titulo">{{titulo}}</h3>
         <p class="aviso__texto">{{texto}}</p>
         {{#enlace}}<p><a href="{{enlace}}">Más información<span class="sr"> sobre {{titulo}}</span></a></p>{{/enlace}}

@@ -14,7 +14,8 @@
      subsección. --desde admite una copia en HTML (vista antigua) o en JSON (la
      respuesta AJAX de la vista nueva), o una carpeta con varias.
    - Excluye lo que lleva datos personales (lib/tablon.mjs → motivoPersonal).
-   - Conserva lo que haya puesto una persona: titulo_claro, tema, oculto.
+   - Conserva lo que haya puesto una persona: titulo_claro, tema, oculto y el plazo
+     (plazo_inicio, plazo_fin, plazo_ejemplo).
    - Fallo silencioso: si la sede no responde o cambia el marcado, NO toca el
      tablon.json que hay y sale con código 0. La web sigue con lo último bueno.
 
@@ -60,7 +61,7 @@ function procesar(crudas, origen) {
   excluidas.length = 0; excluidas.push(...fuera);
   const entradas = fusionar(quedan, previo.entradas);
   return {
-    _leeme: 'GENERADO por scripts/tablon.mjs. Se puede editar a mano titulo_claro (título en lenguaje claro), tema (+ "tema_manual": true) y oculto. Lo demás se pisa al refrescar.',
+    _leeme: 'GENERADO por scripts/tablon.mjs. Se puede editar a mano titulo_claro (título en lenguaje claro), tema (+ "tema_manual": true), oculto y el plazo (plazo_inicio, plazo_fin: AAAA-MM-DD; plazo_ejemplo: true si la fecha no consta en el anuncio). Lo demás se pisa al refrescar.',
     fuente: origen,
     actualizado: new Date().toISOString(),
     excluidas: excluidas.length,
