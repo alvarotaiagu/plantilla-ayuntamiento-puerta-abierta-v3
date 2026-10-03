@@ -413,9 +413,11 @@
         else a.removeAttribute('aria-current');
       });
     }
+    /* la franja de arriba (pasar de sección) y la pantalla entera (la última, que no llega arriba) */
     var io = new IntersectionObserver(marcar, { rootMargin: '0px 0px -70% 0px', threshold: 0 });
-    titulos.forEach(function (t) { io.observe(t); });
-    if (pie) new IntersectionObserver(function (e) { pieVisible = e[e.length - 1].isIntersecting; marcar(); }, { threshold: 0 }).observe(pie);
+    var io2 = new IntersectionObserver(marcar, { threshold: [0, 1] });
+    titulos.forEach(function (t) { io.observe(t); io2.observe(t); });
+    if (pie) new IntersectionObserver(function (e) { pieVisible = e[e.length - 1].isIntersecting; marcar(); }, { threshold: [0, .25, .5, .75, 1] }).observe(pie);
     marcar();
   })();
 

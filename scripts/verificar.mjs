@@ -179,7 +179,7 @@ async function desborde() {
       const r = await page.evaluate(() => {
         const W = document.documentElement.clientWidth, fuera = [];
         for (const el of document.querySelectorAll('body *')) {
-          if (el.closest('.carril, .tabla-envoltorio, .sprite, dialog, .sr, .cortina')) continue;
+          if (el.closest('.carril, .tabla-envoltorio, .sprite, dialog, .sr, .cortina, .az__lista')) continue;   /* .az__lista: la fila A–Z del móvil se desplaza de lado a propósito (v3) */
           const b = el.getBoundingClientRect();
           if (b.width && b.right > W + 0.5) fuera.push(el.tagName.toLowerCase() + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : ''));
         }
@@ -1357,12 +1357,404 @@ async function primeraPantalla() {
   comprobar(temas.total > 0 && temas.abiertos === 0, `temas de trámites: los ${temas.total} desplegables, cerrados de entrada`);
 }
 
+/* ═════════════ v3 · interiores ═════════════
+   Pictograma dentro del arco de cada cabecera (o la foto) y su trazado; la puerta que se queda
+   entre páginas; noticias sin huecos con 0, 1 y todas las fotos; el calendario de la agenda; el
+   índice A–Z de los trámites; el índice «En esta página» de las páginas largas; y el buscador con
+   lo encontrado marcado. Sirve también tras un reskin: lo espera todo de municipio.json. */
+async function v3Interiores() {
+  const sinTildes = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  /* ── 1. cada cabecera interior: pictograma dentro del arco, o la foto de `cabeceras`; nunca vacía ── */
+  {
+    const conf = M.cabeceras || {}, malos = [];
+    const idDe = p => ({ 'aviso-legal.html': 'legal', 'privacidad.html': 'legal', 'cookies.html': 'legal', 'accesibilidad.html': 'legal' })[p] || (p.startsWith('noticia-') ? 'noticia' : p.replace('.html', ''));
+    const pictos = new Set();
+    for (const [w, h] of [[1440, 900], [390, 844]]) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
+      for (const p of INTERIORES.filter(x => x !== '404.html')) {
+        await ir(page, p);
+        const c = conf[idDe(p)], debeFoto = !!(c && fs.existsSync(path.join(RAIZ, 'media', (typeof c === 'string' ? c : c.archivo) + '.jpg')));
+        const r = await page.evaluate(() => {
+          const puerta = document.querySelector('main > .cabeza-pagina .cabeza-pagina__puerta');
+          if (!puerta) return { puerta: false };
+          const arco = puerta.querySelector('.cabeza-pagina__arco'), a = arco.getBoundingClientRect();
+          const svg = arco.querySelector('svg.cabeza-pagina__picto'), img = arco.querySelector('img');
+          const res = { puerta: true, foto: !!img && img.complete && img.naturalWidth > 0, picto: svg ? svg.getAttribute('data-picto') : null };
+          if (svg) {
+            const s = svg.getBoundingClientRect(), trazos = [...svg.children];
+            res.trazos = trazos.length;
+            res.dentro = s.width > a.width * 0.4 && s.left >= a.left && s.right <= a.right && s.top >= a.top && s.bottom <= a.bottom + 1;
+            res.centrado = Math.abs((s.left + s.right) / 2 - (a.left + a.right) / 2) < 2;
+            res.pathLength = trazos.every(t => t.tagName === 'path' && t.getAttribute('pathLength') === '1');
+            res.visibles = trazos.every(t => { const b = t.getBoundingClientRect(); return b.width + b.height > 1; });
+            res.color = getComputedStyle(svg).stroke === getComputedStyle(arco).borderTopColor;
+            res.grosor = parseFloat(getComputedStyle(svg).strokeWidth) * s.width / 24;
+            res.reposo = trazos.every(t => getComputedStyle(t).strokeDasharray === 'none');
+          }
+          return res;
+        });
+        if (!r.puerta) { malos.push(`${p} a ${w}: sin puerta`); continue; }
+        if (debeFoto) { if (!r.foto || r.picto) malos.push(`${p} a ${w}: tenía que llevar la foto de «cabeceras»`); continue; }
+        if (!r.picto) { malos.push(`${p} a ${w}: arco vacío`); continue; }
+        pictos.add(p + ':' + r.picto);
+        if (!(r.trazos >= 2 && r.dentro && r.centrado && r.pathLength && r.visibles && r.color && r.reposo)) malos.push(`${p} a ${w}: pictograma ${JSON.stringify(r)}`);
+        if (r.grosor < 1.2 || r.grosor > 2.6) malos.push(`${p} a ${w}: trazo de ${r.grosor.toFixed(2)} px (los iconos van a ≈ 1,7)`);
+      }
+      await ctx.close();
+    }
+    const porPagina = [...pictos].map(x => x.split(':')[1]);
+    const distintos = new Set(INTERIORES.filter(p => !p.startsWith('noticia-') && p !== '404.html').map(p => [...pictos].find(x => x.startsWith(p + ':'))).filter(Boolean).map(x => x.split(':')[1]));
+    comprobar(!malos.length && porPagina.length > 0, `v3 · cabeceras interiores: cada una lleva su pictograma de línea dentro del arco (${distintos.size} distintos: ${[...distintos].join(', ')}), centrado, en la marca, con trazo de iconos y entero en reposo, o la foto si «cabeceras» la da; ningún arco vacío, a 1440 y 390 px` + (malos.length ? ' → ' + malos.slice(0, 5).join(' | ') : ''));
+  }
+
+  /* ── 2. el pictograma se traza al cargar (≤ 600 ms, de verdad poco a poco) y acaba entero; con
+     movimiento reducido, quieto. La puerta tiene su grupo de View Transition y se queda ── */
+  {
+    const muestreo = () => {
+      window.__trazo = []; window.__finTrazo = 0;
+      document.addEventListener('DOMContentLoaded', () => {
+        const ps = [...document.querySelectorAll('.cabeza-pagina__picto path')];
+        if (!ps.length) return;
+        window.__finTrazo = Math.max(0, ...ps.flatMap(p => p.getAnimations()).map(a => { const t = a.effect.getComputedTiming(); return (t.delay || 0) + t.duration; }));
+        const ultimo = ps[ps.length - 1], t0 = performance.now();
+        const paso = () => { window.__trazo.push(parseFloat(getComputedStyle(ultimo).strokeDashoffset) || 0); if (performance.now() - t0 < 1200) requestAnimationFrame(paso); };
+        requestAnimationFrame(paso);
+      });
+    };
+    const malos = [];
+    let { ctx, page } = await nueva({ reducido: false });
+    await ctx.addInitScript(muestreo);
+    let vt = null;
+    for (const p of ['agenda.html', 'cookies.html']) {
+      await page.goto(BASE + p, { waitUntil: 'domcontentloaded' });
+      await espera(1400);
+      const r = await page.evaluate(() => {
+        const ps = [...document.querySelectorAll('.cabeza-pagina__picto path')];
+        return { trazo: window.__trazo, fin: window.__finTrazo, final: ps.map(x => getComputedStyle(x).strokeDashoffset + '/' + getComputedStyle(x).strokeDasharray),
+          nombre: getComputedStyle(document.querySelector('.cabeza-pagina__puerta')).viewTransitionName, quedan: ps.flatMap(x => x.getAnimations()).length };
+      });
+      const medios = r.trazo.filter(v => v > 0.05 && v < 0.95).length;
+      if (!(r.fin > 0 && r.fin <= 600)) malos.push(`${p}: el trazado dura ${r.fin} ms`);
+      if (medios < 2) malos.push(`${p}: no se ve trazarse (${r.trazo.slice(0, 12).map(v => v.toFixed(2)).join(' ')})`);
+      if (r.quedan || !r.final.every(f => /^0(px)?\/none$/.test(f))) malos.push(`${p}: no acaba entero (${r.final[0]})`);
+      if (r.nombre !== 'puerta-cabecera') malos.push(`${p}: la puerta no tiene su view-transition-name (${r.nombre})`);
+    }
+    /* entre páginas interiores: la transición corre y la puerta tiene su propio grupo */
+    await ctx.addInitScript(() => {
+      window.__vt = 'sin evento';
+      addEventListener('pagereveal', e => {
+        if (!e.viewTransition) { window.__vt = 'sin transición'; return; }
+        e.viewTransition.ready.then(() => { window.__vt = 'lista';
+          window.__grupoPuerta = getComputedStyle(document.documentElement, '::view-transition-group(puerta-cabecera)').animationName; }, () => { window.__vt = 'saltada'; });
+      });
+    });
+    await ir(page, 'agenda.html');
+    await page.click('.menu a[href$="tramites.html"]');
+    await page.waitForLoadState('domcontentloaded'); await espera(900);
+    vt = await page.evaluate(() => ({ vt: window.__vt, grupo: window.__grupoPuerta, trazo: (window.__trazo || []).filter(v => v > 0.05 && v < 0.95).length }));
+    if (vt.vt === 'lista' && vt.grupo && vt.grupo !== 'none') malos.push('la puerta se anima en la transición (' + vt.grupo + ')');
+    if (vt.trazo < 2) malos.push('tras navegar, el pictograma nuevo no se traza');
+    await ctx.close();
+    ({ ctx, page } = await nueva());
+    await ir(page, 'agenda.html');
+    const q = await page.evaluate(() => { const ps = [...document.querySelectorAll('.cabeza-pagina__picto path')]; return { anim: ps.flatMap(x => x.getAnimations()).length, entero: ps.every(x => getComputedStyle(x).strokeDasharray === 'none'), nombre: getComputedStyle(document.querySelector('.cabeza-pagina__puerta')).viewTransitionName }; });
+    if (q.anim || !q.entero || q.nombre !== 'none') malos.push('reducido: ' + JSON.stringify(q));
+    await ctx.close();
+    comprobar(!malos.length, `v3 · el pictograma se traza al llegar (dashoffset de 1 a 0 poco a poco, ≤ 600 ms) y acaba entero y sin dasharray; la puerta tiene su grupo de View Transition sin animar (${vt && vt.vt}); con movimiento reducido, quieto y completo` + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* ── 3. noticias: la cuadrícula sin huecos con las fotos de verdad, con todas, con ninguna y con
+     una sola noticia (en una copia) ── */
+  {
+    const malos = [], viol = [];
+    const medirNoticias = page => page.evaluate(() => {
+      const lista = document.querySelector('.noticias'), cartas = [...document.querySelectorAll('.noticias > .noticia')];
+      return { ancho: lista ? lista.getBoundingClientRect().width : 0, cartas: cartas.map(c => {
+        const m = c.querySelector(':scope > .noticia__foto, :scope > .noticia__fecha'), b = c.getBoundingClientRect(), mb = m ? m.getBoundingClientRect() : null;
+        return { top: Math.round(b.top), alto: Math.round(b.height), ancho: Math.round(b.width), medio: mb ? { top: Math.round(mb.top - b.top), alto: Math.round(mb.height), ancho: Math.round(mb.width), fecha: m.classList.contains('noticia__fecha'), texto: m.textContent.trim() } : null,
+          time: (c.querySelector('time') || {}).textContent || '' };
+      }) };
+    });
+    const revisar = (r, nombre, w, n) => {
+      if (r.cartas.length !== n) { malos.push(`${nombre} ${w}: ${r.cartas.length} de ${n} tarjetas`); return; }
+      if (r.cartas.some(c => !c.medio || c.medio.alto < 40)) malos.push(`${nombre} ${w}: tarjeta sin foto ni fecha`);
+      for (const c of r.cartas.filter(x => x.medio && x.medio.fecha)) if (!/^\d{1,2}\s*\D{3}\s*\d{4}$/.test(c.medio.texto.replace(/\s+/g, ' ')) || !c.time) malos.push(`${nombre} ${w}: fecha del arco «${c.medio.texto}»`);
+      const filas = {};
+      r.cartas.forEach(c => (filas[c.top] = filas[c.top] || []).push(c));
+      for (const fila of Object.values(filas)) {
+        if (new Set(fila.map(c => c.medio && c.medio.alto)).size > 1 || new Set(fila.map(c => c.medio && c.medio.top)).size > 1 || new Set(fila.map(c => c.alto)).size > 1) malos.push(`${nombre} ${w}: fila coja ${JSON.stringify(fila.map(c => c.medio))}`);
+      }
+      if (n === 1 && w >= 1024 && r.cartas[0].ancho < r.ancho * 0.95) malos.push(`${nombre} ${w}: una sola noticia ocupa ${r.cartas[0].ancho} de ${Math.round(r.ancho)} px`);
+    };
+    const reales = (contenido('noticias').noticias || []).filter(n => !n.oculto);
+    if (reales.length) for (const [w, h] of [[1440, 900], [390, 844]]) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
+      await ir(page, 'noticias.html');
+      revisar(await medirNoticias(page), 'reales', w, reales.length);
+      await ctx.close();
+    }
+    const conFoto = reales.find(n => n.imagen && fs.existsSync(path.join(RAIZ, 'media', n.imagen + '.jpg')));
+    const base = reales.length ? reales : [{ id: 'prueba', fecha: '2026-10-01', titulo: 'Noticia de prueba', resumen: 'Resumen de prueba.', cuerpo: ['Texto.'] }];
+    const variantes = [
+      ['ninguna foto', base.map(({ imagen, imagen_alt, ...n }) => n)],
+      ['una noticia', base.slice(0, 1).map(({ imagen, imagen_alt, ...n }) => n)],
+      ...(conFoto ? [['todas con foto', base.map(n => ({ ...n, imagen: conFoto.imagen, imagen_alt: conFoto.imagen_alt || 'Foto de prueba' }))]] : [])
+    ];
+    const dest = copiar();
+    try {
+      for (const [nombre, lista] of variantes) {
+        fs.writeFileSync(path.join(dest, 'contenido', 'noticias.json'), JSON.stringify({ noticias: lista }, null, 2));
+        const ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
+        if (ap.status !== 0) { malos.push(nombre + ': aplicar.mjs falla → ' + (ap.stderr || ap.stdout).slice(-200)); continue; }
+        const srv = crearServidor(dest, null);
+        await new Promise(r => srv.listen(0, '127.0.0.1', r));
+        for (const [w, h] of [[1440, 900], [390, 844]]) {
+          const ctx = await navegador.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
+          await ctx.addInitScript(s => { try { localStorage.setItem(s + '-cookies', 'ok'); } catch (e) {} }, SLUG);
+          const page = await ctx.newPage();
+          await page.goto('http://127.0.0.1:' + srv.address().port + '/noticias.html', { waitUntil: 'networkidle' });
+          await page.evaluate(() => document.querySelectorAll('img[loading=lazy]').forEach(i => { i.loading = 'eager'; }));
+          await page.waitForLoadState('networkidle');
+          revisar(await medirNoticias(page), nombre, w, lista.length);
+          if (w === 1440) viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => nombre + ': ' + v.id));
+          if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) malos.push(`${nombre} ${w}: scroll horizontal`);
+          await ctx.close();
+        }
+        srv.close();
+      }
+    } finally { fs.rmSync(dest, { recursive: true, force: true }); }
+    comprobar(!malos.length && !viol.length, `v3 · noticias: cada tarjeta lleva su foto o la fecha grande en un arco y ninguna fila queda coja (mismas alturas y arranques) con las reales, ${variantes.map(v => v[0]).join(', ')}, a 1440 y 390 px; una sola noticia, a todo el ancho; axe sin violaciones` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : '') + (viol.length ? ' → axe: ' + viol.join(', ') : ''));
+  }
+
+  /* ── 4. el calendario de la agenda: tabla con caption, hoy marcado, días con actos enlazados a
+     actos que existen, paso de mes dentro del horizonte; dos columnas en escritorio ── */
+  {
+    const malos = [];
+    for (const [w, h] of [[1440, 900], [390, 844]]) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
+      await ir(page, 'agenda.html');
+      const r = await page.evaluate(() => {
+        const hoy = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+        const cal = document.querySelector('.calendario'), vis = cal ? [...cal.querySelectorAll('.calendario__mes')].filter(m => !m.hidden) : [];
+        const t = vis[0] && vis[0].querySelector('table');
+        const lista = document.querySelector('.agenda__lista'), cb = cal && cal.getBoundingClientRect(), lb = lista && lista.getBoundingClientRect();
+        const eventosMes = [...document.querySelectorAll('.agenda__lista .evento time')].map(x => x.getAttribute('datetime')).filter(d => vis[0] && d.startsWith(vis[0].getAttribute('data-mes')));
+        const celdaHoy = t && t.querySelector('td[aria-current="date"]');
+        return {
+          hoy, mes: vis.length === 1 ? vis[0].getAttribute('data-mes') : vis.length + ' meses', caption: t && t.caption ? t.caption.textContent.trim() : '',
+          th: t ? [...t.querySelectorAll('thead th[scope="col"]')].length : 0,
+          celdaHoy: celdaHoy ? celdaHoy.textContent.match(/\d+/)[0] : null, oro: celdaHoy ? getComputedStyle(celdaHoy.querySelector('.calendario__dia')).boxShadow : '',
+          oroToken: getComputedStyle(document.documentElement).getPropertyValue('--oro').trim(),
+          enlaces: t ? [...t.querySelectorAll('a')].map(a => ({ href: a.getAttribute('href'), ok: !!document.getElementById(a.getAttribute('href').slice(1)) && !!document.getElementById(a.getAttribute('href').slice(1)).closest('.agenda__lista'), dia: a.textContent.match(/\d+/)[0], nombre: a.textContent })) : [],
+          diasConActo: new Set(eventosMes.map(d => String(Number(d.slice(8, 10))))).size,
+          columnas: cb && lb ? (cb.right <= lb.left + 1 ? 'lado' : cb.bottom <= lb.top + 1 ? 'arriba' : 'pisa') : 'falta',
+          meses: cal ? cal.querySelectorAll('.calendario__mes').length : 0,
+          desdeHoy: cal ? (k => k.length - k.indexOf(cal.getAttribute('data-mes-hoy')))([...cal.querySelectorAll('.calendario__mes')].map(m => m.getAttribute('data-mes'))) : 0, nav: cal ? !cal.querySelector('.calendario__nav').hidden : false
+        };
+      });
+      const rgb = r.oroToken ? 'rgb(' + [1, 3, 5].map(i => parseInt(r.oroToken.slice(i, i + 2), 16)).join(', ') + ')' : '#';
+      if (r.mes !== r.hoy.slice(0, 7)) malos.push(`${w}: el mes a la vista es ${r.mes}, no el de hoy`);
+      if (!/\d{4}$/.test(r.caption) || r.th !== 7) malos.push(`${w}: tabla sin caption o sin cabeceras (${r.caption}, ${r.th})`);
+      if (r.celdaHoy !== String(Number(r.hoy.slice(8)))) malos.push(`${w}: hoy (${r.hoy}) no está marcado (${r.celdaHoy})`);
+      if (!r.oro.includes(rgb)) malos.push(`${w}: hoy sin el oro (${r.oro})`);
+      if (!r.enlaces.length && r.diasConActo) malos.push(`${w}: hay actos este mes y ningún día enlazado`);
+      if (r.enlaces.some(e => !e.ok || !/: /.test(e.nombre))) malos.push(`${w}: enlace del calendario a un acto que no está en la lista`);
+      if (r.enlaces.length !== r.diasConActo) malos.push(`${w}: ${r.enlaces.length} días enlazados para ${r.diasConActo} días con actos en la lista`);
+      if (w === 1440 && r.columnas !== 'lado') malos.push(`1440: el calendario no va al lado de la lista (${r.columnas})`);
+      if (w === 390 && r.columnas !== 'arriba') malos.push(`390: el calendario no va arriba (${r.columnas})`);
+      /* paso de mes: hasta el final del horizonte y vuelta; el foco se queda en el botón */
+      if (r.meses > 1) {
+        if (!r.nav) malos.push(`${w}: sin botones de mes`);
+        const sig = page.locator('[data-cal-paso="1"]'), ant = page.locator('[data-cal-paso="-1"]');
+        const vistos = [r.mes];
+        for (let i = 0; i < r.meses + 1 && (await sig.getAttribute('aria-disabled')) !== 'true'; i++) { await sig.click(); vistos.push(await page.evaluate(() => [...document.querySelectorAll('.calendario__mes')].filter(m => !m.hidden).map(m => m.getAttribute('data-mes')).join(','))); }
+        const fin = await page.evaluate(() => ({ dis: document.querySelector('[data-cal-paso="1"]').getAttribute('aria-disabled'), estado: document.querySelector('[data-cal-estado]').textContent, foco: document.activeElement.getAttribute('data-cal-paso') }));
+        if (fin.dis !== 'true' || !fin.estado || fin.foco !== '1' || vistos.some(v => !v || v.includes(',')) || new Set(vistos).size !== r.desdeHoy) malos.push(`${w}: paso de mes ${JSON.stringify({ vistos, fin })}`);
+        const ultimo = vistos[vistos.length - 1];
+        await ant.click();
+        const atras = await page.evaluate(() => [...document.querySelectorAll('.calendario__mes')].filter(m => !m.hidden).map(m => m.getAttribute('data-mes')).join(','));
+        if (!(atras < ultimo)) malos.push(`${w}: «mes anterior» no vuelve (${atras})`);
+      }
+      if (w === 1440) {
+        const viol = (await new AxeBuilder({ page }).include('.calendario').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => v.id);
+        if (viol.length) malos.push('axe en el calendario: ' + viol.join(', '));
+      }
+      await ctx.close();
+    }
+    comprobar(!malos.length, 'v3 · agenda: calendario del mes en una tabla con caption y cabeceras, hoy con aria-current="date" y el oro, cada día con actos enlaza a su acto de la lista, paso de mes hasta el final del horizonte (aria-disabled al final, anunciado y con el foco en su sitio); al lado de la lista en escritorio y arriba en el móvil' + (malos.length ? ' → ' + malos.slice(0, 5).join(' | ') : ''));
+  }
+
+  /* ── 5. índice A–Z de los trámites: letras activas = iniciales reales, salto con foco, fijo
+     al bajar, refleja el filtro; en el móvil, una fila ── */
+  {
+    const malos = [];
+    const inicial = n => { const c = (n.match(/\p{L}/u) || ['#'])[0].toUpperCase(); return c === 'Ñ' ? 'Ñ' : c.normalize('NFD').replace(/[̀-ͯ]/g, ''); };
+    const vigentes = (M.tramites.todos || []).filter(t => t.vigente !== false);
+    const reales = [...new Set(vigentes.map(t => inicial(t.nombre)))].sort().join('');
+    for (const [w, h] of [[1440, 900], [390, 844]]) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
+      await ir(page, 'tramites.html');
+      const r = await page.evaluate(() => {
+        const nav = document.querySelector('nav.az'), letras = [...nav.querySelectorAll('.az__letra')];
+        const l = nav.querySelector('.az__lista');
+        return { activas: letras.filter(a => a.hasAttribute('href')).map(a => a.textContent).sort().join(''),
+          apagadas: letras.filter(a => !a.hasAttribute('href')).every(a => { a.focus(); return a.parentNode.getAttribute('aria-hidden') === 'true' && document.activeElement !== a; }),
+          destinos: letras.filter(a => a.hasAttribute('href')).every(a => { const d = document.querySelector(a.getAttribute('href')); return d && d.closest('#todos-lista') && d.textContent.trim() === a.textContent; }),
+          fila: l.scrollWidth > l.clientWidth + 1, alto: nav.getBoundingClientRect().height, total: letras.length };
+      });
+      if (r.activas !== reales) malos.push(`${w}: letras activas ${r.activas}, iniciales reales ${reales}`);
+      if (!r.apagadas || !r.destinos || r.total < 26) malos.push(`${w}: letras apagadas o destinos mal`);
+      if (w === 390 && (!r.fila || r.alto > 64)) malos.push(`390: no es una fila compacta (${Math.round(r.alto)} px, desplaza ${r.fila})`);
+      /* salto con el teclado: el foco va a la letra de la lista y no queda debajo del índice */
+      const letra = reales[Math.floor(reales.length / 2)];
+      await page.focus(`.az__letra[href]:text-is("${letra}")`);
+      await page.keyboard.press('Enter');
+      await espera(400);
+      const s = await page.evaluate(() => { const a = document.activeElement, b = a.getBoundingClientRect(), az = document.querySelector('nav.az').getBoundingClientRect();
+        return { foco: a.tagName + '#' + a.id + ':' + a.textContent.trim(), top: b.top, bajo: az.bottom, vh: innerHeight, hash: location.hash }; });
+      if (!s.foco.endsWith(':' + letra) || !/^H3#/.test(s.foco) || s.top < s.bajo - 1 || s.top > s.vh * 0.6) malos.push(`${w}: salto a «${letra}» ${JSON.stringify(s)}`);
+      /* fijo: en tres puntos de la lista el índice sigue arriba y nada lo tapa */
+      const fijo = [];
+      for (const sel of ['#todos-lista .todos__grupo:nth-child(2)', '#todos-lista .todos__grupo:nth-child(5)', '#todos-lista .todos__grupo:last-child']) {
+        await page.evaluate(q => { const e = document.querySelector(q); if (e) window.scrollTo(0, e.getBoundingClientRect().top + scrollY - 200); }, sel);
+        fijo.push(await page.evaluate(() => { const az = document.querySelector('nav.az'), b = az.getBoundingClientRect(), e = document.elementFromPoint(b.left + 20, b.top + b.height / 2); return { top: Math.round(b.top), mio: !!(e && e.closest('nav.az')) }; }));
+      }
+      if (!fijo.every(f => f.top === 0 && f.mio)) malos.push(`${w}: el índice no se queda arriba ${JSON.stringify(fijo)}`);
+      /* el filtro: las letras activas son las iniciales de lo que queda */
+      const palabra = ['agua', 'licencia', 'padron', 'certificado'].find(x => vigentes.some(t => sinTildes(t.nombre).includes(x))) || 'a';
+      await page.fill('#filtrar-tramites', palabra);
+      const f = await page.evaluate(() => ({ activas: [...document.querySelectorAll('nav.az .az__letra[href]')].map(a => a.textContent).sort().join(''),
+        grupos: [...document.querySelectorAll('#todos-lista .todos__grupo')].filter(g => !g.hidden).map(g => g.querySelector('h3').textContent).sort().join('') }));
+      const esperadas = [...new Set(vigentes.filter(t => sinTildes(t.nombre).includes(palabra)).map(t => inicial(t.nombre)))].sort().join('');
+      if (f.activas !== esperadas || f.grupos !== esperadas) malos.push(`${w}: con «${palabra}» las letras son ${f.activas} (grupos ${f.grupos}), esperaba ${esperadas}`);
+      await page.fill('#filtrar-tramites', '');
+      const vuelta = await page.evaluate(() => [...document.querySelectorAll('nav.az .az__letra[href]')].map(a => a.textContent).sort().join(''));
+      if (vuelta !== reales) malos.push(`${w}: al vaciar el filtro no vuelven todas las letras`);
+      await ctx.close();
+    }
+    comprobar(!malos.length, `v3 · índice A–Z de «Todos los trámites»: activas justo las iniciales reales (${reales}), las demás apagadas y fuera del tabulador; el salto lleva el foco a la letra sin quedar bajo el índice; fijo arriba al bajar y sin nada encima; refleja el filtro; en el móvil, una fila` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+
+  /* ── 6. índice «En esta página» de las páginas largas ── */
+  {
+    const malos = [], conIndice = [];
+    for (const p of INTERIORES) {
+      const htmlP = leer(RAIZ, p);
+      if (/class="indice indice--lateral"/.test(htmlP)) conIndice.push(p);
+    }
+    for (const p of ['accesibilidad.html', 'aviso-legal.html', 'privacidad.html', 'cookies.html', 'pueblo.html']) if (PAGINAS.includes(p) && !conIndice.includes(p)) {
+      const n = (leer(RAIZ, p).match(/<main[\s\S]*<\/main>/) || [''])[0].match(/<h2(?![^>]*class="[^"]*\bsr\b)/g) || [];
+      if (n.length >= 4) malos.push(p + ': sin índice con ' + n.length + ' h2');
+    }
+    for (const p of conIndice) {
+      const { ctx, page } = await nueva();
+      await ir(page, p);
+      const r = await page.evaluate(() => {
+        const nav = document.querySelector('.indice--lateral'), b = nav.getBoundingClientRect();
+        const h2 = [...document.querySelectorAll('.con-indice__cuerpo h2')].filter(x => !x.closest('.sr') && !x.classList.contains('sr'));
+        const a = [...nav.querySelectorAll('a')];
+        return { vis: nav.checkVisibility() && b.width > 100, movil: document.querySelector('.indice--movil').checkVisibility(), n: a.length, h2: h2.length,
+          bien: a.every((x, i) => h2[i] && x.getAttribute('href') === '#' + h2[i].id), lado: b.right <= document.querySelector('.con-indice__cuerpo').getBoundingClientRect().left + 1,
+          actual: a.findIndex(x => x.getAttribute('aria-current')) };
+      });
+      if (!r.vis || r.movil || r.n !== r.h2 || !r.bien || !r.lado || r.n < 4) malos.push(`${p}: índice lateral ${JSON.stringify(r)}`);
+      /* bajando con la rueda, aria-current avanza y acaba en la última sección */
+      const seq = [r.actual], tops = [];
+      await page.mouse.move(900, 450);
+      for (let i = 0; i < 200; i++) {
+        await page.mouse.wheel(0, 200); await espera(50);
+        const s = await page.evaluate(() => { const n = document.querySelector('.indice--lateral').getBoundingClientRect(), c = document.querySelector('.con-indice').getBoundingClientRect();
+          return { a: [...document.querySelectorAll('.indice--lateral a')].findIndex(x => x.getAttribute('aria-current')), top: Math.round(n.top), pegado: c.top + 60 < 0 && c.bottom > n.height + 60, fin: innerHeight + scrollY >= document.documentElement.scrollHeight - 2 }; });
+        if (s.a !== seq[seq.length - 1]) seq.push(s.a);
+        if (s.pegado) tops.push(s.top);   /* mientras la rejilla tiene recorrido, el índice no se mueve */
+        if (s.fin) break;
+      }
+      await espera(300);
+      const ultimo = await page.evaluate(() => [...document.querySelectorAll('.indice--lateral a')].findIndex(x => x.getAttribute('aria-current')));
+      if (ultimo !== seq[seq.length - 1]) seq.push(ultimo);
+      if (seq[0] !== 0 || seq.length < 2 || seq.some((x, i) => i && x < seq[i - 1]) || ultimo !== r.n - 1) malos.push(`${p}: aria-current al bajar ${seq.join('→')} (de ${r.n})`);
+      if (tops.length < 2 || new Set(tops).size > 1) malos.push(`${p}: el índice no se queda fijo (${tops.join(', ')})`);
+      await ctx.close();
+      /* móvil: desplegable plegado arriba, sin columna */
+      const m = await nueva({ viewport: { width: 390, height: 844 } });
+      await ir(m.page, p);
+      const mv = await m.page.evaluate(() => { const d = document.querySelector('.indice--movil details'); return { vis: d.checkVisibility(), abierto: d.open, lateral: document.querySelector('.indice--lateral').checkVisibility(), arriba: d.getBoundingClientRect().top < document.querySelector('.con-indice__cuerpo').getBoundingClientRect().top }; });
+      if (!mv.vis || mv.abierto || mv.lateral || !mv.arriba) malos.push(`${p} a 390: ${JSON.stringify(mv)}`);
+      await m.page.click('.indice--movil summary');
+      if (!(await m.page.evaluate(() => document.querySelector('.indice--movil details').open && document.querySelector('.indice--movil a').checkVisibility()))) malos.push(`${p} a 390: el desplegable no abre`);
+      await m.ctx.close();
+    }
+    /* sin JavaScript, la lista se ve (en el móvil, el desplegable viene abierto) */
+    if (conIndice.length) {
+      for (const w of [390, 1440]) {
+        const ctx = await navegador.newContext({ viewport: { width: w, height: 844 }, javaScriptEnabled: false });
+        const page = await ctx.newPage();
+        await page.goto(BASE + conIndice[0], { waitUntil: 'networkidle' });
+        const n = await page.evaluate(() => [...document.querySelectorAll('.indice a')].filter(a => a.checkVisibility()).length);
+        if (!n) malos.push(`sin JavaScript a ${w}: la lista del índice no se ve`);
+        await ctx.close();
+      }
+    }
+    comprobar(!malos.length && conIndice.length > 0, `v3 · índice «En esta página» en las páginas largas (${conIndice.join(', ')}): sale de sus h2, columna lateral fija en escritorio con aria-current que avanza al bajar hasta la última sección, desplegable plegado arriba en el móvil y la lista a la vista sin JavaScript` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+
+  /* ── 7. buscador: lo encontrado con <mark> (sin tildes ni mayúsculas), cuenta en role=status,
+     entrada escalonada ≤ 300 ms solo con transform y nada con movimiento reducido; axe ── */
+  {
+    const malos = [];
+    const casos = [['empadronarme', ['empad', 'padron']], ['PADRON', ['padron']], ['licencia', ['licencia']]]
+      .filter(([q]) => (M.tramites.todos || []).some(t => sinTildes(t.nombre).includes(sinTildes(q).slice(0, 5))));
+    for (const reducido of [true, false]) {
+      const { ctx, page } = await nueva({ reducido: reducido ? undefined : false, viewport: { width: 1440, height: 900 } });
+      await ir(page, 'noticias.html');
+      for (const [q, raices] of casos) {
+        await page.click('[data-abrir-buscador]');
+        /* la entrada se mide en cuanto se pintan los resultados (dura menos que la espera) */
+        await page.evaluate(() => {
+          window.__entrada = null;
+          const ul = document.querySelector('#buscador .resultados');
+          const mo = new MutationObserver(() => {
+            if (!ul.children.length) return;   /* al vaciar el campo se vacía la lista: esa no cuenta */
+            const anims = [...ul.children].flatMap(li => li.getAnimations());
+            window.__entrada = { fin: Math.max(0, ...anims.map(a => { const t = a.effect.getComputedTiming(); return (t.delay || 0) + t.duration; })),
+              props: [...new Set(anims.flatMap(a => a.effect.getKeyframes().flatMap(k => Object.keys(k).filter(x => !['offset', 'easing', 'composite', 'computedOffset'].includes(x)))))] };
+            mo.disconnect();
+          });
+          mo.observe(ul, { childList: true });
+        });
+        await page.fill('#buscador [data-buscador-campo]', q);
+        /* la cuenta ya tenía texto de la búsqueda anterior: se espera a que se pinte esta */
+        await page.waitForFunction(() => window.__entrada !== null, null, { timeout: 3000 }).catch(() => {});
+        const r = await page.evaluate(() => {
+          window.__entrada = window.__entrada || { fin: 0, props: [] };
+          const lis = [...document.querySelectorAll('#buscador .resultados > li')];
+          return { n: lis.length, marcas: [...document.querySelectorAll('#buscador .resultados mark')].map(m => m.textContent), primero: lis[0] ? lis[0].querySelectorAll('mark').length : 0,
+            cuenta: document.querySelector('#buscador [data-buscador-cuenta]').textContent, rol: document.querySelector('#buscador [data-buscador-cuenta]').getAttribute('role'),
+            fin: window.__entrada.fin, props: window.__entrada.props };
+        });
+        if (!r.n || !r.primero || r.marcas.some(mk => !raices.some(x => sinTildes(mk).includes(x)) && !Object.values(M.tramites.sinonimos || {}).flat().some(s => sinTildes(s).includes(sinTildes(mk)) || sinTildes(mk).includes(sinTildes(s))))) malos.push(`«${q}»: marcas ${JSON.stringify(r.marcas.slice(0, 5))} en ${r.n} resultados`);
+        if (r.rol !== 'status' || !r.cuenta.includes(String(r.n))) malos.push(`«${q}»: cuenta «${r.cuenta}»`);
+        if (reducido && r.fin) malos.push(`reducido: los resultados se animan (${r.fin} ms)`);
+        if (!reducido && (!r.fin || r.fin > 300 || r.props.some(x => x !== 'translate' && x !== 'transform'))) malos.push(`con movimiento: entrada de ${r.fin} ms con ${r.props.join(', ')}`);
+        if (!reducido && q === casos[0][0]) {
+          await espera(400);
+          const viol = (await new AxeBuilder({ page }).include('#buscador').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => v.id);
+          if (viol.length) malos.push('axe con marcas: ' + viol.join(', '));
+        }
+        await page.keyboard.press('Escape');
+      }
+      await ctx.close();
+    }
+    comprobar(casos.length > 0 && !malos.length, `v3 · buscador: ${casos.map(c => '«' + c[0] + '»').join(', ')} marcan con <mark> la palabra encontrada (sin tildes ni mayúsculas), la cuenta sigue en role=status, la entrada es escalonada solo con transform y ≤ 300 ms, quieta con movimiento reducido, y axe pasa con las marcas` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+}
+
 /* ═════════════ orden ═════════════ */
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
 if (!SOLO || SOLO.includes('estaticas')) estaticas();
 for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', panelHoy], ['cortina', cortina], ['movimiento', movimiento], ['contenido', contenidoEjemplo], ['interaccion', interaccion],
-  ['estructura', estructura], ['interiores', interiores], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ['primera', primeraPantalla], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
+  ['estructura', estructura], ['interiores', interiores], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ['primera', primeraPantalla], ['v3interiores', v3Interiores], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();
   try { await fn(); } catch (e) { comprobar(false, nombre + ': la prueba se rompió → ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')); }

@@ -283,7 +283,7 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .resultado__oficial { grid-column: 1; color: var(--apagado); font-size: .9375rem; }
 .resultados .icono { grid-row: 1 / span 2; grid-column: 2; color: var(--marca); }
 /* lo encontrado (main.js): el fondo tenue de la marca y en negrita, para que no dependa solo del
-   color de fondo (un subrayado lo confundia con un enlace). El texto sigue en su color: --marca y --apagado pasan AA sobre --marca-tenue */
+   color de fondo (un subrayado lo confundía con un enlace). El texto sigue en su color: --marca y --apagado pasan AA sobre --marca-tenue */
 .resultados mark { background: var(--marca-tenue); color: inherit; border-radius: 2px; padding-inline: .1em; font-weight: 700; }
 
 /* ═══════════════ PORTADA: HERO «HOY» ═══════════════ */
@@ -800,7 +800,7 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
    noticia con el arco pequeño a la izquierda (seis arcos de ancho completo eran media pantalla cada
    uno). Una sola noticia: tarjeta apaisada a todo el ancho, no un tercio con dos huecos al lado */
 .noticias { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); }
-.noticia { padding: 1rem 1.1rem .5rem; display: flex; flex-direction: column; }
+.noticia { padding: 1rem 1.1rem .5rem; display: flex; flex-direction: column; max-width: none; }
 .noticia__foto, .noticia__fecha { margin: 0 0 .9rem; aspect-ratio: 3 / 2; overflow: hidden; }
 .noticia__foto img { width: 100%; height: 100%; object-fit: cover; }
 .noticia__fecha {
@@ -848,15 +848,16 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
   .agenda { grid-template-columns: minmax(19rem, 25rem) minmax(0, 1fr); }
   .agenda__calendario { position: sticky; top: 1rem; max-width: none; }
 }
-.calendario { position: relative; padding: .75rem .75rem .5rem; background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); }
-.calendario__nav:not([hidden]) { position: absolute; top: .6rem; left: .6rem; right: .6rem; display: flex; justify-content: space-between; pointer-events: none; }
+.calendario { position: relative; padding: .6rem .4rem .4rem; background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); }
+.calendario__nav:not([hidden]) { position: absolute; top: .5rem; left: .5rem; right: .5rem; display: flex; justify-content: space-between; pointer-events: none; }
 .calendario__paso {
   pointer-events: auto; display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0;
   border: 1px solid var(--linea-fuerte); border-radius: var(--radio); background: var(--superficie); color: var(--marca); cursor: pointer;
 }
 .calendario__paso:hover { border-color: var(--marca); background: var(--marca-tenue); }
 .calendario__paso[aria-disabled="true"] { color: var(--apagado); border-color: var(--linea); background: var(--superficie); cursor: default; }
-.calendario__tabla { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 3px; }
+.calendario__tabla { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 2px; }
+@media (min-width: 48em) { .calendario { padding: .75rem .75rem .5rem; } .calendario__tabla { border-spacing: 3px; } }
 .calendario__caption { min-height: 44px; padding: .35rem 3.25rem .6rem; font: 700 1.3rem/1.2 var(--f-titulo); text-align: center; }
 .calendario__tabla th { padding: 0 0 .25rem; color: var(--apagado); font-size: .8125rem; font-weight: 600; text-align: center; }
 .calendario__tabla td { padding: 0; text-align: center; }
