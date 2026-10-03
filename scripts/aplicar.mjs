@@ -220,9 +220,27 @@ const conHref = t => { const href = S.tramite(t); return { ...t, href, sr: srDe(
 const lista = todos.map(conHref).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
   .map(t => ({ ...t, formato: FORMATOS[t.tipo] ? FORMATOS[t.tipo].etiqueta : null, texto_busqueda: normal(t.nombre) }));
 const tramitesSede = lista.filter(t => enSede(t.href)).length;
+/* v3 · «Todos los trámites» por iniciales, con el índice A–Z fijo: las letras sin trámites salen
+   apagadas y sin enlace. La Ñ solo si algún trámite empieza por ella */
+const inicial = n => { const c = (n.match(/\p{L}/u) || ['#'])[0].toUpperCase(); return c === 'Ñ' ? 'Ñ' : c.normalize('NFD').replace(/[̀-ͯ]/g, ''); };
+const letrasTramites = [];
+for (const t of lista) {
+  const l = inicial(t.nombre);
+  let g = letrasTramites.find(x => x.letra === l);
+  if (!g) letrasTramites.push(g = { letra: l, id: 'letra-' + (l === 'Ñ' ? 'enie' : l.toLowerCase()), items: [] });
+  g.items.push(t);
+}
+const ABC = 'ABCDEFGHIJKLMN' + (letrasTramites.some(g => g.letra === 'Ñ') ? 'Ñ' : '') + 'OPQRSTUVWXYZ';
+const indiceAZ = [...ABC].map(l => { const g = letrasTramites.find(x => x.letra === l); return { letra: l, id: 'letra-' + (l === 'Ñ' ? 'enie' : l.toLowerCase()), activa: !!g }; });
+/* lo que no empieza por una letra del abecedario (un número) va al final, sin letra en el índice */
+letrasTramites.sort((a, b) => (ABC.indexOf(a.letra) < 0) - (ABC.indexOf(b.letra) < 0) || ABC.indexOf(a.letra) - ABC.indexOf(b.letra));
 const DESTINO = { pdf: 'Impreso en PDF', doc: 'Impreso en Word', documento: 'Documento en el tablón de la sede' };
 /* iconos del sprite (fuente/_iconos.html): un atajo con un icono que no existe sería un hueco */
 const ICONOS = new Set([...leer('fuente/_iconos.html').matchAll(/id="i-([\w-]+)"/g)].map(m => m[1]));
+/* pictogramas de las cabeceras interiores (fuente/_pictogramas.html): van EN LÍNEA dentro del arco,
+   cada trazo con pathLength="1" para que css/movimiento.css lo dibuje (dentro de un <use> no se puede) */
+const PICTOS = Object.fromEntries([...leer('fuente/_pictogramas.html').matchAll(/<symbol id="p-([\w-]+)" viewBox="0 0 24 24">([\s\S]*?)<\/symbol>/g)]
+  .map(([, id, dentro]) => [id, dentro.trim().replace(/\s*\n\s*/g, '').replace(/<path /g, '<path pathLength="1" ')]));
 const temasDatos = (M.tramites.temas || []).map(tm => ({ ...tm, tramites: tm.tramites.map(conHref) }));
 /* temas en dos columnas que se apilan (sin huecos al abrir un desplegable): la primera mitad a
    la izquierda, así el orden de lectura y de tabulación baja por cada columna */
@@ -244,7 +262,8 @@ const tramites = {
   temas_columnas: [...[temasDatos.slice(0, mitadTemas), temasDatos.slice(mitadTemas, mitadTemas * 2)].filter(c => c.length).map(temas => ({ temas, ancha: false })),
     ...(temaAncho ? [{ temas: [temaAncho], ancha: true }] : [])],
   momentos: (M.tramites.momentos || []).map(m => ({ ...m, pasos: m.pasos.map(p => (p.id || p.url ? conHref(p) : { ...p, href: null, sr: '' })) })),
-  lista, total: lista.length, en_sede: tramitesSede, impresos: lista.filter(t => t.formato).length
+  lista, total: lista.length, en_sede: tramitesSede, impresos: lista.filter(t => t.formato).length,
+  letras: letrasTramites, az: indiceAZ
 };
 /* nombres en lenguaje claro para el buscador: los de atajos, temas y momentos */
 const claros = new Map();
@@ -375,7 +394,10 @@ for (const a of C.avisos) {
 }
 const noticias = C.noticias.filter(n => !n.oculto).slice().sort((a, b) => b.fecha.localeCompare(a.fecha)).map(n => {
   const f = n.imagen ? foto(n.imagen, n.imagen_alt, 'noticia: ' + n.titulo) : null;
-  return { ...n, fecha_texto: fechaTexto(n.fecha), imagen: f ? n.imagen : null, imagen_ancho: f ? f.ancho : null, imagen_alto: f ? f.alto : null,
+  /* v3 · sin foto, la tarjeta lleva la fecha grande en un arco (dibujo: la fecha la lee el <time>) */
+  const [fa, fm, fd] = n.fecha.split('-').map(Number);
+  return { ...n, fecha_texto: fechaTexto(n.fecha), fecha_dia: fd, fecha_mes: MESES[fm - 1].slice(0, 3), fecha_anio: fa,
+    imagen: f ? n.imagen : null, imagen_ancho: f ? f.ancho : null, imagen_alto: f ? f.alto : null,
     imagen_alt: n.imagen_alt || '', resumen: n.resumen || null, ejemplo: !!n.ejemplo, fecha_aproximada: !!n.fecha_aproximada, fuente: n.fuente || null, relacionado: n.relacionado || null };
 });
 const fiestas = ((M.pueblo && M.pueblo.fiestas) || []).map(f => ({ mes: f.mes, nombre: f.nombre, cuando: f.cuando, mayor: !!f.mayor, fecha_fija: f.fecha_fija || null }));
@@ -608,6 +630,17 @@ const PAGINAS = [
     migas: [{ href: 'noticias.html', texto: 'Noticias' }], descripcion: n.resumen || n.titulo, noticia: n }))
 ];
 for (const n of noticias) if (!/^[a-z0-9-]+$/.test(n.id)) errores.push('noticias.json: id «' + n.id + '» solo con a-z, 0-9 y guiones');
+/* v3 · el pictograma de cada cabecera sin foto: lo elige la plantilla por página, no los datos.
+   Una página interior nueva sin pictograma es un error (sería otra vez el arco vacío) */
+const PICTO_DE = { 'tramites.html': 'tramites', 'ayuntamiento.html': 'ayuntamiento', 'avisos.html': 'megafono', 'noticias.html': 'periodico',
+  'agenda.html': 'calendario', 'telefonos.html': 'telefono', 'pueblo.html': 'pueblo', 'contacto.html': 'sobre',
+  'aviso-legal.html': 'balanza', 'privacidad.html': 'candado', 'cookies.html': 'galleta', 'accesibilidad.html': 'accesibilidad' };
+const pictoDe = p => PICTO_DE[p.archivo] || (p.id === 'noticia' ? 'periodico' : null);
+for (const p of PAGINAS) {
+  if (p.id === 'inicio' || p.id === 'error') continue;
+  if (!pictoDe(p)) errores.push(p.archivo + ': sin pictograma para la cabecera (PICTO_DE en aplicar.mjs)');
+  else if (!PICTOS[pictoDe(p)]) errores.push(p.archivo + ': no hay pictograma «' + pictoDe(p) + '» en fuente/_pictogramas.html');
+}
 
 if (errores.length && !FORZAR) {
   console.error('\n✗ No se escribe nada. Arregla esto:\n  - ' + errores.join('\n  - ') + '\n');
@@ -681,16 +714,55 @@ const conParciales = (src, n = 0) => {
   if (n > 6) throw new Error('Parciales anidados demasiado hondo');
   return src.replace(/\{\{>\s*([\w-]+)\s*\}\}/g, (m, nombre) => conParciales(leer('fuente/_' + nombre + '.html'), n + 1));
 };
+/* v3 · índice lateral de las páginas largas. Fuera: la portada, la 404, Trámites (tiene su índice
+   A–Z y su buscador), Noticias (sus h2 son las tarjetas) y las páginas de otras zonas de la v3
+   (El Ayuntamiento y Teléfonos): para dárselo, quitarlas de aquí */
+const SIN_INDICE = new Set(['inicio', 'error', 'tramites', 'noticias', 'ayuntamiento', 'telefonos']);
+const textoPlano = h => h.replace(/<span class="sr">[\s\S]*?<\/span>/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
+  .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+const cuerpoMain = html => { const i = html.indexOf('<main'), f = html.lastIndexOf('</main>'); return i < 0 || f < 0 ? null : [i, f]; };
+/* los h2 del cuerpo sin id (los textos legales) reciben uno a partir de su texto */
+function conIdsEnH2(html) {
+  const c = cuerpoMain(html);
+  if (!c) return html;
+  const usados = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]));
+  const dentro = html.slice(c[0], c[1]).replace(/<h2((?:(?!\bid=)[^>])*)>([\s\S]*?)<\/h2>/g, (m, attrs, txt) => {
+    let id = 's-' + slugDe(textoPlano(txt)).slice(0, 48), n = 2;
+    while (usados.has(id)) id = id.replace(/-\d+$/, '') + '-' + n++;
+    usados.add(id);
+    return `<h2${attrs} id="${id}">${txt}</h2>`;
+  });
+  return html.slice(0, c[0]) + dentro + html.slice(c[1]);
+}
+function h2sDelCuerpo(html) {
+  const c = cuerpoMain(html);
+  if (!c) return [];
+  return [...html.slice(c[0], c[1]).matchAll(/<h2([^>]*)>([\s\S]*?)<\/h2>/g)]
+    .filter(([, attrs]) => !/class="[^"]*\bsr\b/.test(attrs))
+    .map(([, attrs, txt]) => ({ id: (attrs.match(/\bid="([^"]+)"/) || [])[1], texto: textoPlano(txt) })).filter(x => x.id && x.texto);
+}
 for (const p of PAGINAS) {
   const pagina = { ...p, titulo_doc: p.titulo_doc || `${p.titulo} · Ayuntamiento de ${N}`, entradilla: p.entradilla || null, migas: p.migas || [], cortina: !!p.cortina, es_inicio: !!p.es_inicio,
     /* la 404 ya lleva su propio arco en el cuerpo: una puerta por página */
     cabecera: cabeceras[p.id] || null, cabeza_grande: p.id === 'pueblo' && !!cabeceras[p.id], cabeza_arco: p.id !== 'error' && !cabeceras[p.id] };
+  /* v3 · dentro del arco de línea, el pictograma de la página (con foto, manda la foto) */
+  pagina.picto = pagina.cabeza_arco && pictoDe(p) ? pictoDe(p) : null;
+  pagina.pictograma = pagina.picto ? PICTOS[pagina.picto] : null;
   const datos = {
     ...comun, pagina, noticia: p.noticia || null,
     nav: NAV.map(([id, texto]) => ({ id, texto, href: id + '.html', actual: id === p.id })),
     base_404: p.archivo === '404.html' && M.url ? new URL(M.url).pathname.replace(/\/?$/, '/') : null
   };
-  let html = renderizar(conParciales(leer('fuente/' + (p.fuente || p.archivo))), datos);
+  pagina.indice = null;
+  const plantilla = conParciales(leer('fuente/' + (p.fuente || p.archivo)));
+  let html = renderizar(plantilla, datos);
+  /* v3 · índice lateral «En esta página» en las páginas largas (≥ 4 h2 en el cuerpo): se pinta una
+     vez, se leen sus h2 y, si salen, se vuelve a pintar con el índice */
+  if (!SIN_INDICE.has(p.id)) {
+    html = conIdsEnH2(html);
+    const h2s = h2sDelCuerpo(html);
+    if (h2s.length >= 4) { pagina.indice = h2s; html = conIdsEnH2(renderizar(plantilla, datos)); }
+  }
   html = html.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+\n/g, '\n');
   escribir(p.archivo, html);
 }

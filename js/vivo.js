@@ -493,12 +493,53 @@
         (enlace ? '<a class="evento__enlace" href="' + esc(enlace.url) + '">' + esc(enlace.texto) + '<span class="sr">: ' + esc(e.titulo) + esc(enlace.sr || ', se abre otra web') + '</span></a>' : '') +
         (pendiente ? icsHtml(e, D) : '') + '</p>' : '') + '</li>';
   }
+  /* v3 · el calendario del mes, a la izquierda de la lista (arriba en el móvil). Una tabla por mes,
+     desde el mes en curso (o hasta 2 atrás, si «Ya pasó» enseña algo de entonces) hasta el último acto
+     anunciado o, como poco, el horizonte de la agenda (D.horizonte_dias). Los días con actos enlazan a
+     su acto en la lista; hoy lleva aria-current="date" y el oro de los filetes. Solo se ve el mes
+     en curso: main.js enseña los botones de mes anterior y siguiente (sin JS, la lista lo tiene todo). */
+  var DIAS_L = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+  function claveMes(iso) { return iso.slice(0, 7); }
+  function mesSiguiente(clave, n) { var a = Number(clave.slice(0, 4)), m = Number(clave.slice(5, 7)) - 1 + n; a += Math.floor(m / 12); m = ((m % 12) + 12) % 12; return a + '-' + (m < 9 ? '0' : '') + (m + 1); }
+  function nombreMes(clave) { var m = MESES[Number(clave.slice(5, 7)) - 1]; return m.charAt(0).toUpperCase() + m.slice(1) + ' de ' + clave.slice(0, 4); }
+  function calendario(D, ahora, p, ya) {
+    var hoyMes = claveMes(ahora.iso), enlazables = p.concat(ya), porDia = {};
+    enlazables.forEach(function (e) { (porDia[e.fecha] = porDia[e.fecha] || []).push(e); });
+    var desde = hoyMes, hasta = claveMes(sumarDias(ahora.iso, D.horizonte_dias || 60)), tope = mesSiguiente(hoyMes, -2);
+    ya.forEach(function (e) { var k = claveMes(e.fecha); if (k < desde && k >= tope) desde = k; });
+    p.forEach(function (e) { var k = claveMes(e.fecha); if (k > hasta) hasta = k; });
+    var meses = [];
+    for (var k = desde; k <= hasta && meses.length < 16; k = mesSiguiente(k, 1)) meses.push(k);
+    var h = '<div class="calendario" data-mes-hoy="' + hoyMes + '">' +
+      '<h2 class="sr" id="t-calendario">Calendario</h2>' +
+      '<div class="calendario__nav" hidden><button type="button" class="calendario__paso" data-cal-paso="-1"><svg class="icono icono--volver" aria-hidden="true"><use href="#i-flecha"/></svg><span class="sr">Mes anterior</span></button>' +
+      '<p class="sr" role="status" data-cal-estado></p>' +
+      '<button type="button" class="calendario__paso" data-cal-paso="1"><span class="sr">Mes siguiente</span><svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></button></div>';
+    meses.forEach(function (clave) {
+      var a = Number(clave.slice(0, 4)), m = Number(clave.slice(5, 7));
+      var primero = clave + '-01', hueco = (diaSemana(primero) + 6) % 7, dias = new Date(Date.UTC(a, m, 0)).getUTCDate();
+      var t = '<div class="calendario__mes" data-mes="' + clave + '"' + (clave === hoyMes ? '' : ' hidden') + '><table class="calendario__tabla"><caption class="calendario__caption">' + nombreMes(clave) + '</caption><thead><tr>' +
+        DIAS_L.map(function (d) { return '<th scope="col"><span aria-hidden="true">' + d.charAt(0).toUpperCase() + '</span><span class="sr">' + d + '</span></th>'; }).join('') + '</tr></thead><tbody><tr>';
+      for (var i = 0; i < hueco; i++) t += '<td></td>';
+      for (var d = 1; d <= dias; d++) {
+        var iso = clave + '-' + (d < 10 ? '0' : '') + d, col = (hueco + d - 1) % 7, evs = porDia[iso] || [], esHoy = iso === ahora.iso;
+        if (col === 0 && d > 1) t += '</tr><tr>';
+        t += '<td class="calendario__celda' + (evs.length ? ' con-acto' : '') + (esHoy ? ' es-hoy' : '') + (evs.length && !eventoPendiente(evs[0], ahora) ? ' ya-paso' : '') + '"' + (esHoy ? ' aria-current="date"' : '') + '>' +
+          (evs.length ? '<a class="calendario__dia" href="#evento-' + esc(evs[0].id) + '">' + d + '<span class="sr">' + (esHoy ? ', hoy' : '') + ': ' + evs.map(function (e) { return esc(e.titulo); }).join('; ') + '</span></a>'
+            : '<span class="calendario__dia">' + d + (esHoy ? '<span class="sr">, hoy</span>' : '') + '</span>') + '</td>';
+      }
+      for (var r = (hueco + dias) % 7; r && r < 7; r++) t += '<td></td>';
+      h += t + '</tr></tbody></table></div>';
+    });
+    return h + '<p class="calendario__leyenda" aria-hidden="true"><span class="calendario__muestra calendario__muestra--acto"></span>Con actos<span class="calendario__muestra calendario__muestra--hoy"></span>Hoy</p></div>';
+  }
   function agenda(D, ahora) {
     var p = proximos(D, ahora);
     var ya = pasados(D, ahora).slice(0, 6);
-    return '<h2 class="seccion__titulo" id="t-proximo">Lo que viene</h2>' +
+    return '<div class="agenda__calendario">' + calendario(D, ahora, p, ya) + '</div><div class="agenda__lista">' +
+      '<h2 class="seccion__titulo" id="t-proximo">Lo que viene</h2>' +
       (p.length ? '<ol class="eventos">' + p.map(function (e) { return evento(e, D, ahora); }).join('') + '</ol>' : '<p>No hay nada anunciado.</p>') +
-      (ya.length ? '<h2 class="seccion__titulo" id="t-pasado">Ya pasó</h2><ol class="eventos eventos--pasados">' + ya.map(function (e) { return evento(e, D, ahora); }).join('') + '</ol>' : '');
+      (ya.length ? '<h2 class="seccion__titulo" id="t-pasado">Ya pasó</h2><ol class="eventos eventos--pasados">' + ya.map(function (e) { return evento(e, D, ahora); }).join('') + '</ol>' : '') + '</div>';
   }
 
   /* ── estado de un servicio (página de teléfonos) ── */

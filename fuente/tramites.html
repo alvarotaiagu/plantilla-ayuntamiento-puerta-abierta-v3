@@ -49,10 +49,19 @@
       <input class="campo__entrada" id="filtrar-tramites" type="search" autocomplete="off" spellcheck="false" placeholder="Por ejemplo: padrón, agua, licencia">
       <p class="buscador__cuenta" role="status" data-filtro-cuenta></p>
     </div>
-    <ul class="todos" id="todos-lista">
-      {{#tramites.lista}}<li data-texto="{{texto_busqueda}}"><a class="enlace-tramite" href="{{href}}">{{nombre}}<span class="sr">{{sr}}</span>{{#formato}}<span class="etiqueta-pdf" aria-hidden="true">{{formato}}</span>{{/formato}}<svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
-      {{/tramites.lista}}
-    </ul>
+    <nav class="az" aria-label="Trámites por letra" data-az="todos-lista">
+      <ol class="az__lista" data-desborda>{{#tramites.az}}<li{{^activa}} aria-hidden="true"{{/activa}}><a class="az__letra" data-letra="{{id}}"{{#activa}} href="#{{id}}"{{/activa}}>{{letra}}</a></li>{{/tramites.az}}</ol>
+    </nav>
+    <div class="todos" id="todos-lista">
+      {{#tramites.letras}}<div class="todos__grupo" data-letra="{{id}}">
+        <h3 class="todos__inicial" id="{{id}}" tabindex="-1">{{letra}}</h3>
+        <ul class="todos__lista">
+          {{#items}}<li data-texto="{{texto_busqueda}}"><a class="enlace-tramite" href="{{href}}">{{nombre}}<span class="sr">{{sr}}</span>{{#formato}}<span class="etiqueta-pdf" aria-hidden="true">{{formato}}</span>{{/formato}}<svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>
+          {{/items}}
+        </ul>
+      </div>
+      {{/tramites.letras}}
+    </div>
   </div>
 </section>
 {{> documento_abajo}}

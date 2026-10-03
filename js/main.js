@@ -24,9 +24,13 @@
       if (el.hasAttribute('data-limite')) op.limite = Number(el.getAttribute('data-limite'));
       if (el.hasAttribute('data-clave')) op.clave = el.getAttribute('data-clave');
       var nuevo = window.Vivo.pintar(bloque, D, a, op);
-      if (el.innerHTML !== nuevo) el.innerHTML = nuevo;
+      /* se compara con lo último que se pintó, no con el DOM (los filtros y el calendario lo tocan):
+         así el repintado de cada minuto no se lleva el foco si no ha cambiado nada */
+      if ((el.__pintado != null ? el.__pintado : el.innerHTML) !== nuevo) el.innerHTML = nuevo;
+      el.__pintado = nuevo;
       if (bloque === 'franja') el.hidden = !nuevo;
       if (bloque === 'tablon') montarTablon(el);
+      if (bloque === 'agenda') montarCalendario(el);
     });
   }
 
@@ -68,6 +72,45 @@
     }
     var existe = !activo || $$('.filtro', grupo).some(function (b) { return b.getAttribute('data-tema') === activo; });
     aplicar(existe ? activo : '');
+  }
+
+  /* ═══ v3 · calendario de la agenda: un mes a la vista y paso al anterior y al siguiente.
+     El mes elegido se guarda en la caja, así un repintado (la hoja, el minuto) no lo pierde ═══ */
+  function montarCalendario(caja) {
+    var cal = $('.calendario', caja);
+    if (!cal) return;
+    var meses = $$('.calendario__mes', cal);
+    if (meses.length < 2) return;
+    $('.calendario__nav', cal).hidden = false;
+    var claves = meses.map(function (m) { return m.getAttribute('data-mes'); });
+    var hoy = cal.getAttribute('data-mes-hoy');
+    function mostrar(clave) {
+      var i = Math.max(0, claves.indexOf(clave));
+      caja.setAttribute('data-mes-actual', claves[i]);
+      meses.forEach(function (m, j) { m.hidden = j !== i; });
+      $$('[data-cal-paso]', cal).forEach(function (b) {
+        var paso = Number(b.getAttribute('data-cal-paso')), destino = claves[i + paso];
+        b.setAttribute('aria-disabled', String(!destino));
+        $('.sr', b).textContent = (paso < 0 ? 'Mes anterior' : 'Mes siguiente') + (destino ? ': ' + $('caption', meses[i + paso]).textContent : '');
+      });
+    }
+    var guardado = caja.getAttribute('data-mes-actual');
+    mostrar(guardado && claves.indexOf(guardado) >= 0 ? guardado : hoy);
+    if (!caja.__calendario) {
+      caja.__calendario = true;
+      caja.addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-cal-paso]');
+        if (!b || b.getAttribute('aria-disabled') === 'true') return;
+        var lista = $$('.calendario__mes', caja).map(function (m) { return m.getAttribute('data-mes'); });
+        var i = lista.indexOf(caja.getAttribute('data-mes-actual'));
+        var destino = lista[i + Number(b.getAttribute('data-cal-paso'))];
+        if (!destino) return;
+        caja.setAttribute('data-mes-actual', destino);
+        montarCalendario(caja);
+        var cal2 = $('.calendario', caja), act = $('.calendario__mes:not([hidden]) caption', cal2);
+        $('[data-cal-estado]', cal2).textContent = act ? act.textContent : '';
+      });
+    }
   }
 
   /* ═══ el tablón más fresco (lo refresca una tarea diaria en el servidor) ═══ */
@@ -226,6 +269,34 @@
       .slice(0, 10).map(function (x) { return x.t; });
   }
   function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  /* v3 · lo encontrado va marcado con <mark>. Se compara igual que busca el buscador (sin tildes ni
+     mayúsculas, con sus variantes y sinónimos) y se marca la palabra entera del texto original:
+     «empad» marca «Empadronamiento», «boda» marca «Matrimonio» */
+  function terminos(q) {
+    var t = [];
+    normal(q).split(/[^a-z0-9ñ@]+/).filter(function (p) { return p.length > 1 && VACIAS.indexOf(' ' + p + ' ') < 0; })
+      .forEach(function (p) { variantes(p).forEach(function (v) { if (v.length > 1 && t.indexOf(v) < 0) t.push(v); }); });
+    return t;
+  }
+  var LETRA = /[\p{L}\p{N}]/u;
+  function conMarcas(texto, ts) {
+    var plano = '', mapa = [], rangos = [];
+    for (var i = 0; i < texto.length; i++) { var n = normal(texto[i]); for (var j = 0; j < n.length; j++) { plano += n[j]; mapa.push(i); } }
+    ts.forEach(function (t) {
+      for (var k = plano.indexOf(t); k >= 0; k = plano.indexOf(t, k + t.length)) {
+        var a = mapa[k], b = mapa[k + t.length - 1] + 1;
+        while (a > 0 && LETRA.test(texto[a - 1])) a--;
+        while (b < texto.length && LETRA.test(texto[b])) b++;
+        rangos.push([a, b]);
+      }
+    });
+    if (!rangos.length) return escHtml(texto);
+    rangos.sort(function (x, y) { return x[0] - y[0]; });
+    var out = '', pos = 0, unidos = [];
+    rangos.forEach(function (r) { var u = unidos[unidos.length - 1]; if (u && r[0] <= u[1]) u[1] = Math.max(u[1], r[1]); else unidos.push(r.slice()); });
+    unidos.forEach(function (r) { out += escHtml(texto.slice(pos, r[0])) + '<mark>' + escHtml(texto.slice(r[0], r[1])) + '</mark>'; pos = r[1]; });
+    return out + escHtml(texto.slice(pos));
+  }
   function montarBuscador(caja) {
     var campo = $('[data-buscador-campo]', caja), lista = $('[data-buscador-resultados]', caja), cuenta = $('[data-buscador-cuenta]', caja);
     if (!campo) return;
@@ -238,11 +309,11 @@
         var q = campo.value.trim();
         if (!q) { lista.innerHTML = ''; cuenta.textContent = ''; return; }
         cargarDatosTramites(function () {
-          var todos = buscar(q), r = max ? todos.slice(0, max) : todos;
+          var todos = buscar(q), r = max ? todos.slice(0, max) : todos, ts = terminos(q);
           lista.innerHTML = r.map(function (t) {
             var claro = (t.c && t.c[0]) ? t.c[0].split(' · ')[0] : '';
-            return '<li><a href="' + escHtml(t.h) + '"><span class="resultado__nombre">' + escHtml(claro || t.n) + '</span>' +
-              (claro && normal(claro) !== normal(t.n) ? '<span class="resultado__oficial">' + escHtml(t.n) + '</span>' : '') +
+            return '<li><a href="' + escHtml(t.h) + '"><span class="resultado__nombre">' + conMarcas(claro || t.n, ts) + '</span>' +
+              (claro && normal(claro) !== normal(t.n) ? '<span class="resultado__oficial">' + conMarcas(t.n, ts) + '</span>' : '') +
               '<span class="sr">' + escHtml(t.s) + '</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>';
           }).join('');
           cuenta.textContent = todos.length > r.length ? todos.length + ' trámites encontrados; aquí, los ' + r.length + ' primeros. «Buscar» los enseña todos.'
@@ -292,8 +363,63 @@
         if (!li.hidden) n++;
       });
       cuenta.textContent = palabras.length ? (n === 1 ? 'Se ve 1 trámite.' : 'Se ven ' + n + ' trámites.') : '';
+      revisarIndice(lista);
     });
   });
+
+  /* ═══ v3 · índice A–Z de «Todos los trámites»: refleja lo que deja el filtro (una letra sin
+     trámites a la vista pierde el enlace y sale del orden de tabulación) y, al saltar, el foco va
+     a la letra de la lista, que queda por debajo del índice fijo (scroll-margin-top) ═══ */
+  function revisarIndice(lista) {
+    var nav = lista && $('[data-az="' + lista.id + '"]');
+    if (!nav) return;
+    $$('[data-letra]', lista).forEach(function (g) {
+      var hay = $$('li', g).some(function (li) { return !li.hidden; });
+      g.hidden = !hay;
+      var a = $('a[data-letra="' + g.getAttribute('data-letra') + '"]', nav);
+      if (!a) return;
+      if (hay) { a.setAttribute('href', '#' + g.getAttribute('data-letra')); a.parentNode.removeAttribute('aria-hidden'); }
+      else { a.removeAttribute('href'); a.parentNode.setAttribute('aria-hidden', 'true'); }
+    });
+  }
+  $$('[data-az]').forEach(function (nav) {
+    nav.addEventListener('click', function (ev) {
+      var a = ev.target.closest('a[href^="#"]');
+      var destino = a && document.getElementById(a.getAttribute('href').slice(1));
+      if (!destino) return;
+      /* el salto lo hace el navegador (con el ancla en la dirección); después, el foco */
+      setTimeout(function () { destino.focus({ preventScroll: true }); }, 0);
+    });
+  });
+
+  /* ═══ v3 · índice «En esta página»: aria-current en la sección que se está leyendo.
+     IntersectionObserver sobre cada h2 con umbral 0 y la franja del 30 % de arriba (memoria
+     «IntersectionObserver en sección alta»: nunca un % de una sección alta); la cuenta se hace
+     con la posición de los h2. Al llegar al pie, la última. Es contenido, no movimiento: también
+     con movimiento reducido ═══ */
+  (function () {
+    var enlaces = $$('.indice__lista a[href^="#"]');
+    if (!enlaces.length || !('IntersectionObserver' in window)) return;
+    var titulos = [];
+    enlaces.forEach(function (a) { var t = document.getElementById(a.getAttribute('href').slice(1)); if (t && titulos.indexOf(t) < 0) titulos.push(t); });
+    if (!titulos.length) return;
+    var pie = $('footer'), pieVisible = false;
+    function marcar() {
+      var limite = innerHeight * 0.3, actual = titulos[0], ultimo = titulos[titulos.length - 1];
+      titulos.forEach(function (t) { if (t.getBoundingClientRect().top <= limite) actual = t; });
+      if (pieVisible && ultimo.getBoundingClientRect().top < innerHeight * 0.85) actual = ultimo;
+      enlaces.forEach(function (a) {
+        if (a.getAttribute('href') === '#' + actual.id) a.setAttribute('aria-current', 'location');
+        else a.removeAttribute('aria-current');
+      });
+    }
+    /* la franja de arriba (pasar de sección) y la pantalla entera (la última, que no llega arriba) */
+    var io = new IntersectionObserver(marcar, { rootMargin: '0px 0px -70% 0px', threshold: 0 });
+    var io2 = new IntersectionObserver(marcar, { threshold: [0, 1] });
+    titulos.forEach(function (t) { io.observe(t); io2.observe(t); });
+    if (pie) new IntersectionObserver(function (e) { pieVisible = e[e.length - 1].isIntersecting; marcar(); }, { threshold: [0, .25, .5, .75, 1] }).observe(pie);
+    marcar();
+  })();
 
   /* ═══ contenedores que desbordan: focusables solo si desbordan (PLIEGO §5) ═══ */
   function revisarDesborde(el) {

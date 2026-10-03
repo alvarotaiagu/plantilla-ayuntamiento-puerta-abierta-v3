@@ -302,7 +302,9 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .resultado__nombre { font-weight: 600; color: var(--marca); }
 .resultado__oficial { grid-column: 1; color: var(--apagado); font-size: .9375rem; }
 .resultados .icono { grid-row: 1 / span 2; grid-column: 2; color: var(--marca); }
-.resultados mark { background: var(--marca-tenue); color: inherit; border-radius: 2px; }
+/* lo encontrado (main.js): el fondo tenue de la marca y en negrita, para que no dependa solo del
+   color de fondo (un subrayado lo confundía con un enlace). El texto sigue en su color: --marca y --apagado pasan AA sobre --marca-tenue */
+.resultados mark { background: var(--marca-tenue); color: inherit; border-radius: 2px; padding-inline: .1em; font-weight: 700; }
 
 /* ═══════════════ PORTADA: HERO ═══════════════
    El arco con la foto, el nombre, el lema, el buscador y los botones. Nada más: «Hoy» va en su
@@ -924,7 +926,16 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas: "migas migas" "titulo titulo" "entradilla puerta";
 }
-.cabeza-pagina__puerta--linea { width: 3.25rem; align-self: end; justify-self: end; margin-bottom: calc(-1 * var(--cabeza-pie) - 1px); }
+.cabeza-pagina__puerta--linea { width: 4.25rem; align-self: end; justify-self: end; margin-bottom: calc(-1 * var(--cabeza-pie) - 1px); }
+/* v3 · el arco ya no está vacío: lleva el pictograma de la página (fuente/_pictogramas.html), un
+   dibujo de línea en la marca con el trazo de los iconos. Va en la parte recta de la puerta,
+   centrado, y el grosor se da en unidades de la rejilla de 24 para que salga ≈ 1,6-2 px */
+.cabeza-pagina__arco--linea { position: relative; }
+.cabeza-pagina__picto {
+  position: absolute; left: 19%; top: 37%; width: 62%; height: auto; aspect-ratio: 1; overflow: visible;
+  fill: none; stroke: var(--marca); stroke-width: 1.05; stroke-linecap: round; stroke-linejoin: round;
+}
+@media (min-width: 48em) { .cabeza-pagina__picto { stroke-width: .72; } }
 .cabeza-pagina__puerta--linea .cabeza-pagina__umbral { height: 4px; margin-inline: -14%; }
 @media (min-width: 48em) {
   .cabeza-pagina--arco .cabeza-pagina__rejilla {
@@ -985,8 +996,32 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 .pasos a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; }
 
 .campo--filtro { margin: 1.25rem 0 0; }
-.todos { list-style: none; margin: 1.25rem 0 0; padding: 0; columns: 2 24rem; column-gap: 2.5rem; }
-.todos li { break-inside: avoid; }
+/* v3 · «Todos los trámites» por iniciales y el índice A–Z, fijo arriba al bajar por la lista (la
+   sección no recorta: un overflow:hidden por encima lo despegaría). En el móvil, una fila que se
+   desplaza de lado; las letras sin trámites, apagadas y fuera del orden de tabulación */
+.az { position: sticky; top: 0; z-index: 3; margin: 1.25rem 0 0; padding: .4rem 0; background: var(--papel); border-bottom: 1px solid var(--linea-fuerte); }
+.az__lista { list-style: none; margin: 0; padding: 0; display: flex; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.az__lista li { flex: 1 0 2.75rem; max-width: none; }
+@media (min-width: 64em) { .az__lista li { flex-basis: 2.25rem; } }
+.az__letra {
+  display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: var(--radio);
+  font: 700 1.125rem/1 var(--f-titulo); color: var(--marca); text-decoration: none;
+}
+.az__letra[href]:hover { background: var(--marca-tenue); text-decoration: underline; }
+.az__letra:not([href]) { color: var(--apagado); font-weight: 400; }
+.az__lista:focus-visible { outline-offset: -3px; }
+.todos { margin: 0; }
+.todos__grupo { display: grid; grid-template-columns: minmax(0, 1fr); padding-top: .75rem; border-bottom: 1px solid var(--linea); }
+.todos__inicial { margin: 0; scroll-margin-top: 4.5rem; font-size: 1.75rem; color: var(--marca); }
+.todos__lista { list-style: none; margin: 0; padding: 0; columns: 2 22rem; column-gap: 2.5rem; }
+.todos__lista li { break-inside: avoid; }
+.todos__lista li:first-child .enlace-tramite { border-top: 0; }
+@media (min-width: 48em) {
+  .todos__grupo { grid-template-columns: 4rem minmax(0, 1fr); padding-block: .5rem; }
+  .todos__inicial { padding-top: .35rem; font-size: 2rem; }
+  .todos__lista li .enlace-tramite { border-top: 0; border-bottom: 1px solid var(--linea); }
+  .todos__lista li:last-child .enlace-tramite { border-bottom: 0; }
+}
 
 .avisos { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
 .aviso { background: var(--superficie); border: 1px solid var(--linea); border-left: 4px solid var(--marca); border-radius: var(--radio); padding: 1.1rem 1.25rem .4rem; }
@@ -996,10 +1031,38 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 .aviso__titulo { font-size: 1.3rem; margin-bottom: .35rem; }
 .aviso:target { outline: 3px solid var(--oro); outline-offset: 2px; }
 
+/* v3 · noticias: cada tarjeta lleva arriba su foto o, sin foto, la fecha grande en un arco del mismo
+   tamaño, así la cuadrícula queda pareja con 0, 1 o todas las fotos. En el móvil, una fila por
+   noticia con el arco pequeño a la izquierda (seis arcos de ancho completo eran media pantalla cada
+   uno). Una sola noticia: tarjeta apaisada a todo el ancho, no un tercio con dos huecos al lado */
 .noticias { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); }
-.noticia { padding: 1rem 1.1rem .5rem; display: flex; flex-direction: column; }
-.noticia__foto { margin: 0 0 .9rem; aspect-ratio: 4 / 3; overflow: hidden; }
+.noticia { padding: 1rem 1.1rem .5rem; display: flex; flex-direction: column; max-width: none; }
+.noticia__foto, .noticia__fecha { margin: 0 0 .9rem; aspect-ratio: 3 / 2; overflow: hidden; }
 .noticia__foto img { width: 100%; height: 100%; object-fit: cover; }
+.noticia__fecha {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: .1rem;
+  padding-bottom: 12%; background: var(--marca-tenue); color: var(--marca); line-height: 1;
+}
+.densidad-puerta .noticia__fecha { border-color: var(--marca); }
+.noticia__dia { font: 700 clamp(3.25rem, 2.4rem + 2.4vw, 4.5rem)/.95 var(--f-titulo); }
+.noticia__mes { font: 700 1.125rem/1.1 var(--f-titulo); letter-spacing: .12em; text-transform: uppercase; }
+.noticia__anio { margin-top: .2rem; color: var(--apagado); font-size: .9375rem; font-weight: 600; }
+.noticia--sin-foto .noticia__meta:not(:has(.ejemplo)) { margin: 0; }
+@media (max-width: 47.99em) {
+  .noticia { flex-direction: row; align-items: flex-start; gap: 1rem; padding: .9rem 1rem .4rem; }
+  .noticia__foto, .noticia__fecha { flex: none; width: 5.5rem; aspect-ratio: 4 / 5; margin: 0 0 .5rem; }
+  .noticia__fecha { padding-bottom: .55rem; }
+  .noticia__dia { font-size: 2.25rem; }
+  .noticia__mes { font-size: .875rem; }
+  .noticia__anio { font-size: .8125rem; }
+  .noticia__texto { min-width: 0; }
+  .noticia__titulo { font-size: 1.15rem; }
+}
+@media (min-width: 48em) {
+  .noticias:has(> .noticia:only-child) { grid-template-columns: minmax(0, 1fr); }
+  .noticia:only-child { display: grid; grid-template-columns: minmax(16rem, 2fr) 3fr; gap: 0 2rem; align-items: center; padding: 1.25rem; }
+  .noticia:only-child :is(.noticia__foto, .noticia__fecha) { margin: 0; }
+}
 .noticia__meta { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: 0 0 .3rem; color: var(--apagado); font-size: 1rem; }
 .noticia__titulo { font-size: 1.3rem; line-height: 1.3; }
 .noticia__titulo a { color: var(--tinta); text-decoration: none; }
@@ -1010,6 +1073,44 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 .articulo__foto { margin: 0 0 1.5rem; aspect-ratio: 3 / 2; overflow: hidden; }
 .articulo__foto img { width: 100%; height: 100%; object-fit: cover; }
 .articulo__fuente { color: var(--apagado); font-size: 1rem; border-top: 1px solid var(--linea); padding-top: 1rem; margin-top: 1.5rem; }
+
+/* v3 · agenda a dos columnas: el calendario del mes (fijo al bajar) a la izquierda y la lista a la
+   derecha; en el móvil, el calendario arriba y compacto */
+.agenda { display: grid; gap: 2rem 3.5rem; align-items: start; }
+.agenda__lista { min-width: 0; }
+.agenda__lista .evento { max-width: 46rem; }
+.agenda__calendario { min-width: 0; max-width: 26rem; }
+@media (min-width: 64em) {
+  .agenda { grid-template-columns: minmax(19rem, 25rem) minmax(0, 1fr); }
+  .agenda__calendario { position: sticky; top: 1rem; max-width: none; }
+}
+.calendario { position: relative; padding: .6rem .4rem .4rem; background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); }
+.calendario__nav:not([hidden]) { position: absolute; top: .5rem; left: .5rem; right: .5rem; display: flex; justify-content: space-between; pointer-events: none; }
+.calendario__paso {
+  pointer-events: auto; display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0;
+  border: 1px solid var(--linea-fuerte); border-radius: var(--radio); background: var(--superficie); color: var(--marca); cursor: pointer;
+}
+.calendario__paso:hover { border-color: var(--marca); background: var(--marca-tenue); }
+.calendario__paso[aria-disabled="true"] { color: var(--apagado); border-color: var(--linea); background: var(--superficie); cursor: default; }
+.calendario__tabla { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 2px; }
+@media (min-width: 48em) { .calendario { padding: .75rem .75rem .5rem; } .calendario__tabla { border-spacing: 3px; } }
+.calendario__caption { min-height: 44px; padding: .35rem 3.25rem .6rem; font: 700 1.3rem/1.2 var(--f-titulo); text-align: center; }
+.calendario__tabla th { padding: 0 0 .25rem; color: var(--apagado); font-size: .8125rem; font-weight: 600; text-align: center; }
+.calendario__tabla td { padding: 0; text-align: center; }
+.calendario__dia {
+  display: flex; align-items: center; justify-content: center; min-height: 44px; border-radius: var(--radio);
+  font-size: 1rem; font-variant-numeric: tabular-nums; color: var(--tinta);
+}
+a.calendario__dia { background: var(--marca-tenue); color: var(--marca); font-weight: 700; text-decoration: underline; text-underline-offset: .2em; }
+a.calendario__dia:hover { background: var(--marca); color: var(--sobre-marca); }
+a.calendario__dia:focus-visible { outline-offset: 1px; }
+.ya-paso a.calendario__dia { background: var(--superficie-2); color: var(--apagado); }
+.es-hoy .calendario__dia { box-shadow: inset 0 0 0 3px var(--oro); font-weight: 700; }
+.calendario__leyenda { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; margin: .5rem .25rem .25rem; color: var(--apagado); font-size: .875rem; }
+.calendario__muestra { display: inline-block; width: 1rem; height: 1rem; border-radius: 3px; }
+.calendario__leyenda .calendario__muestra:not(:first-child) { margin-left: .75rem; }
+.calendario__muestra--acto { background: var(--marca-tenue); border: 1px solid var(--marca); }
+.calendario__muestra--hoy { box-shadow: inset 0 0 0 3px var(--oro); }
 
 .eventos { list-style: none; margin: 0 0 2.5rem; padding: 0; display: grid; gap: .75rem; }
 .evento { padding: 1rem 1.2rem .35rem; }
@@ -1171,6 +1272,38 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 .instalacion .ficha__titulo { font-size: 1.15rem; }
 .creditos { font-size: 1rem; padding-left: 1.1rem; }
 .creditos li { margin-bottom: .4rem; }
+
+/* ── v3 · índice «En esta página» de las páginas largas ──
+   Escritorio: una columna a la izquierda, fija al bajar, con la sección que se está leyendo marcada
+   (aria-current, con el filete de oro). Móvil: un desplegable arriba, plegado. Las secciones del
+   cuerpo pierden su propio margen lateral: ya lo pone la rejilla */
+.con-indice { display: grid; grid-template-columns: minmax(0, 1fr); }
+.con-indice__cuerpo { min-width: 0; }
+.con-indice__cuerpo .contenedor { padding-inline: 0; max-width: none; }
+.con-indice__cuerpo .texto-largo, .con-indice__cuerpo .articulo { max-width: 46rem; }
+.con-indice__cuerpo .placa-rejilla { max-width: 52rem; margin-inline: 0; }
+.con-indice__cuerpo .carril { margin-inline: 0; padding-inline: 0; scroll-padding-inline: 0; }
+.con-indice__cuerpo > .seccion:first-child { border-top: 0; padding-top: clamp(1.75rem, 3.5vw, 2.75rem); }
+.indice__lista { list-style: none; margin: 0; padding: 0; }
+.indice__lista a { display: flex; align-items: center; min-height: 44px; padding: .3rem .75rem; border-left: 3px solid var(--linea); color: var(--tinta); font-size: 1rem; line-height: 1.3; text-decoration: none; }
+.indice__lista a:hover { color: var(--marca); text-decoration: underline; }
+.indice__lista a[aria-current] { border-left-color: var(--oro); color: var(--marca); font-weight: 700; }
+.indice--lateral { display: none; }
+.indice--movil { margin-top: 1.25rem; }
+.indice__plegable { background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); }
+.indice__resumen { display: flex; align-items: center; min-height: 48px; padding: .5rem 1rem; font-weight: 600; cursor: pointer; }
+.indice__plegable[open] .indice__resumen { border-bottom: 1px solid var(--linea); }
+.indice__resumen::-webkit-details-marker { display: none; }
+/* con display:flex el triángulo de <summary> desaparece: un galón que dice que se despliega */
+.indice__resumen::after { content: ""; width: .5rem; height: .5rem; margin: 0 .25rem 0 auto; border-right: 2px solid var(--marca); border-bottom: 2px solid var(--marca); rotate: 45deg; translate: 0 -.15rem; }
+.indice__plegable[open] .indice__resumen::after { rotate: -135deg; translate: 0 .15rem; }
+.indice__plegable .indice__lista { padding: .5rem 1rem .75rem; }
+@media (min-width: 64em) {
+  .con-indice { grid-template-columns: 13.5rem minmax(0, 1fr); column-gap: clamp(2rem, 4vw, 4rem); }
+  .indice--movil { display: none; }
+  .indice--lateral { display: block; position: sticky; top: 1.5rem; align-self: start; max-height: calc(100vh - 3rem); overflow-y: auto; margin-top: clamp(1.75rem, 3.5vw, 2.75rem); padding: 0 .25rem .25rem 0; }
+  .indice__titulo { margin: 0 0 .6rem; color: var(--apagado); font-size: .8125rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; }
+}
 
 /* ── legal y 404 ── */
 .legal { overflow-wrap: break-word; }
