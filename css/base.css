@@ -656,9 +656,19 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .alcaldia { display: grid; gap: 2rem; align-items: center; }
 @media (min-width: 56em) { .alcaldia { grid-template-columns: 15rem 1fr; gap: 3rem; } }
 .retrato { margin: 0; max-width: 15rem; }
-.retrato__hueco { aspect-ratio: 3 / 4; display: grid; place-items: center; background: var(--superficie-2); border: 2px dashed var(--linea-fuerte); }
-.retrato__escudo { width: 42%; opacity: .2; filter: grayscale(1); }
-.retrato__pie { margin-top: .6rem; text-align: center; color: var(--apagado); font-size: .9375rem; }
+/* el retrato que falta: un hueco diseñado (marco interior, escudo apagado y umbral), no una caja
+   discontinua que parece un error. El pie sigue diciendo que ahí irá el retrato oficial */
+.retrato__hueco { position: relative; aspect-ratio: 3 / 4; background: var(--superficie-2); border: 1px solid var(--linea-fuerte); overflow: hidden; }
+.retrato__marco {
+  position: absolute; inset: .6rem .6rem 0; display: grid; place-items: center;
+  border: 1px solid var(--linea-fuerte); border-bottom: 0; border-radius: inherit;
+}
+.densidad-sobria .retrato__marco { inset: .6rem; border-bottom: 1px solid var(--linea-fuerte); }
+.retrato__escudo { width: 40%; opacity: .2; filter: grayscale(1); }
+.retrato__umbral { display: block; height: 6px; margin-inline: -4%; background: var(--oro); border-radius: 2px; }
+.densidad-sobria .retrato__umbral { display: none; }
+.retrato__pie { margin-top: .75rem; text-align: center; color: var(--apagado); font-size: .9375rem; line-height: 1.45; }
+.retrato__pie b { display: block; color: var(--tinta); font: 700 1rem/1.3 var(--f-titulo); letter-spacing: .02em; }
 .saluda { margin: 0 0 1rem; padding-left: 1.25rem; border-left: 3px solid var(--oro); font-size: 1.25rem; line-height: 1.55; }
 .saluda p { margin: 0; }
 .saluda__firma b { display: block; font: 700 1.15rem/1.3 var(--f-titulo); }
@@ -688,6 +698,15 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .ficha__titulo { font-size: 1.15rem; line-height: 1.3; }
 .ficha__persona b { display: block; }
 .ficha__persona span, .ficha__fechas { color: var(--apagado); font-size: 1rem; }
+
+/* «¿Quién se ocupa de qué?» del Ayuntamiento: asunto y delegación oficial a un lado, persona,
+   cargo y grupo (con la muestra del hemiciclo) al otro. Sustituye a la antigua «Concejalías» */
+.quien--ayto .quien__fila { align-items: start; max-width: none; }
+.quien__asunto { min-width: 0; }
+.quien__delegacion { margin: .3rem 0 0; color: var(--apagado); font-size: 1rem; line-height: 1.45; }
+.quien--ayto .quien__persona { align-items: flex-start; }
+.quien__grupo { display: inline-flex; align-items: center; gap: .4rem; margin-top: .35rem; font-size: .9375rem; font-weight: 600; line-height: 1.3; }
+.quien__grupo .pleno__muestra { width: 1.05rem; height: 1.05rem; }
 
 .horario-ayto, .contacto { display: grid; gap: 2rem; align-items: start; }
 @media (min-width: 56em) { .horario-ayto, .contacto { grid-template-columns: 1fr 1fr; gap: 3rem; } }

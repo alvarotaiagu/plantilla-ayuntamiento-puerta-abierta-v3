@@ -303,7 +303,6 @@ function hemiciclo() {
   };
 }
 const pleno = hemiciclo();
-const concejalias = miembros.filter(m => m.delegacion).map(m => ({ ...m }));
 
 /* normativa y documentos: lo que su web vieja tenía colgado (ordenanzas, actas, decretos) y no
    es un trámite. Cada grupo es un desplegable; vacío, la sección no sale */
@@ -330,6 +329,21 @@ const instalaciones = (M.instalaciones || []).map(g => {
   return { grupo: g.grupo, id: 'instalaciones-' + slugDe(g.grupo), items };
 });
 const quien = (M.quien || []).map(q => ({ ...q, iniciales: iniciales(q.nombre) }));
+/* «¿Quién se ocupa de qué?» del Ayuntamiento: el asunto en lenguaje claro (quien) con la delegación
+   oficial y el grupo de la corporación. Antes eran dos secciones («Concejalías» repetía a las mismas
+   personas); las delegaciones que no estén en `quien` entran al final, con la delegación como asunto.
+   Los campos opcionales van a null: si faltan, el Mustache los busca hacia fuera */
+const muestraDe = sigla => ((pleno && pleno.grupos.find(g => g.sigla === sigla)) || {}).muestra || null;
+const quienAyto = [
+  ...(M.quien || []).map(q => {
+    const m = miembros.find(x => x.nombre === q.nombre);
+    return { tema: q.tema, nombre: q.nombre, iniciales: iniciales(q.nombre), cargo: q.cargo || (m && m.cargo) || '',
+      delegacion: (m && m.delegacion) || null, grupo: (m && m.grupo) || null, muestra: m ? muestraDe(m.grupo) : null };
+  }),
+  ...miembros.filter(m => m.delegacion && !(M.quien || []).some(q => q.nombre === m.nombre)).map(m => ({
+    tema: m.delegacion, nombre: m.nombre, iniciales: iniciales(m.nombre), cargo: m.cargo || '', delegacion: null, grupo: m.grupo || null, muestra: muestraDe(m.grupo)
+  }))
+];
 
 /* ───────────────────────── contenido ───────────────────────── */
 const avisosOrden = C.avisos.filter(a => !a.oculto).slice().sort((a, b) => b.fecha.localeCompare(a.fecha))
@@ -528,7 +542,7 @@ const comun = {
   paletas: paletas.map((p, i) => ({ clave: p.clave, nombre: nombreMatiz(p.col.marca), pulsado: i === 0 ? 'true' : 'false' })),
   tramites, listin_corto: listinCorto, listin_grupos: gruposListin,
   quien, quien_portada: quien.filter(q => q.portada), fiestas,
-  pleno, concejalias, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
+  pleno, quien_ayto: quienAyto, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },
   pueblo, creditos, hay_creditos_fotos: creditos.length > 0, hero_foto: heroFoto,
