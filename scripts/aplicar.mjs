@@ -212,7 +212,8 @@ function foto(archivo, alt, para) {
 /* ───────────────────────── trámites ───────────────────────── */
 const todos = (M.tramites.todos || []).filter(t => t.vigente !== false);
 for (const t of todos) {
-  if (!t.id && !t.url) errores.push('trámite «' + t.nombre + '» sin id ni url');
+  /* en la sede de la Diputación, un trámite puede ir solo con su `opc` (opc_id del menú) */
+  if (!t.id && !t.url && !(t.opc && M.sede.tipo === 'diputacion')) errores.push('trámite «' + t.nombre + '» sin id ni url' + (M.sede.tipo === 'diputacion' ? ' ni opc' : ''));
   if (t.id && M.sede.tipo === 'gestiona' && !/^[0-9a-f-]{36}$/.test(t.id)) errores.push('trámite «' + t.nombre + '»: el id de Gestiona es un uuid');
 }
 const conHref = t => { const href = S.tramite(t); return { ...t, href, sr: srDe(href, t.tipo) }; };
@@ -375,7 +376,10 @@ const pueblo = {
   lugares: (P.lugares || []).map(l => { const f = foto(l.foto, l.alt, l.nombre); return { nombre: l.nombre, texto: l.texto, foto: f ? l.foto : null, ancho: f ? f.ancho : null, alto: f ? f.alto : null, alt: l.alt || '', credito: f ? f.credito : null }; }),
   placa: P.placa ? { titulo: P.placa.titulo || 'Un lugar con nombre propio', lineas: P.placa.lineas, pie: P.placa.pie, texto: P.placa.texto || null } : null,
   gastronomia: P.gastronomia ? { ...P.gastronomia, foto_datos: P.gastronomia.foto ? foto(P.gastronomia.foto, P.gastronomia.alt, 'gastronomía') : null } : null,
-  historia: P.historia || [], patrimonio: P.patrimonio || [], personajes: P.personajes || [], rutas: P.rutas || [],
+  historia: P.historia || [], patrimonio: P.patrimonio || [], personajes: P.personajes || [],
+  /* url: null explícito: si falta, el Mustache la busca hacia fuera y encuentra la `url` de la web
+     (una ruta sin enlace salía con «Ver la ruta» a la portada; Monesterio, Camino de Santiago) */
+  rutas: (P.rutas || []).map(r => ({ ...r, url: r.url || null })),
   /* lo que se puede visitar por dentro: con horario y entrada solo si constan; si no, cómo preguntarlo */
   visitas: (P.visitas || []).map(v => {
     if (!v.nombre) errores.push('pueblo.visitas: cada visita lleva «nombre»');

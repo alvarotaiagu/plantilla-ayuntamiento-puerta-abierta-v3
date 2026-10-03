@@ -439,7 +439,8 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .listin-corto__titulo { font-size: 1.3rem; margin-bottom: .5rem; }
 .listin { list-style: none; margin: 0; padding: 0; }
 .listin__fila { display: flex; align-items: center; gap: .5rem; padding: .3rem 0; border-bottom: 1px solid var(--linea); }
-.listin__nombre { flex: 0 1 auto; line-height: 1.35; padding-block: .3rem; }
+/* min-width:0 y anywhere: un correo largo en la nota («policialocal@…») ensanchaba toda la columna a 320 px */
+.listin__nombre { flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere; line-height: 1.35; padding-block: .3rem; }
 .listin__nombre small { display: block; color: var(--apagado); font-size: .9375rem; }
 .listin__puntos { flex: 1 1 1rem; min-width: .75rem; align-self: center; border-bottom: 2px dotted var(--linea-fuerte); }
 .listin__numero {
@@ -578,6 +579,7 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .evento:target { outline: 3px solid var(--oro); outline-offset: 2px; }
 
 .listin-completo { display: grid; gap: 2rem 3rem; }
+.listin-completo > * { min-width: 0; }
 @media (min-width: 64em) { .listin-completo { grid-template-columns: 1fr 1fr; align-items: start; } }
 .listin-grupo__titulo { font-size: 1.3rem; padding-bottom: .5rem; border-bottom: 2px solid var(--tinta); margin-bottom: 0; }
 .listin-completo .listin__fila { padding-block: .45rem; }

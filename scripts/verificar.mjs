@@ -534,24 +534,40 @@ async function interaccion() {
   await ir(page, 'index.html');
   await page.click('[data-abrir-buscador]');
   const abierto = await page.evaluate(() => document.getElementById('buscador').open && document.activeElement.matches('[data-buscador-campo]'));
-  const casos = [['empadronarme', /padr[oó]n/i], ['obra', /urban[ií]stica/i], ['agua', /agua/i], ['boda', /matrimonio/i], ['tramite padron', /padr[oó]n/i], ['quejas', /quejas/i]];
+  /* los casos de Ribera, si el municipio tiene esos trámites; si no (Monesterio no tiene ni agua ni
+     boda ni quejas en su sede), los que salen de sus propios sinónimos */
+  const sinTilde = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const nombresTram = (M.tramites.todos || []).filter(t => t.vigente !== false).map(t => sinTilde(t.nombre));
+  const hayTram = re => nombresTram.some(n => re.test(n));
+  const casos = [['empadronarme', /padr[oó]n/i], ['obra', /urban[ií]stica/i], ['agua', /agua/i], ['boda', /matrimonio/i], ['tramite padron', /padr[oó]n/i], ['quejas', /quejas/i]]
+    .map(([q, re]) => [q, new RegExp(sinTilde(re.source), 'i')]).filter(([, re]) => hayTram(re))
+    /* «lo suyo» incluye lo que el municipio dice en sus sinónimos («obra» → obra menor, en Monesterio) */
+    .map(([q, re]) => [q, new RegExp([re.source, ...((M.tramites.sinonimos || {})[q] || []).map(d => sinTilde(d).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))].join('|'), 'i')]);
+  for (const [q, destinos] of Object.entries(M.tramites.sinonimos || {})) {
+    if (casos.length >= 5) break;
+    const hay = destinos.map(sinTilde).filter(d => nombresTram.some(n => n.includes(d)));
+    if (hay.length && !casos.some(c => c[0] === q)) casos.push([q, new RegExp(hay.map(d => d.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i')]);
+  }
   const malos = [];
+  if (casos.length < 4) malos.push('solo ' + casos.length + ' casos de prueba: faltan sinónimos que lleven a trámites');
   for (const [q, re] of casos) {
     await page.fill('#buscador [data-buscador-campo]', q);
     await page.waitForFunction(() => document.querySelector('#buscador [data-buscador-cuenta]').textContent.length > 0, null, { timeout: 3000 }).catch(() => {});
     await espera(250);
     const r = await page.evaluate(() => [...document.querySelectorAll('#buscador [data-buscador-resultados] a')].map(a => ({ t: a.textContent, h: a.getAttribute('href') })));
-    if (!r.length || !re.test(r[0].t)) malos.push(`«${q}» → ${r.length} resultados, el primero «${r[0] ? r[0].t.slice(0, 40) : '-'}»`);
+    if (!r.length || !re.test(sinTilde(r[0].t))) malos.push(`«${q}» → ${r.length} resultados, el primero «${r[0] ? r[0].t.slice(0, 40) : '-'}»`);
     if (r.some(x => !patronSede.test(x.h) && !/\.(pdf|docx?)$/.test(x.h) && !/^https:\/\//.test(x.h))) malos.push(`«${q}»: enlace raro`);
   }
   await page.keyboard.press('Escape');
   const cerrado = await page.evaluate(() => !document.getElementById('buscador').open);
   if (!abierto || !cerrado) malos.push('abierto ' + abierto + ', cerrado ' + cerrado);
-  comprobar(abierto && !malos.length && cerrado, 'buscador: la lupa abre el diálogo con el foco en el campo; «empadronarme», «obra», «agua», «boda» y «tramite padron» (sin tildes) encuentran lo suyo; Esc lo cierra' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  comprobar(abierto && !malos.length && cerrado, 'buscador: la lupa abre el diálogo con el foco en el campo; ' + casos.map(c => '«' + c[0] + '»').join(', ') + ' (sin tildes) encuentran lo suyo; Esc lo cierra' + (malos.length ? ' → ' + malos.join(' | ') : ''));
   await ir(page, 'tramites.html');
-  await page.fill('#filtrar-tramites', 'agua');
-  const f = await page.evaluate(() => ({ vis: [...document.querySelectorAll('#todos-lista li')].filter(l => l.getBoundingClientRect().height > 0).length, esperado: [...document.querySelectorAll('#todos-lista li')].filter(l => l.dataset.texto.includes('agua')).length, cuenta: document.querySelector('[data-filtro-cuenta]').textContent }));
-  comprobar(f.vis > 0 && f.vis === f.esperado && f.cuenta.includes(String(f.vis)), `filtro de «Todos los trámites»: «agua» deja ${f.vis} visibles y lo dice`);
+  /* una palabra que esté en algunos trámites y no en todos */
+  const palabra = ['agua', 'obra', 'padron', 'licencia', 'certificado'].find(w => { const n = nombresTram.filter(x => x.includes(w)).length; return n > 0 && n < nombresTram.length; }) || 'agua';
+  await page.fill('#filtrar-tramites', palabra);
+  const f = await page.evaluate(w => ({ vis: [...document.querySelectorAll('#todos-lista li')].filter(l => l.getBoundingClientRect().height > 0).length, esperado: [...document.querySelectorAll('#todos-lista li')].filter(l => l.dataset.texto.includes(w)).length, cuenta: document.querySelector('[data-filtro-cuenta]').textContent }), palabra);
+  comprobar(f.vis > 0 && f.vis === f.esperado && f.cuenta.includes(String(f.vis)), `filtro de «Todos los trámites»: «${palabra}» deja ${f.vis} visibles y lo dice`);
   const total = await page.evaluate(() => document.querySelectorAll('#todos-lista li').length);
   const cabecera = await page.evaluate(() => document.getElementById('todos').textContent);
   comprobar(cabecera.includes('(' + total + ')'), `«Todos los trámites (${total})» cuenta lo que lista`);
