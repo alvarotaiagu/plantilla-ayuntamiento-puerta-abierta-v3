@@ -56,10 +56,16 @@
 {{#pueblo.patrimonio.length}}<section class="seccion" aria-labelledby="t-patrimonio">
   <div class="contenedor">
     <h2 class="seccion__titulo" id="t-patrimonio">Patrimonio</h2>
-    <ul class="patrimonio">
-      {{#pueblo.patrimonio}}<li><b>{{nombre}}</b>{{#detalle}}<span>{{detalle}}</span>{{/detalle}}</li>
-      {{/pueblo.patrimonio}}
-    </ul>
+    <div class="patrimonio-grupos">
+      {{#pueblo.patrimonio_grupos}}<div class="patrimonio-grupo">
+        {{#titulo}}<h3 class="patrimonio-grupo__titulo">{{titulo}}</h3>{{/titulo}}
+        <ul class="patrimonio">
+          {{#items}}<li class="patrimonio__fila"><b class="patrimonio__nombre">{{nombre}}</b>{{#detalle}}<span class="patrimonio__detalle">{{detalle}}</span>{{/detalle}}</li>
+          {{/items}}
+        </ul>
+      </div>
+      {{/pueblo.patrimonio_grupos}}
+    </div>
   </div>
 </section>{{/pueblo.patrimonio.length}}
 
@@ -71,7 +77,7 @@
 </section>{{/fiestas.length}}
 
 {{#pueblo.gastronomia}}<section class="seccion" aria-labelledby="t-gastronomia">
-  <div class="contenedor gastronomia">
+  <div class="contenedor gastronomia{{#pueblo.gastronomia.foto_datos}} gastronomia--con-foto{{/pueblo.gastronomia.foto_datos}}">
     <div>
       <h2 class="seccion__titulo" id="t-gastronomia">Gastronomía</h2>
       <div class="gastronomia__listas">
@@ -80,7 +86,7 @@
         {{#pueblo.gastronomia.bebidas.length}}<div><h3 class="gastronomia__titulo">Para beber</h3><ul class="lista-coma">{{#pueblo.gastronomia.bebidas}}<li>{{.}}</li>{{/pueblo.gastronomia.bebidas}}</ul></div>{{/pueblo.gastronomia.bebidas.length}}
       </div>
     </div>
-    {{#pueblo.gastronomia.foto_datos}}<figure class="gastronomia__foto"><img src="media/{{archivo}}-800.jpg" width="{{ancho}}" height="{{alto}}" alt="{{alt}}" loading="lazy" decoding="async">{{#credito}}<figcaption class="credito">{{credito}}</figcaption>{{/credito}}</figure>{{/pueblo.gastronomia.foto_datos}}
+    {{#pueblo.gastronomia.foto_datos}}<figure class="gastronomia__foto"><div class="gastronomia__marco arco-opcional"><img src="media/{{archivo}}-800.jpg" width="{{ancho}}" height="{{alto}}" alt="{{alt}}" loading="lazy" decoding="async"></div>{{#credito}}<figcaption class="credito">{{credito}}</figcaption>{{/credito}}</figure>{{/pueblo.gastronomia.foto_datos}}
   </div>
 </section>{{/pueblo.gastronomia}}
 

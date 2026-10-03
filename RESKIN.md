@@ -68,7 +68,7 @@ Fuentes que funcionaron en Ribera y Segura:
 | `escudo_credito` | sí | Autor, licencia y URL de la ficha de Commons |
 | `corporacion` | no | `grupos` (sigla, nombre, color, trama `liso`/`rayas`/`puntos`/`cuadros`, gobierno) y `miembros` (nombre, grupo, cargo, delegación y `alcalde: true`). Sin `grupos` no sale el hemiciclo; con 13 concejales o menos, sale de una sola fila |
 | `alcaldia.saluda` | no | Con `saluda_ejemplo: true` mientras no lo escriban ellos |
-| `quien` | no | Tema, persona y cargo. Las de `portada: true` salen en la portada (4) |
+| `quien` | no | Tema, persona y cargo. Las de `portada: true` salen en la portada (4). En «El Ayuntamiento», cada fila se completa con la delegación oficial y el grupo del miembro de `corporacion` con el mismo nombre, y las delegaciones que no estén en `quien` se añaden al final (ya no hay sección «Concejalías» aparte): **el nombre tiene que escribirse igual en los dos sitios** |
 | `servicios` | sí | Nombre, teléfono, dirección, horario, `tramos`, `nota` y `grupo`. El grupo ordena el listín. Sin teléfono (la recogida de basura, por ejemplo) sale solo con su detalle, y entonces lleva al menos `nota` u `horario` |
 | `urgencias` | no | El 112 va el primero, en rojo |
 | `listin_corto` | no | 4 nombres de `servicios` o `urgencias` para la portada |
@@ -86,6 +86,8 @@ Fuentes que funcionaron en Ribera y Segura:
 | `plenos` | no | `[{fecha, hora, tipo, lugar, convocatoria, grabacion, ejemplo}]`. Entran en la agenda (chip «Pleno», con su .ics) y el próximo sale en «Más hoy». Mientras viene enlaza la `convocatoria`; cuando ya pasó, la `grabacion`. También vale una fila de la agenda con `"tipo": "pleno"` |
 | `recogida` | no | `[{id, nombre, dias: [1..7], fechas: ["AAAA-MM-DD"], hora, como, telefono, tramite, tramite_texto, ejemplo}]` (enseres, poda, voluminosos). En «Más hoy» dice «toca hoy» o «la próxima, el …» y cómo pedirla. `tramite` es una URL o `{id}` del catálogo de la sede. Salen las 2 primeras |
 | `fotos.hero` | no | `archivo`, `alt` y `posicion` (CSS). Sin foto, el arco queda como hueco diseñado con el escudo apagado |
+| `cabeceras` | no | Foto de la cabecera de una página interior, por id de página (`tramites`, `ayuntamiento`, `avisos`, `noticias`, `agenda`, `telefonos`, `pueblo`, `contacto`, `legal`, `noticia`): `{archivo, alt, posicion}`, o solo el nombre del archivo si la foto es decorativa (sin `alt`). Sale recortada en arco, con su crédito debajo. **`pueblo` la pinta grande**, como un hero: es la página turística, así que conviene darle la mejor foto. Las páginas sin foto llevan el arco de línea en la marca con su umbral de oro (la 404, nada: ya tiene su arco). En la versión sobria, la foto es un rectángulo y no hay arco de línea. Si la foto de `pueblo` es la del primer lugar del carril, ese lugar pasa al final. Solo fotos de `media/` con crédito |
+| `pueblo.patrimonio[].grupo` | no | Agrupa el patrimonio en columnas con título («Iglesia y ermitas», «Casas y palacios», «Arqueología y campo»…), en el orden en que aparecen. Sin grupos, sale la lista de siempre en dos columnas; lo que no lleve grupo entre otros que sí, va a «Otros» |
 
 ## 4. La sede: dos familias
 

@@ -303,7 +303,6 @@ function hemiciclo() {
   };
 }
 const pleno = hemiciclo();
-const concejalias = miembros.filter(m => m.delegacion).map(m => ({ ...m }));
 
 /* normativa y documentos: lo que su web vieja tenía colgado (ordenanzas, actas, decretos) y no
    es un trámite. Cada grupo es un desplegable; vacío, la sección no sale */
@@ -330,6 +329,21 @@ const instalaciones = (M.instalaciones || []).map(g => {
   return { grupo: g.grupo, id: 'instalaciones-' + slugDe(g.grupo), items };
 });
 const quien = (M.quien || []).map(q => ({ ...q, iniciales: iniciales(q.nombre) }));
+/* «¿Quién se ocupa de qué?» del Ayuntamiento: el asunto en lenguaje claro (quien) con la delegación
+   oficial y el grupo de la corporación. Antes eran dos secciones («Concejalías» repetía a las mismas
+   personas); las delegaciones que no estén en `quien` entran al final, con la delegación como asunto.
+   Los campos opcionales van a null: si faltan, el Mustache los busca hacia fuera */
+const muestraDe = sigla => ((pleno && pleno.grupos.find(g => g.sigla === sigla)) || {}).muestra || null;
+const quienAyto = [
+  ...(M.quien || []).map(q => {
+    const m = miembros.find(x => x.nombre === q.nombre);
+    return { tema: q.tema, nombre: q.nombre, iniciales: iniciales(q.nombre), cargo: q.cargo || (m && m.cargo) || '',
+      delegacion: (m && m.delegacion) || null, grupo: (m && m.grupo) || null, muestra: m ? muestraDe(m.grupo) : null };
+  }),
+  ...miembros.filter(m => m.delegacion && !(M.quien || []).some(q => q.nombre === m.nombre)).map(m => ({
+    tema: m.delegacion, nombre: m.nombre, iniciales: iniciales(m.nombre), cargo: m.cargo || '', delegacion: null, grupo: m.grupo || null, muestra: muestraDe(m.grupo)
+  }))
+];
 
 /* ───────────────────────── contenido ───────────────────────── */
 const avisosOrden = C.avisos.filter(a => !a.oculto).slice().sort((a, b) => b.fecha.localeCompare(a.fecha))
@@ -444,6 +458,20 @@ const pueblo = {
   placa: P.placa ? { titulo: P.placa.titulo || 'Un lugar con nombre propio', lineas: P.placa.lineas, pie: P.placa.pie, texto: P.placa.texto || null } : null,
   gastronomia: P.gastronomia ? { ...P.gastronomia, foto_datos: P.gastronomia.foto ? foto(P.gastronomia.foto, P.gastronomia.alt, 'gastronomía') : null } : null,
   historia: P.historia || [], patrimonio: P.patrimonio || [], personajes: P.personajes || [],
+  /* patrimonio por grupos (campo opcional `grupo` de cada elemento), en el orden en que aparecen.
+     Sin grupos, un solo bloque sin título; lo que no lleve grupo entre otros que sí, va a «Otros» */
+  patrimonio_grupos: (() => {
+    const gs = [];
+    for (const it of P.patrimonio || []) {
+      const t = it.grupo || null;
+      let g = gs.find(x => x.clave === t);
+      if (!g) gs.push(g = { clave: t, titulo: t, items: [] });
+      g.items.push({ nombre: it.nombre, detalle: it.detalle || null });
+    }
+    if (gs.length > 1) gs.forEach(g => { if (!g.titulo) g.titulo = 'Otros'; });
+    gs.sort((a, b) => (a.clave === null) - (b.clave === null));
+    return gs.map(g => ({ titulo: g.titulo, items: g.items, cuenta: g.items.length }));
+  })(),
   /* url: null explícito: si falta, el Mustache la busca hacia fuera y encuentra la `url` de la web
      (una ruta sin enlace salía con «Ver la ruta» a la portada; Monesterio, Camino de Santiago) */
   rutas: (P.rutas || []).map(r => ({ ...r, url: r.url || null })),
@@ -466,6 +494,22 @@ const pueblo = {
 };
 if (P.establecimientos && P.establecimientos.length && !P.establecimientos_fuente) errores.push('pueblo.establecimientos_fuente: di de dónde salen los datos y de cuándo (son negocios privados)');
 pueblo.establecimientos_fuente = P.establecimientos_fuente || null;
+/* cabeceras de las páginas interiores: foto opcional por id de página, recortada en arco como la
+   del hero. "cabeceras": { "pueblo": { "archivo", "alt", "posicion" } } o solo "archivo" (sin alt:
+   la foto es decorativa). Sin foto, la cabecera lleva el arco de línea. «El pueblo» la pinta grande */
+const ID_PAGINAS = ['tramites', 'ayuntamiento', 'avisos', 'noticias', 'agenda', 'telefonos', 'pueblo', 'contacto', 'legal', 'noticia'];
+const cabeceras = {};
+for (const [id, c] of Object.entries(M.cabeceras || {})) {
+  if (id.startsWith('_') || c == null) continue;
+  if (!ID_PAGINAS.includes(id)) { errores.push('cabeceras: «' + id + '» no es una página (' + ID_PAGINAS.join(', ') + ')'); continue; }
+  const conf = typeof c === 'string' ? { archivo: c } : c;
+  if (!conf.archivo) { errores.push('cabeceras «' + id + '»: falta «archivo»'); continue; }
+  const f = foto(conf.archivo, conf.alt, 'cabecera de ' + id);
+  if (f) cabeceras[id] = { ...f, alt: conf.alt || '', posicion: conf.posicion || '50% 50%', credito: f.credito || null };
+}
+/* si la foto grande de «El pueblo» es la del primer lugar del carril, ese lugar pasa al final:
+   la misma foto dos veces seguidas parece un error */
+if (cabeceras.pueblo && pueblo.lugares.length > 1 && pueblo.lugares[0].foto === cabeceras.pueblo.archivo) pueblo.lugares.push(pueblo.lugares.shift());
 const creditos = [...usadas.values()];
 
 /* ───────────────────────── legal ───────────────────────── */
@@ -574,7 +618,7 @@ const comun = {
   paletas: paletas.map((p, i) => ({ clave: p.clave, nombre: nombreMatiz(p.col.marca), pulsado: i === 0 ? 'true' : 'false' })),
   tramites, listin_corto: listinCorto, listin_grupos: gruposListin,
   quien, quien_portada: quien.filter(q => q.portada), fiestas,
-  pleno, concejalias, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
+  pleno, quien_ayto: quienAyto, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },
   pueblo, creditos, hay_creditos_fotos: creditos.length > 0, hero_foto: heroFoto,
@@ -589,7 +633,9 @@ const conParciales = (src, n = 0) => {
   return src.replace(/\{\{>\s*([\w-]+)\s*\}\}/g, (m, nombre) => conParciales(leer('fuente/_' + nombre + '.html'), n + 1));
 };
 for (const p of PAGINAS) {
-  const pagina = { ...p, titulo_doc: p.titulo_doc || `${p.titulo} · Ayuntamiento de ${N}`, entradilla: p.entradilla || null, migas: p.migas || [], cortina: !!p.cortina, es_inicio: !!p.es_inicio };
+  const pagina = { ...p, titulo_doc: p.titulo_doc || `${p.titulo} · Ayuntamiento de ${N}`, entradilla: p.entradilla || null, migas: p.migas || [], cortina: !!p.cortina, es_inicio: !!p.es_inicio,
+    /* la 404 ya lleva su propio arco en el cuerpo: una puerta por página */
+    cabecera: cabeceras[p.id] || null, cabeza_grande: p.id === 'pueblo' && !!cabeceras[p.id], cabeza_arco: p.id !== 'error' && !cabeceras[p.id] };
   const datos = {
     ...comun, pagina, noticia: p.noticia || null,
     nav: NAV.map(([id, texto]) => ({ id, texto, href: id + '.html', actual: id === p.id })),

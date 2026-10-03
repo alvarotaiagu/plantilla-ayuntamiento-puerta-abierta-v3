@@ -546,9 +546,78 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
 @media (max-width: 36em) { .cookies { left: .5rem; right: .5rem; bottom: .5rem; padding: .85rem 1rem; } .cookies__texto { font-size: .9375rem; } }
 
 /* ═══════════════ PÁGINAS INTERIORES ═══════════════ */
-.cabeza-pagina { padding-block: 1rem clamp(1.5rem, 3vw, 2.25rem); border-bottom: 1px solid var(--linea); }
-.cabeza-pagina__titulo { font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem); margin-bottom: .25rem; }
+/* Cabecera de página: migas, h1 y entradilla con la puerta a la derecha.
+   - Sin foto: un arco de línea en la marca con su umbral de oro, de pie sobre el filete de abajo
+     (en el móvil, pequeño junto al título).
+   - Con foto (municipio.json → cabeceras): la foto recortada en arco, como la del hero.
+   - «El pueblo» con foto: grande, a media pantalla.
+   - Versión sobria: el arco solo va en el hero; aquí la foto es un rectángulo y no hay arco de línea.
+   Una rejilla plana (sin envoltorio del texto) para poder mover la puerta entre filas. */
+.cabeza-pagina { --cabeza-pie: clamp(1.5rem, 3vw, 2.25rem); padding-block: 1rem var(--cabeza-pie); border-bottom: 1px solid var(--linea); }
+.cabeza-pagina__rejilla {
+  display: grid; grid-template-columns: minmax(0, 1fr); column-gap: clamp(1rem, 4vw, 3.5rem);
+  grid-template-areas: "migas" "titulo" "entradilla" "puerta";
+}
+.cabeza-pagina .migas { grid-area: migas; min-width: 0; }
+.cabeza-pagina__titulo { grid-area: titulo; font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem); margin-bottom: .25rem; min-width: 0; overflow-wrap: break-word; }
+/* a 320 px con barra de desplazamiento clásica quedan 273 px: «Ayuntamiento» a 36 px no cabe */
+@media (max-width: 23.99em) { .cabeza-pagina__titulo { font-size: 2rem; } }
+.cabeza-pagina .entradilla { grid-area: entradilla; }
 .entradilla { font-size: 1.25rem; line-height: 1.5; margin: .5rem 0 0; max-width: 44rem; }
+.cabeza-pagina__puerta { grid-area: puerta; position: relative; margin: 0; }
+.cabeza-pagina__arco { display: block; overflow: hidden; background: var(--superficie-2); }
+.cabeza-pagina__arco img { width: 100%; height: 100%; object-fit: cover; }
+.cabeza-pagina__arco--linea { aspect-ratio: 4 / 5; background: var(--marca-tenue); border: 2px solid var(--marca); border-bottom: 0; border-radius: 9999px 9999px 0 0; }
+.cabeza-pagina__umbral { display: block; height: 6px; margin-inline: max(-6%, calc(4px - var(--margen))); background: var(--oro); border-radius: 2px; }
+.cabeza-pagina__puerta .credito { margin-top: .5rem; }
+
+/* sin foto: el arco de línea, de pie sobre el filete de la cabecera (el umbral tapa la línea de
+   abajo). En el móvil, pequeño y junto a la entradilla, nunca junto al título: le quitaría ancho
+   y partiría palabras largas («Ayuntamiento», a 320 px) */
+.cabeza-pagina--arco .cabeza-pagina__rejilla {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "migas migas" "titulo titulo" "entradilla puerta";
+}
+.cabeza-pagina__puerta--linea { width: 3.25rem; align-self: end; justify-self: end; margin-bottom: calc(-1 * var(--cabeza-pie) - 1px); }
+.cabeza-pagina__puerta--linea .cabeza-pagina__umbral { height: 4px; margin-inline: -14%; }
+@media (min-width: 48em) {
+  .cabeza-pagina--arco .cabeza-pagina__rejilla {
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas: "migas puerta" "titulo puerta" "entradilla puerta";
+  }
+  .cabeza-pagina__puerta--linea { width: clamp(5.5rem, 8vw, 7.5rem); }
+  .cabeza-pagina__puerta--linea .cabeza-pagina__umbral { height: 6px; margin-inline: -10%; }
+}
+
+/* con foto: debajo del texto en el móvil (el ancho limitado por el alto: con el zoom al 200 %
+   el arco cabe en la pantalla y sigue siendo de medio punto); a la derecha desde 48em */
+.cabeza-pagina--foto .cabeza-pagina__puerta { margin-top: 1.25rem; width: min(100%, 34rem, 96vh); }
+.cabeza-pagina--foto .cabeza-pagina__arco { aspect-ratio: 16 / 10; }
+@media (min-width: 48em) {
+  .cabeza-pagina--foto:not(.cabeza-pagina--grande) .cabeza-pagina__rejilla {
+    grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto 1fr;
+    grid-template-areas: "migas puerta" "titulo puerta" "entradilla puerta";
+  }
+  .cabeza-pagina--foto:not(.cabeza-pagina--grande) .cabeza-pagina__puerta { width: clamp(12rem, 22vw, 17rem); margin-top: .5rem; }
+  .cabeza-pagina--foto:not(.cabeza-pagina--grande) .cabeza-pagina__arco { aspect-ratio: 4 / 5; }
+}
+/* «El pueblo»: la página turística abre con la foto grande */
+.cabeza-pagina--grande .cabeza-pagina__puerta { width: min(100%, 44rem, 80vh); }
+.cabeza-pagina--grande .cabeza-pagina__arco { aspect-ratio: 4 / 3; }
+@media (min-width: 64em) {
+  .cabeza-pagina--grande { padding-bottom: clamp(2rem, 4vw, 3.5rem); }
+  .cabeza-pagina--grande .cabeza-pagina__rejilla {
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 34rem); grid-template-rows: auto 1fr auto auto 1.4fr;
+    grid-template-areas: "migas puerta" ". puerta" "titulo puerta" "entradilla puerta" ". puerta";
+  }
+  .cabeza-pagina--grande .cabeza-pagina__puerta { width: 100%; margin-top: .5rem; }
+  .cabeza-pagina--grande .cabeza-pagina__arco { aspect-ratio: 5 / 4; }
+  .cabeza-pagina--grande .cabeza-pagina__titulo { font-size: clamp(3rem, 1.6rem + 3.4vw, 4.75rem); }
+  .cabeza-pagina--grande .entradilla { font-size: 1.375rem; }
+}
+.densidad-sobria .cabeza-pagina__puerta--linea,
+.densidad-sobria .cabeza-pagina__umbral { display: none; }
+.densidad-sobria .cabeza-pagina--arco .cabeza-pagina__rejilla { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "migas" "titulo" "entradilla"; }
 .migas ol { list-style: none; margin: 0 0 .25rem; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0 .5rem; font-size: 1rem; }
 .migas li + li::before { content: "/"; color: var(--apagado); margin-right: .5rem; }
 .migas a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding-inline: .2rem; }
@@ -617,9 +686,19 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
 .alcaldia { display: grid; gap: 2rem; align-items: center; }
 @media (min-width: 56em) { .alcaldia { grid-template-columns: 15rem 1fr; gap: 3rem; } }
 .retrato { margin: 0; max-width: 15rem; }
-.retrato__hueco { aspect-ratio: 3 / 4; display: grid; place-items: center; background: var(--superficie-2); border: 2px dashed var(--linea-fuerte); }
-.retrato__escudo { width: 42%; opacity: .2; filter: grayscale(1); }
-.retrato__pie { margin-top: .6rem; text-align: center; color: var(--apagado); font-size: .9375rem; }
+/* el retrato que falta: un hueco diseñado (marco interior, escudo apagado y umbral), no una caja
+   discontinua que parece un error. El pie sigue diciendo que ahí irá el retrato oficial */
+.retrato__hueco { position: relative; aspect-ratio: 3 / 4; background: var(--superficie-2); border: 1px solid var(--linea-fuerte); overflow: hidden; }
+.retrato__marco {
+  position: absolute; inset: .6rem .6rem 0; display: grid; place-items: center;
+  border: 1px solid var(--linea-fuerte); border-bottom: 0; border-radius: inherit;
+}
+.densidad-sobria .retrato__marco { inset: .6rem; border-bottom: 1px solid var(--linea-fuerte); }
+.retrato__escudo { width: 40%; opacity: .2; filter: grayscale(1); }
+.retrato__umbral { display: block; height: 6px; margin-inline: -4%; background: var(--oro); border-radius: 2px; }
+.densidad-sobria .retrato__umbral { display: none; }
+.retrato__pie { margin-top: .75rem; text-align: center; color: var(--apagado); font-size: .9375rem; line-height: 1.45; }
+.retrato__pie b { display: block; color: var(--tinta); font: 700 1rem/1.3 var(--f-titulo); letter-spacing: .02em; }
 .saluda { margin: 0 0 1rem; padding-left: 1.25rem; border-left: 3px solid var(--oro); font-size: 1.25rem; line-height: 1.55; }
 .saluda p { margin: 0; }
 .saluda__firma b { display: block; font: 700 1.15rem/1.3 var(--f-titulo); }
@@ -649,6 +728,15 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
 .ficha__titulo { font-size: 1.15rem; line-height: 1.3; }
 .ficha__persona b { display: block; }
 .ficha__persona span, .ficha__fechas { color: var(--apagado); font-size: 1rem; }
+
+/* «¿Quién se ocupa de qué?» del Ayuntamiento: asunto y delegación oficial a un lado, persona,
+   cargo y grupo (con la muestra del hemiciclo) al otro. Sustituye a la antigua «Concejalías» */
+.quien--ayto .quien__fila { align-items: start; max-width: none; }
+.quien__asunto { min-width: 0; }
+.quien__delegacion { margin: .3rem 0 0; color: var(--apagado); font-size: 1rem; line-height: 1.45; }
+.quien--ayto .quien__persona { align-items: flex-start; }
+.quien__grupo { display: inline-flex; align-items: center; gap: .4rem; margin-top: .35rem; font-size: .9375rem; font-weight: 600; line-height: 1.3; }
+.quien__grupo .pleno__muestra { width: 1.05rem; height: 1.05rem; }
 
 .horario-ayto, .contacto { display: grid; gap: 2rem; align-items: start; }
 @media (min-width: 56em) { .horario-ayto, .contacto { grid-template-columns: 1fr 1fr; gap: 3rem; } }
@@ -694,20 +782,30 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
 .placa__pie { margin-top: 1.25rem; color: var(--apagado); font-size: 1rem; }
 .placa__nota { color: var(--apagado); }
 
-.patrimonio { list-style: none; margin: 0; padding: 0; columns: 2 22rem; column-gap: 2.5rem; }
-.patrimonio li { break-inside: avoid; padding: .75rem 0; border-top: 1px solid var(--linea); }
-.patrimonio b { display: block; font: 700 1.125rem/1.35 var(--f-titulo); }
-.patrimonio span { display: block; color: var(--apagado); font-size: 1rem; line-height: 1.5; }
+/* patrimonio por grupos (campo opcional `grupo`): una columna con título por grupo, que se
+   colocan lado a lado en escritorio. Sin grupos, la lista de siempre en dos columnas */
+.patrimonio-grupos { display: grid; gap: 2rem 2.5rem; align-items: start; grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); }
+.patrimonio-grupo { min-width: 0; }
+.patrimonio-grupo__titulo { font-size: 1.3rem; margin: 0; padding-bottom: .5rem; border-bottom: 2px solid var(--tinta); }
+.patrimonio { list-style: none; margin: 0; padding: 0; }
+.patrimonio-grupo:only-child .patrimonio { columns: 2 22rem; column-gap: 2.5rem; }
+.patrimonio__fila { break-inside: avoid; padding: .75rem 0; border-bottom: 1px solid var(--linea); }
+.patrimonio-grupo:only-child .patrimonio__fila { border-bottom: 0; border-top: 1px solid var(--linea); }
+.patrimonio__nombre { display: block; font: 700 1.125rem/1.35 var(--f-titulo); }
+.patrimonio__detalle { display: block; color: var(--apagado); font-size: 1rem; line-height: 1.5; margin-top: .15rem; }
 
 .gastronomia { display: grid; gap: 2rem; align-items: start; }
-@media (min-width: 56em) { .gastronomia { grid-template-columns: 1.3fr 1fr; gap: 3rem; } }
+@media (min-width: 56em) { .gastronomia--con-foto { grid-template-columns: 1.3fr 1fr; gap: 3rem; } }
 .gastronomia__listas { display: grid; gap: 1.25rem; }
+/* sin foto, las listas ocupan el ancho en columnas: que no quede un hueco a la derecha */
+.gastronomia:not(.gastronomia--con-foto) .gastronomia__listas { grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 1.25rem 2.5rem; }
 .gastronomia__titulo { font-size: 1.15rem; margin-bottom: .3rem; }
 .lista-coma { list-style: none; margin: 0; padding: 0; }
 .lista-coma li { display: inline; }
 .lista-coma li:not(:last-child)::after { content: " · "; color: var(--apagado); }
 .gastronomia__foto { margin: 0; }
-.gastronomia__foto img { border-radius: var(--radio); width: 100%; }
+.gastronomia__marco { aspect-ratio: 4 / 3; overflow: hidden; background: var(--superficie-2); }
+.gastronomia__marco img { width: 100%; height: 100%; object-fit: cover; }
 
 .rutas { list-style: none; margin: 0; padding: 0; display: grid; gap: 0 2.5rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); }
 .ruta { padding: .9rem 0 .2rem; border-top: 1px solid var(--linea); }
@@ -743,6 +841,24 @@ code { font-size: .9em; overflow-wrap: anywhere; }
 .no-encontrada { display: grid; gap: 2rem; align-items: center; }
 @media (min-width: 48em) { .no-encontrada { grid-template-columns: 11rem 1fr; } }
 .no-encontrada__arco { width: 11rem; aspect-ratio: 3 / 4; }
+
+/* ═══════════════ TEXTURA DE CAL ═══════════════
+   Grano muy fino y unas manchas suaves sobre --papel, como una pared encalada. Vale para
+   cualquier pueblo: no lleva color, solo transparencia de negro (los números de feColorMatrix
+   y la tabla de feComponentTransfer), y se pinta sobre el --papel de cada marca.
+   - Contraste: la tabla tope deja cada píxel en ≤ 2 % + 1 % de negro, nunca más oscuro que
+     --superficie-2 (papel con un 3,5 % de tinta), que ya está medido contra el texto, el
+     apagado y la marca en scripts/lib/color.mjs. Se cumple mientras la tinta tenga canales
+     ≤ papel / 7 (cualquier tinta casi negra).
+   - Coste: dos imágenes que se rasterizan una vez y se repiten; se desplazan con la página
+     (nada de background-attachment: fixed ni filtros por fotograma).
+   - Las tarjetas (--superficie) y la cabecera quedan lisas: la hoja sobre la pared. */
+body {
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 .003 .008 .014 .02'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='720' height='720'%3E%3Cfilter id='m' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0 .003 .007 .01'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E");
+  background-size: 220px 220px, 720px 720px;
+}
 
 /* ═══════════════ DENSIDAD ═══════════════
    «Puerta abierta»: el arco enmarca también las fotos del carril, de las

@@ -30,7 +30,8 @@ La web es una puerta de medio punto encalada que da paso a lo que pasa hoy en el
 
 **Carácter:**
 - Letra: Besley para los titulares y Libre Franklin para el texto. Se sirven desde la propia web.
-- Cal `#FAF9F5` y tinta `#1A1E1B`.
+- Cal `#FAF9F5` y tinta `#1A1E1B`. La cal lleva un grano muy fino y unas manchas suaves (SVG con `feTurbulence`, solo transparencia de negro y con tope: ningún píxel más oscuro que `--superficie-2`).
+- Las cabeceras de las páginas interiores repiten la puerta: un arco de línea en la marca con su umbral de oro, de pie sobre el filete, o la foto en arco si `cabeceras` le da una. «El pueblo» la lleva grande.
 - El sinople del escudo, oscurecido hasta AA (`#0A7940`), como marca.
 - Oro `#EAC102` solo en filetes, en la marca de «hoy» y en el borde del mes actual. **Nunca como texto.**
 - El gules, oscurecido (`#CF0317`), solo en la franja urgente y en el 112.
@@ -61,12 +62,12 @@ El RD 1112/2018 obliga a cumplir WCAG 2.1 AA. Por eso esta plantilla **rompe a p
 |---|---|
 | `index.html` | Franja urgente (si la hay). Hero «Hoy en Ribera» con el arco. Trámites por temas con 4 atajos. Tablón con filtros (los 6 últimos). «Lo que viene y lo que pasó» con el listín corto. «¿Quién se ocupa de qué?». «El año en Ribera». Franja de sede y pie |
 | `tramites.html` | Buscador, «Por momentos», por temas y «Todos los trámites (115)» con filtro |
-| `ayuntamiento.html` | Alcaldía (retrato como hueco diseñado y saluda de ejemplo). Quién se ocupa de qué. El pleno en hemiciclo (color, trama y rótulo). Concejalías. Horario y contacto. Enlace a las grabaciones de pleno |
+| `ayuntamiento.html` | Alcaldía (retrato como hueco diseñado y saluda de ejemplo). Quién se ocupa de qué (asunto, persona, cargo, delegación oficial y grupo, en una sola lista). El pleno en hemiciclo (color, trama y rótulo). Horario y contacto. Enlace a las grabaciones de pleno |
 | `avisos.html` | Avisos propios y el tablón completo con filtros |
 | `noticias.html` y `noticia-*.html` | Lista y detalle de cada noticia |
 | `agenda.html` | Lo que viene (con las fiestas de fecha fija y los plenos), lo que pasó y el año en fiestas. Cada evento que viene lleva «Añadir a mi calendario (archivo .ics)»; un pleno, su convocatoria o, ya celebrado, su grabación |
 | `telefonos.html` | El listín completo, con el 112 el primero y el «abierto ahora» de la biblioteca y el centro de día |
-| `pueblo.html` | Carril de lugares con fotos en arco, la placa de la casa natal de Meléndez Valdés, historia, patrimonio, fiestas, gastronomía, personajes, rutas y créditos de las fotos |
+| `pueblo.html` | Cabecera grande con la foto de las dos torres en arco (y su crédito), carril de lugares con fotos en arco, la placa de la casa natal de Meléndez Valdés, historia, patrimonio en tres grupos, fiestas, gastronomía con foto, personajes, rutas y créditos de las fotos |
 | `contacto.html` | Dirección, horario, mapa bajo clic, instancia general y quejas (en la sede), y datos de la entidad |
 | `aviso-legal.html`, `privacidad.html`, `cookies.html`, `accesibilidad.html`, `404.html` | Lo legal y la página de error |
 
@@ -262,6 +263,7 @@ Los datos de cada página tienen su fuente en **[DATOS.md](DATOS.md)**.
   - la sede caída no rompe nada.
 - **Reskin** a Segura de León sin restos de Ribera, y la banda de propuesta que se apaga con `"propuesta": false`.
 - **Secciones opcionales** que Ribera no usa («Para visitar», «Normativa y documentos» e impresos en Word, añadidas para Fuente de Cantos; el canal de avisos con sus pasos, farmacias con teléfono, dos recogidas y un pleno a 10 días): se prueban en una copia con los datos de muestra de `pruebas/opcionales.json`, con axe y a 320 px.
+- **Páginas interiores**: la puerta de la cabecera no pisa el título ni las migas, cabe en la pantalla y es de medio punto a 320, 390, 1024 y 1440 px y con zoom; sin foto, de pie sobre el filete; en la sobria, sin arco. «El pueblo» con su foto grande y su crédito, el patrimonio entero en sus grupos, «¿Quién se ocupa de qué?» sin perder a nadie (asunto, persona, delegación y grupo), el hemiciclo entero y la textura de cal sin `fixed` ni filtros.
 - **Contenido**:
   - «Ejemplo» exactamente en los 8 datos marcados;
   - banda y `noindex` en todas las páginas;
