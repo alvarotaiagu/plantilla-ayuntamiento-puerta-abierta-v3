@@ -95,8 +95,11 @@ if (M.sede.tipo === 'gestiona') {
   if (!ent || !opc.tablon) errores.push('sede de la Diputación: hacen falta sede.ent_id y sede.opc.tablon (y transparencia/perfil si los tiene)');
   const noEst = o => `${sedeBase}/portal/noEstatica.do?opc_id=${o}&ent_id=${ent}`;
   S = {
-    inicio: sedeBase, tablon: noEst(opc.tablon), transparencia: M.sede.transparencia || noEst(opc.transparencia),
-    perfil: M.sede.perfil_contratante || noEst(opc.perfil),
+    /* muchas sedes de la Diputación no tienen portal de transparencia (Monesterio, 03/10/2026):
+       sin `transparencia` ni `opc.transparencia`, el enlace no sale; igual con el perfil */
+    inicio: sedeBase, tablon: noEst(opc.tablon),
+    transparencia: M.sede.transparencia || (opc.transparencia ? noEst(opc.transparencia) : null),
+    perfil: M.sede.perfil_contratante || (opc.perfil ? noEst(opc.perfil) : null),
     tramite: t => (t.opc ? noEst(t.opc) : t.url || (/^https?:/.test(t.id) ? t.id : noEst(t.id))),
     /* además de noEstatica.do, la ficha de un trámite (/sede/fichaInformativa.do?…) y los
        documentos del tablón (/portal/tablonVirtual.do?aDoc=F…) son enlaces fijos de la sede */

@@ -100,7 +100,7 @@ Fuentes que funcionaron en Ribera y Segura:
   - Los de **registro de entrada** tienen ficha con enlace fijo: `/sede/fichaInformativa.do?asu_cod=…&asu_mod_cod=…&codVerif=<hash>&tra_cod=`. El `codVerif` es estable, no de sesión. Ponla en `url`.
   - Los del **padrón** no tienen ficha pública. Usa su `opc`: `noEstatica.do?opc_id=49` abre una página que pide identificarse y lo explica. Las rutas internas (`/sede/pmhnet/…`) devuelven una página vacía sin sesión.
   - El patrón de la verificación admite cualquier `/portal/*.do?…` o `/sede/*.do?…` de su `base`.
-  - **No suele haber transparencia ni quejas** en la sede. Sin `sede.quejas`, «Quejas» lleva a la instancia general. Pon en `sede.instancia_general` la `url` de la ficha del registro general.
+  - **No suele haber transparencia ni quejas** en la sede. Sin `sede.transparencia` ni `sede.opc.transparencia`, el enlace a transparencia no sale en ninguna página (franja de la sede, «Normativa y documentos» y aviso legal); lo mismo con el perfil del contratante. Sin `sede.quejas`, «Quejas» lleva a la instancia general. Pon en `sede.instancia_general` la `url` de la ficha del registro general.
 
 La verificación comprueba que **todos** los enlaces de la sede siguen el patrón de su tipo.
 

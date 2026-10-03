@@ -67,7 +67,7 @@
 {{#documentos.length}}<section class="seccion" id="documentos" aria-labelledby="t-documentos">
   <div class="contenedor">
     <h2 class="seccion__titulo" id="t-documentos">Normativa y documentos</h2>
-    <p class="seccion__entradilla">Ordenanzas, actas y otros documentos del Ayuntamiento. Lo publicado oficialmente está en el <a href="{{sede.tablon}}">tablón<span class="sr">, se abre la sede electrónica</span></a> y en el <a href="{{sede.transparencia}}">portal de transparencia<span class="sr">, se abre la sede electrónica</span></a>.</p>
+    <p class="seccion__entradilla">Ordenanzas, actas y otros documentos del Ayuntamiento. Lo publicado oficialmente está en el <a href="{{sede.tablon}}">tablón<span class="sr">, se abre la sede electrónica</span></a>{{#sede.transparencia}} y en el <a href="{{sede.transparencia}}">portal de transparencia<span class="sr">, se abre la sede electrónica</span></a>{{/sede.transparencia}}.</p>
     <div class="temas">
       {{#documentos}}<details class="tema">
         <summary class="tema__resumen">

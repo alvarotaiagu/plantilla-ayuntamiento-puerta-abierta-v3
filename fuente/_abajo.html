@@ -5,10 +5,10 @@
       <ul class="sede-franja__lista">
         <li><a class="sede-franja__enlace" href="{{sede.inicio}}"><svg class="icono" aria-hidden="true"><use href="#i-sede"/></svg><span><b>Sede electrónica</b><span>Trámites con certificado o Cl@ve</span></span></a></li>
         <li><a class="sede-franja__enlace" href="{{sede.tablon}}"><svg class="icono" aria-hidden="true"><use href="#i-tablon"/></svg><span><b>Tablón de anuncios</b><span>Edictos y anuncios oficiales</span></span></a></li>
-        <li><a class="sede-franja__enlace" href="{{sede.transparencia}}"><svg class="icono" aria-hidden="true"><use href="#i-ojo"/></svg><span><b>Transparencia</b><span>Cuentas, contratos y acuerdos</span></span></a></li>
-        <li><a class="sede-franja__enlace" href="{{sede.perfil}}"><svg class="icono" aria-hidden="true"><use href="#i-contrato"/></svg><span><b>Perfil del contratante</b><span>Licitaciones del Ayuntamiento</span></span></a></li>
+        {{#sede.transparencia}}<li><a class="sede-franja__enlace" href="{{sede.transparencia}}"><svg class="icono" aria-hidden="true"><use href="#i-ojo"/></svg><span><b>Transparencia</b><span>Cuentas, contratos y acuerdos</span></span></a></li>{{/sede.transparencia}}
+        {{#sede.perfil}}<li><a class="sede-franja__enlace" href="{{sede.perfil}}"><svg class="icono" aria-hidden="true"><use href="#i-contrato"/></svg><span><b>Perfil del contratante</b><span>Licitaciones del Ayuntamiento</span></span></a></li>{{/sede.perfil}}
       </ul>
-      <p class="sede-franja__nota">Estos cuatro enlaces le llevan a la sede electrónica o a la Plataforma de Contratación del Sector Público.</p>
+      <p class="sede-franja__nota">Estos enlaces le llevan a la sede electrónica o a la Plataforma de Contratación del Sector Público.</p>
     </div>
   </section>
   <div class="pie__cuerpo">
