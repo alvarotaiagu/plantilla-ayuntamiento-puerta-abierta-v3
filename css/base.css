@@ -790,17 +790,20 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
 .banda--oscura .chip--mayor, .banda--oscura .mes__ahora { background: var(--oro); color: var(--tinta); }
 /* respiro: sin «Quién se ocupa» detrás, la banda oscura no se pega a la franja verde de la sede */
 main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
-/* v3: el cambio de banda entra por una puerta. Sobre el borde de arriba de la banda asoma un arco
-   de medio punto de su mismo color, alineado con el borde del texto (donde empieza la raya de oro
-   del título). Mide 0,7 del relleno de abajo de la sección anterior: nunca pisa su contenido.
-   Es un pseudo-elemento: no lo lee nadie. Quieto, está arriba del todo; css/movimiento.css lo hace
-   subir al llegar con el scroll. Una puerta por banda, en dos bandas: nunca una arcada */
+/* v3: el cambio de banda entra por una puerta. Sobre el borde de arriba de la banda se alza un arco
+   de medio punto DE LÍNEA en la marca (la puerta de las cabeceras interiores), con el borde de la
+   banda por umbral, alineado con el borde del texto (donde empieza la raya de oro del título).
+   Mide 0,7 del relleno de abajo de la sección anterior: nunca pisa su contenido. Un arco macizo del
+   color de la banda se leía como una mancha. Es un pseudo-elemento: no lo lee nadie. Quieto, está
+   arriba del todo; css/movimiento.css lo hace subir al llegar con el scroll. Una puerta por banda,
+   en dos bandas: nunca una arcada */
 .banda--puerta { position: relative; isolation: isolate; }
 .banda--puerta::before {
   content: ""; position: absolute; z-index: -1; bottom: 100%;
   left: max(var(--margen), calc((100% - var(--ancho)) / 2));
-  width: calc(var(--seccion) * 1.4); height: calc(var(--seccion) * .7);
-  border-radius: 9999px 9999px 0 0; background-color: inherit;
+  width: calc(var(--seccion) * .9); height: calc(var(--seccion) * .7);
+  box-sizing: border-box; border: 2px solid var(--marca); border-bottom: 0;
+  border-radius: 9999px 9999px 0 0;
   pointer-events: none;
 }
 .densidad-sobria .banda--puerta::before { display: none; }
