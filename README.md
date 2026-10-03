@@ -37,12 +37,25 @@ La web es una puerta de medio punto encalada que da paso a lo que pasa hoy en el
 - El gules, oscurecido (`#CF0317`), solo en la franja urgente y en el 112.
 - Esquinas de 6 px, filetes de 1 px y casi ninguna sombra.
 
-**El único gesto: la cortina** (solo en la portada, una vez por sesión, 1,2 s):
+**El gesto grande: la cortina** (solo en la portada, una vez por sesión, 1,2 s):
 1. Se traza un arco en sinople de abajo arriba, con su umbral de oro.
 2. El hueco del arco se abre desde la base y deja ver la portada.
 3. El hueco vuela hasta el arco de la foto del hero y aterriza al píxel; el arco se vuelve a medir en cada fotograma.
 
-Se salta con un clic, una tecla o la rueda. Con movimiento reducido no existe, y sin GSAP se quita sola.
+Se salta con un clic, una tecla o la rueda. Con movimiento reducido no existe, y sin GSAP se quita sola. Al irse, la foto del arco se asienta (de 1,06 a 1) y las filas de «Hoy» entran escalonadas.
+
+**Movimiento pequeño** (v2), en `css/movimiento.css` y `js/movimiento.js`. Todo va dentro de `prefers-reduced-motion: no-preference`, el estado de reposo es el final y ningún texto se revela con opacity:
+- **Transiciones entre páginas.** View Transitions: la cabecera se queda quieta y la foto de una noticia viaja del listado al artículo.
+- **Revelados ligados al scroll** (`animation-timeline: view()`, dentro de `@supports`): la raya de oro de cada título se dibuja y la línea de tiempo se traza.
+- **Atajos:** un arco de `--marca-tenue` sube al pasar el ratón o al llegar con el foco.
+- **Paneles y desplegables:** el menú móvil baja como una persiana, el buscador entra con escala y los desplegables se abren con altura animada.
+- **Detalles:**
+  - el punto de «Abierto ahora» late 3 veces;
+  - los filtros del tablón recolocan las filas;
+  - las flechas se desplazan al pasar el ratón;
+  - los escaños del hemiciclo aparecen en orden.
+
+Firefox se queda sin las transiciones entre páginas ni los revelados por scroll, y se ve igual de completo. `verificar.mjs → movimiento` comprueba que con movimiento reducido no se anima nada, y que con movimiento no queda nada a medias al bajar hasta el final.
 
 ## Sector público: la accesibilidad manda
 

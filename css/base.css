@@ -5,8 +5,9 @@
 
    Accesibilidad (RD 1112/2018, WCAG 2.1 AA) por encima del PLIEGO:
    texto de 18 px, interlineado ≥ 1,5, medida ≤ 75 caracteres, zonas táctiles
-   de 44 px, scroll nativo, nada de texto apagado con opacity, y el único
-   movimiento de verdad es la cortina de la portada.
+   de 44 px, scroll nativo y nada de texto apagado con opacity. El movimiento
+   (cortina aparte) vive en css/movimiento.css y js/movimiento.js, siempre bajo
+   prefers-reduced-motion: no-preference y con el reposo como estado final.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 *, *::before, *::after { box-sizing: border-box; }
