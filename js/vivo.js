@@ -365,13 +365,18 @@
     var h = '<p class="linea__hoy"><span class="linea__marca" aria-hidden="true"><svg class="linea__arquito" viewBox="0 0 20 24"><path d="M2 23V10a8 8 0 0 1 16 0v13"/></svg></span>' +
       '<span class="linea__hoy-texto"><b>Hoy</b>, ' + esc(fechaLarga(ahora.iso)) + '</span></p>';
     h += '<div class="linea__bloques"><div class="linea__bloque linea__bloque--viene"><h3 class="linea__subtitulo">Lo que viene</h3>';
+    var itemEvento = function (e) {
+      return '<li class="linea__item linea__item--evento"' + marcaEjemplo(e, 'evento:' + e.id) + '>' +
+        '<p class="linea__cuando"><time datetime="' + e.fecha + '">' + esc(cuando(e.fecha, ahora)) + (e.hora ? ', ' + hora(e.hora) : '') + '</time><span class="chip chip--agenda">' + (e.tipo === 'pleno' ? 'Pleno' : 'Agenda') + '</span>' + (e.ejemplo ? EJEMPLO : '') + '</p>' +
+        '<div class="linea__tarjeta"><div><h4 class="linea__titulo"><a href="' + esc(enlaceEvento(e, D)) + '">' + esc(e.titulo) + '</a></h4>' +
+        (e.lugar ? '<p class="linea__lugar">' + esc(e.lugar) + '</p>' : '') + '</div></div></li>';
+    };
     if (vienen.length) {
-      h += '<ol class="linea linea--viene">' + vienen.map(function (e) {
-        return '<li class="linea__item linea__item--evento"' + marcaEjemplo(e, 'evento:' + e.id) + '>' +
-          '<p class="linea__cuando"><time datetime="' + e.fecha + '">' + esc(cuando(e.fecha, ahora)) + (e.hora ? ', ' + hora(e.hora) : '') + '</time><span class="chip chip--agenda">Agenda</span>' + (e.ejemplo ? EJEMPLO : '') + '</p>' +
-          '<div class="linea__tarjeta"><div><h4 class="linea__titulo"><a href="' + esc(enlaceEvento(e, D)) + '">' + esc(e.titulo) + '</a></h4>' +
-          (e.lugar ? '<p class="linea__lugar">' + esc(e.lugar) + '</p>' : '') + '</div></div></li>';
-      }).join('') + '</ol>';
+      h += '<ol class="linea linea--viene">' + vienen.map(itemEvento).join('') + '</ol>';
+      /* v3: con uno o dos eventos en el plazo, la columna quedaba corta junto a «Lo que pasó».
+         Se completa con lo que la agenda ya tiene más adelante (datos reales, con su fecha) */
+      var despues = todos.filter(function (e) { return e.fecha > tope; }).slice(0, 3 - vienen.length);
+      if (despues.length) h += '<p class="linea__despues">Más adelante</p><ol class="linea linea--despues">' + despues.map(itemEvento).join('') + '</ol>';
     } else {
       /* estado vacío: lo dice, y si hay algo más adelante, cuál es */
       h += '<div class="linea__vacio"><p>No hay nada anunciado en los próximos ' + dias + ' días.</p>' +
@@ -404,19 +409,53 @@
   /* Tira de 12 meses: los que tienen fiesta se despliegan; los vacíos ocupan poco (en escritorio,
      solo la abreviatura; el nombre entero y «sin fiestas» siguen ahí para el lector de pantalla).
      El mes en curso, con el borde de oro. Sigue siendo una lista ordenada de 12 meses */
+  /* v3: si el mes en curso no tiene fiestas, su celda (la resaltada) dice cuál es la siguiente.
+     Se busca hacia delante, dando la vuelta al año; null si no hay ninguna en otro mes */
+  function siguienteFiesta(D, mes) {
+    for (var k = 1; k < 12; k++) {
+      var m = ((mes - 1 + k) % 12) + 1;
+      var fs = (D.fiestas || []).filter(function (f) { return f.mes === m; });
+      if (fs.length) return { fiesta: fs[0], mes: m };
+    }
+    return null;
+  }
   function anio(D, ahora) {
     return MESES.map(function (m, i) {
       var mes = i + 1;
       var fs = (D.fiestas || []).filter(function (f) { return f.mes === mes; });
       var actual = mes === ahora.mes;
       var nombre = m.charAt(0).toUpperCase() + m.slice(1);
+      var sig = actual && !fs.length ? siguienteFiesta(D, mes) : null;
       return '<li class="mes' + (fs.length ? ' con-fiesta' : ' es-vacio') + (actual ? ' es-mes-actual' : '') + '">' +
         '<p class="mes__nombre"><span class="mes__largo">' + nombre + '</span><span class="mes__corto" aria-hidden="true">' + MESES_C[i] + '</span>' +
         (actual ? ' <span class="mes__ahora">Este mes</span>' : '') + '</p>' +
         (fs.length ? '<ul class="mes__fiestas">' + fs.map(function (f) {
           return '<li><b>' + esc(f.nombre) + '</b>' + (f.mayor ? ' <span class="chip chip--mayor">Fiesta mayor</span>' : '') + '<span>' + esc(f.cuando) + '</span></li>';
-        }).join('') + '</ul>' : '<p class="mes__vacio"><span class="mes__raya" aria-hidden="true"></span><span class="mes__vacio-texto">Sin fiestas señaladas</span></p>') + '</li>';
+        }).join('') + '</ul>' : '<p class="mes__vacio"><span class="mes__raya" aria-hidden="true"></span><span class="mes__vacio-texto">Sin fiestas señaladas' + (sig ? '.' : '') + '</span></p>' +
+          (sig ? '<p class="mes__siguiente">Lo siguiente: <b>' + esc(sig.fiesta.nombre) + '</b>, ' + MESES[sig.mes - 1] + '</p>' : '')) + '</li>';
     }).join('');
+  }
+
+  /* ── al lado del tablón (portada): el canal de avisos y el próximo pleno ──
+     Cada bloque solo si hay datos; sin ninguno devuelve '' y el tablón ocupa el ancho */
+  function lado(D, ahora) {
+    var h = '';
+    var c = D.canal;
+    if (c && c.url) {
+      h += '<div class="lado__bloque lado__bloque--canal">' + icono('i-movil') + '<h3 class="lado__titulo">Reciba los avisos en el móvil</h3>' +
+        '<p class="lado__texto">El Ayuntamiento los publica también en <a href="' + esc(c.url) + '">' + esc(c.nombre) + FUERA + '</a>.</p>' +
+        (c.pasos && c.pasos.length ? '<p class="lado__subtitulo">Cómo apuntarse</p><ol class="lado__pasos">' + c.pasos.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ol>'
+          : '<p class="lado__texto"><a href="' + esc(D.rutas.avisos) + '#t-canal">Cómo apuntarse</a></p>') + '</div>';
+    }
+    var p = proximoPleno(D, ahora);
+    if (p) {
+      h += '<div class="lado__bloque lado__bloque--pleno"' + marcaEjemplo(p, 'evento:' + p.id) + '>' + icono('i-calendario') + '<h3 class="lado__titulo">Próximo pleno</h3>' +
+        '<p class="lado__fecha"><a href="' + esc(enlaceEvento(p, D)) + '">' + esc(cuando(p.fecha, ahora)) + (p.hora ? ', ' + hora(p.hora) : '') + '<span class="sr">, ' + esc(p.titulo) + '</span></a>' + (p.ejemplo ? ' ' + EJEMPLO : '') + '</p>' +
+        '<p class="lado__texto">' + esc(p.titulo) + (p.lugar ? '. ' + esc(p.lugar) : '') + '</p>' +
+        (p.convocatoria ? '<p class="lado__texto"><a href="' + esc(p.convocatoria) + '">Convocatoria y orden del día<span class="sr"> del pleno' + esc(p.convocatoria_sr || ', se abre otra web') + '</span></a></p>' : '') +
+        '<p class="lado__accion">' + icsHtml(p, D) + '</p></div>';
+    }
+    return h;
   }
 
   /* ── página de agenda ── */
@@ -448,10 +487,10 @@
     return s ? estadoHtml(s, ahora, 'estado estado--servicio') : '';
   }
 
-  var BLOQUES = { franja: franja, hoy: hoy, tablon: tablon, linea: linea, anio: anio, agenda: agenda, servicio: servicio };
+  var BLOQUES = { franja: franja, hoy: hoy, tablon: tablon, linea: linea, anio: anio, agenda: agenda, servicio: servicio, lado: lado };
 
   raiz.Vivo = {
-    ahoraEn: ahoraEn, estado: estado, fechaLarga: fechaLarga, fechaCorta: fechaCorta,
+    ahoraEn: ahoraEn, estado: estado, fechaLarga: fechaLarga, fechaCorta: fechaCorta, siguienteFiesta: siguienteFiesta,
     urgentes: urgentes, proximos: proximos, ultimos: ultimos,
     farmaciaDeGuardia: farmaciaDeGuardia, proximaRecogida: proximaRecogida, proximoPleno: proximoPleno, ics: ics, archivoIcs: archivoIcs,
     pintar: function (nombre, D, ahora, op) { return BLOQUES[nombre](D, ahora, op || {}); },
