@@ -1551,5 +1551,13 @@
       "alt": "Avenida arbolada que lleva a una torre blanca con reloj",
       "posicion": "58% 50%"
     }
+  },
+  "cabeceras": {
+    "_leeme": "Foto opcional en la cabecera de cada página interior (por id de página), recortada en arco. Sin foto, el arco de línea. «El pueblo» la pinta grande.",
+    "pueblo": {
+      "archivo": "iglesia-torres",
+      "alt": "Las dos torres blancas de la iglesia sobre los tejados del pueblo, con la sierra al fondo",
+      "posicion": "70% 55%"
+    }
   }
 }

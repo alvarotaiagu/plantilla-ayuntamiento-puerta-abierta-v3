@@ -519,9 +519,78 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 @media (max-width: 36em) { .cookies { left: .5rem; right: .5rem; bottom: .5rem; padding: .85rem 1rem; } .cookies__texto { font-size: .9375rem; } }
 
 /* ═══════════════ PÁGINAS INTERIORES ═══════════════ */
-.cabeza-pagina { padding-block: 1rem clamp(1.5rem, 3vw, 2.25rem); border-bottom: 1px solid var(--linea); }
-.cabeza-pagina__titulo { font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem); margin-bottom: .25rem; }
+/* Cabecera de página: migas, h1 y entradilla con la puerta a la derecha.
+   - Sin foto: un arco de línea en la marca con su umbral de oro, de pie sobre el filete de abajo
+     (en el móvil, pequeño junto al título).
+   - Con foto (municipio.json → cabeceras): la foto recortada en arco, como la del hero.
+   - «El pueblo» con foto: grande, a media pantalla.
+   - Versión sobria: el arco solo va en el hero; aquí la foto es un rectángulo y no hay arco de línea.
+   Una rejilla plana (sin envoltorio del texto) para poder mover la puerta entre filas. */
+.cabeza-pagina { --cabeza-pie: clamp(1.5rem, 3vw, 2.25rem); padding-block: 1rem var(--cabeza-pie); border-bottom: 1px solid var(--linea); }
+.cabeza-pagina__rejilla {
+  display: grid; grid-template-columns: minmax(0, 1fr); column-gap: clamp(1rem, 4vw, 3.5rem);
+  grid-template-areas: "migas" "titulo" "entradilla" "puerta";
+}
+.cabeza-pagina .migas { grid-area: migas; min-width: 0; }
+.cabeza-pagina__titulo { grid-area: titulo; font-size: clamp(2.25rem, 1.6rem + 2.6vw, 3.5rem); margin-bottom: .25rem; min-width: 0; overflow-wrap: break-word; }
+/* a 320 px con barra de desplazamiento clásica quedan 273 px: «Ayuntamiento» a 36 px no cabe */
+@media (max-width: 23.99em) { .cabeza-pagina__titulo { font-size: 2rem; } }
+.cabeza-pagina .entradilla { grid-area: entradilla; }
 .entradilla { font-size: 1.25rem; line-height: 1.5; margin: .5rem 0 0; max-width: 44rem; }
+.cabeza-pagina__puerta { grid-area: puerta; position: relative; margin: 0; }
+.cabeza-pagina__arco { display: block; overflow: hidden; background: var(--superficie-2); }
+.cabeza-pagina__arco img { width: 100%; height: 100%; object-fit: cover; }
+.cabeza-pagina__arco--linea { aspect-ratio: 4 / 5; background: var(--marca-tenue); border: 2px solid var(--marca); border-bottom: 0; border-radius: 9999px 9999px 0 0; }
+.cabeza-pagina__umbral { display: block; height: 6px; margin-inline: max(-6%, calc(4px - var(--margen))); background: var(--oro); border-radius: 2px; }
+.cabeza-pagina__puerta .credito { margin-top: .5rem; }
+
+/* sin foto: el arco de línea, de pie sobre el filete de la cabecera (el umbral tapa la línea de
+   abajo). En el móvil, pequeño y junto a la entradilla, nunca junto al título: le quitaría ancho
+   y partiría palabras largas («Ayuntamiento», a 320 px) */
+.cabeza-pagina--arco .cabeza-pagina__rejilla {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "migas migas" "titulo titulo" "entradilla puerta";
+}
+.cabeza-pagina__puerta--linea { width: 3.25rem; align-self: end; justify-self: end; margin-bottom: calc(-1 * var(--cabeza-pie) - 1px); }
+.cabeza-pagina__puerta--linea .cabeza-pagina__umbral { height: 4px; margin-inline: -14%; }
+@media (min-width: 48em) {
+  .cabeza-pagina--arco .cabeza-pagina__rejilla {
+    grid-template-rows: auto auto 1fr;
+    grid-template-areas: "migas puerta" "titulo puerta" "entradilla puerta";
+  }
+  .cabeza-pagina__puerta--linea { width: clamp(5.5rem, 8vw, 7.5rem); }
+  .cabeza-pagina__puerta--linea .cabeza-pagina__umbral { height: 6px; margin-inline: -10%; }
+}
+
+/* con foto: debajo del texto en el móvil (el ancho limitado por el alto: con el zoom al 200 %
+   el arco cabe en la pantalla y sigue siendo de medio punto); a la derecha desde 48em */
+.cabeza-pagina--foto .cabeza-pagina__puerta { margin-top: 1.25rem; width: min(100%, 34rem, 96vh); }
+.cabeza-pagina--foto .cabeza-pagina__arco { aspect-ratio: 16 / 10; }
+@media (min-width: 48em) {
+  .cabeza-pagina--foto:not(.cabeza-pagina--grande) .cabeza-pagina__rejilla {
+    grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto 1fr;
+    grid-template-areas: "migas puerta" "titulo puerta" "entradilla puerta";
+  }
+  .cabeza-pagina--foto:not(.cabeza-pagina--grande) .cabeza-pagina__puerta { width: clamp(12rem, 22vw, 17rem); margin-top: .5rem; }
+  .cabeza-pagina--foto:not(.cabeza-pagina--grande) .cabeza-pagina__arco { aspect-ratio: 4 / 5; }
+}
+/* «El pueblo»: la página turística abre con la foto grande */
+.cabeza-pagina--grande .cabeza-pagina__puerta { width: min(100%, 44rem, 80vh); }
+.cabeza-pagina--grande .cabeza-pagina__arco { aspect-ratio: 4 / 3; }
+@media (min-width: 64em) {
+  .cabeza-pagina--grande { padding-bottom: clamp(2rem, 4vw, 3.5rem); }
+  .cabeza-pagina--grande .cabeza-pagina__rejilla {
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 34rem); grid-template-rows: auto 1fr auto auto 1.4fr;
+    grid-template-areas: "migas puerta" ". puerta" "titulo puerta" "entradilla puerta" ". puerta";
+  }
+  .cabeza-pagina--grande .cabeza-pagina__puerta { width: 100%; margin-top: .5rem; }
+  .cabeza-pagina--grande .cabeza-pagina__arco { aspect-ratio: 5 / 4; }
+  .cabeza-pagina--grande .cabeza-pagina__titulo { font-size: clamp(3rem, 1.6rem + 3.4vw, 4.75rem); }
+  .cabeza-pagina--grande .entradilla { font-size: 1.375rem; }
+}
+.densidad-sobria .cabeza-pagina__puerta--linea,
+.densidad-sobria .cabeza-pagina__umbral { display: none; }
+.densidad-sobria .cabeza-pagina--arco .cabeza-pagina__rejilla { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "migas" "titulo" "entradilla"; }
 .migas ol { list-style: none; margin: 0 0 .25rem; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0 .5rem; font-size: 1rem; }
 .migas li + li::before { content: "/"; color: var(--apagado); margin-right: .5rem; }
 .migas a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; padding-inline: .2rem; }

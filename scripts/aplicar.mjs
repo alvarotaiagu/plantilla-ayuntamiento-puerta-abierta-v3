@@ -399,6 +399,22 @@ const pueblo = {
 };
 if (P.establecimientos && P.establecimientos.length && !P.establecimientos_fuente) errores.push('pueblo.establecimientos_fuente: di de dónde salen los datos y de cuándo (son negocios privados)');
 pueblo.establecimientos_fuente = P.establecimientos_fuente || null;
+/* cabeceras de las páginas interiores: foto opcional por id de página, recortada en arco como la
+   del hero. "cabeceras": { "pueblo": { "archivo", "alt", "posicion" } } o solo "archivo" (sin alt:
+   la foto es decorativa). Sin foto, la cabecera lleva el arco de línea. «El pueblo» la pinta grande */
+const ID_PAGINAS = ['tramites', 'ayuntamiento', 'avisos', 'noticias', 'agenda', 'telefonos', 'pueblo', 'contacto', 'legal', 'noticia'];
+const cabeceras = {};
+for (const [id, c] of Object.entries(M.cabeceras || {})) {
+  if (id.startsWith('_') || c == null) continue;
+  if (!ID_PAGINAS.includes(id)) { errores.push('cabeceras: «' + id + '» no es una página (' + ID_PAGINAS.join(', ') + ')'); continue; }
+  const conf = typeof c === 'string' ? { archivo: c } : c;
+  if (!conf.archivo) { errores.push('cabeceras «' + id + '»: falta «archivo»'); continue; }
+  const f = foto(conf.archivo, conf.alt, 'cabecera de ' + id);
+  if (f) cabeceras[id] = { ...f, alt: conf.alt || '', posicion: conf.posicion || '50% 50%', credito: f.credito || null };
+}
+/* si la foto grande de «El pueblo» es la del primer lugar del carril, ese lugar pasa al final:
+   la misma foto dos veces seguidas parece un error */
+if (cabeceras.pueblo && pueblo.lugares.length > 1 && pueblo.lugares[0].foto === cabeceras.pueblo.archivo) pueblo.lugares.push(pueblo.lugares.shift());
 const creditos = [...usadas.values()];
 
 /* ───────────────────────── legal ───────────────────────── */
@@ -513,7 +529,9 @@ const conParciales = (src, n = 0) => {
   return src.replace(/\{\{>\s*([\w-]+)\s*\}\}/g, (m, nombre) => conParciales(leer('fuente/_' + nombre + '.html'), n + 1));
 };
 for (const p of PAGINAS) {
-  const pagina = { ...p, titulo_doc: p.titulo_doc || `${p.titulo} · Ayuntamiento de ${N}`, entradilla: p.entradilla || null, migas: p.migas || [], cortina: !!p.cortina, es_inicio: !!p.es_inicio };
+  const pagina = { ...p, titulo_doc: p.titulo_doc || `${p.titulo} · Ayuntamiento de ${N}`, entradilla: p.entradilla || null, migas: p.migas || [], cortina: !!p.cortina, es_inicio: !!p.es_inicio,
+    /* la 404 ya lleva su propio arco en el cuerpo: una puerta por página */
+    cabecera: cabeceras[p.id] || null, cabeza_grande: p.id === 'pueblo' && !!cabeceras[p.id], cabeza_arco: p.id !== 'error' && !cabeceras[p.id] };
   const datos = {
     ...comun, pagina, noticia: p.noticia || null,
     nav: NAV.map(([id, texto]) => ({ id, texto, href: id + '.html', actual: id === p.id })),
