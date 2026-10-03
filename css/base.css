@@ -769,10 +769,38 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 .aviso__titulo { font-size: 1.3rem; margin-bottom: .35rem; }
 .aviso:target { outline: 3px solid var(--oro); outline-offset: 2px; }
 
+/* v3 · noticias: cada tarjeta lleva arriba su foto o, sin foto, la fecha grande en un arco del mismo
+   tamaño, así la cuadrícula queda pareja con 0, 1 o todas las fotos. En el móvil, una fila por
+   noticia con el arco pequeño a la izquierda (seis arcos de ancho completo eran media pantalla cada
+   uno). Una sola noticia: tarjeta apaisada a todo el ancho, no un tercio con dos huecos al lado */
 .noticias { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); }
 .noticia { padding: 1rem 1.1rem .5rem; display: flex; flex-direction: column; }
-.noticia__foto { margin: 0 0 .9rem; aspect-ratio: 4 / 3; overflow: hidden; }
+.noticia__foto, .noticia__fecha { margin: 0 0 .9rem; aspect-ratio: 3 / 2; overflow: hidden; }
 .noticia__foto img { width: 100%; height: 100%; object-fit: cover; }
+.noticia__fecha {
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: .1rem;
+  padding-bottom: 12%; background: var(--marca-tenue); color: var(--marca); line-height: 1;
+}
+.densidad-puerta .noticia__fecha { border-color: var(--marca); }
+.noticia__dia { font: 700 clamp(3.25rem, 2.4rem + 2.4vw, 4.5rem)/.95 var(--f-titulo); }
+.noticia__mes { font: 700 1.125rem/1.1 var(--f-titulo); letter-spacing: .12em; text-transform: uppercase; }
+.noticia__anio { margin-top: .2rem; color: var(--apagado); font-size: .9375rem; font-weight: 600; }
+.noticia--sin-foto .noticia__meta:not(:has(.ejemplo)) { margin: 0; }
+@media (max-width: 47.99em) {
+  .noticia { flex-direction: row; align-items: flex-start; gap: 1rem; padding: .9rem 1rem .4rem; }
+  .noticia__foto, .noticia__fecha { flex: none; width: 5.5rem; aspect-ratio: 4 / 5; margin: 0 0 .5rem; }
+  .noticia__fecha { padding-bottom: .55rem; }
+  .noticia__dia { font-size: 2.25rem; }
+  .noticia__mes { font-size: .875rem; }
+  .noticia__anio { font-size: .8125rem; }
+  .noticia__texto { min-width: 0; }
+  .noticia__titulo { font-size: 1.15rem; }
+}
+@media (min-width: 48em) {
+  .noticias:has(> .noticia:only-child) { grid-template-columns: minmax(0, 1fr); }
+  .noticia:only-child { display: grid; grid-template-columns: minmax(16rem, 2fr) 3fr; gap: 0 2rem; align-items: center; padding: 1.25rem; }
+  .noticia:only-child :is(.noticia__foto, .noticia__fecha) { margin: 0; }
+}
 .noticia__meta { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: 0 0 .3rem; color: var(--apagado); font-size: 1rem; }
 .noticia__titulo { font-size: 1.3rem; line-height: 1.3; }
 .noticia__titulo a { color: var(--tinta); text-decoration: none; }

@@ -367,7 +367,10 @@ const avisosOrden = C.avisos.filter(a => !a.oculto).slice().sort((a, b) => b.fec
   .map(a => ({ ...a, fecha_texto: fechaTexto(a.fecha), urgente: !!a.urgente, ejemplo: !!a.ejemplo, enlace: a.enlace || null }));
 const noticias = C.noticias.filter(n => !n.oculto).slice().sort((a, b) => b.fecha.localeCompare(a.fecha)).map(n => {
   const f = n.imagen ? foto(n.imagen, n.imagen_alt, 'noticia: ' + n.titulo) : null;
-  return { ...n, fecha_texto: fechaTexto(n.fecha), imagen: f ? n.imagen : null, imagen_ancho: f ? f.ancho : null, imagen_alto: f ? f.alto : null,
+  /* v3 · sin foto, la tarjeta lleva la fecha grande en un arco (dibujo: la fecha la lee el <time>) */
+  const [fa, fm, fd] = n.fecha.split('-').map(Number);
+  return { ...n, fecha_texto: fechaTexto(n.fecha), fecha_dia: fd, fecha_mes: MESES[fm - 1].slice(0, 3), fecha_anio: fa,
+    imagen: f ? n.imagen : null, imagen_ancho: f ? f.ancho : null, imagen_alto: f ? f.alto : null,
     imagen_alt: n.imagen_alt || '', resumen: n.resumen || null, ejemplo: !!n.ejemplo, fecha_aproximada: !!n.fecha_aproximada, fuente: n.fuente || null, relacionado: n.relacionado || null };
 });
 const fiestas = ((M.pueblo && M.pueblo.fiestas) || []).map(f => ({ mes: f.mes, nombre: f.nombre, cuando: f.cuando, mayor: !!f.mayor, fecha_fija: f.fecha_fija || null }));
