@@ -87,7 +87,7 @@
 
   /* ═══ hoja de cálculo publicada (memoria «hoja de cálculo como CMS»):
      primero se ve el respaldo, luego se fusiona lo de la hoja. ═══ */
-  function leerHoja(pestana) {
+  function leerHoja(pestana, valida) {
     var u = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(D.hoja.id) + '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(pestana);
     return conTiempo(u, { credentials: 'omit' }).then(function (r) { return r.text(); }).then(function (txt) {
       var j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1));
@@ -96,8 +96,10 @@
         var o = {};
         (fila.c || []).forEach(function (c, i) {
           var v = c ? c.v : null;
-          var m = typeof v === 'string' && v.match(/^Date\((\d+),(\d+),(\d+)/);
-          if (m) v = m[1] + '-' + String(Number(m[2]) + 1).padStart(2, '0') + '-' + String(m[3]).padStart(2, '0');
+          var m = typeof v === 'string' && v.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+))?/);
+          /* una celda de solo hora llega como Date(1899,11,30,20,30,0): es «20:30» */
+          if (m && m[1] === '1899' && m[4] != null) v = String(m[4]).padStart(2, '0') + ':' + String(m[5]).padStart(2, '0');
+          else if (m) v = m[1] + '-' + String(Number(m[2]) + 1).padStart(2, '0') + '-' + String(m[3]).padStart(2, '0');
           if (v === 'TRUE' || v === 'sí' || v === 'si') v = true;
           if (v === 'FALSE' || v === 'no') v = false;
           o[cols[i]] = v;
@@ -105,7 +107,7 @@
         if (o.estado && /oculto|borrador/i.test(o.estado)) o.oculto = true;
         if (!o.id && o.titulo && o.fecha) o.id = normal(o.fecha + '-' + o.titulo).replace(/[^a-z0-9]+/g, '-').slice(0, 60);
         return o;
-      }).filter(function (o) { return o.titulo && o.fecha; });
+      }).filter(valida || function (o) { return o.titulo && o.fecha; });
     });
   }
   function fusionar(lista, nuevas) {
@@ -118,10 +120,35 @@
     var p = D.hoja.pestanas || {};
     var pares = [['avisos', p.avisos], ['agenda', p.agenda], ['noticias', p.noticias]].filter(function (x) { return x[1]; });
     pares.forEach(function (par) {
-      leerHoja(par[1]).then(function (filas) { fusionar(D[par[0]], filas); pintarVivo(); })
-        .catch(function (e) { if (window.console) console.warn('Hoja «' + par[1] + '»: se queda el respaldo', e && e.message); });
+      leerHoja(par[1]).then(function (filas) {
+        /* un evento de la hoja no tiene .ics escrito (o el que había ya no vale): se genera al pulsar */
+        if (par[0] === 'agenda') filas.forEach(function (f) { f.ics = null; if (f.tipo) f.tipo = normal(f.tipo); });
+        fusionar(D[par[0]], filas); pintarVivo();
+      }).catch(function (e) { if (window.console) console.warn('Hoja «' + par[1] + '»: se queda el respaldo', e && e.message); });
     });
+    /* pestaña de guardias de farmacia (desde, hasta, farmacia): manda sobre la rotación */
+    if (p.farmacias && D.farmacias) {
+      leerHoja(p.farmacias, function (o) { return o.desde && o.farmacia; }).then(function (filas) {
+        D.farmacias.guardias = filas.filter(function (o) { return !o.oculto; }).map(function (o) { return { desde: o.desde, hasta: o.hasta || null, farmacia: String(o.farmacia) }; })
+          .concat(D.farmacias.guardias || []);
+        pintarVivo();
+      }).catch(function (e) { if (window.console) console.warn('Hoja «' + p.farmacias + '»: se quedan las guardias de la página', e && e.message); });
+    }
   }
+
+  /* ═══ «Añadir a mi calendario» de un evento que llegó de la hoja: el .ics se hace aquí ═══ */
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest && ev.target.closest('button[data-ics]');
+    if (!b || !window.Vivo || !window.Blob || !window.URL) return;
+    var id = b.getAttribute('data-ics');
+    var e = (D.agenda || []).filter(function (x) { return String(x.id) === id; })[0];
+    if (!e) return;
+    var url = URL.createObjectURL(new Blob([window.Vivo.ics(e, D, new Date())], { type: 'text/calendar;charset=utf-8' }));
+    var a = document.createElement('a');
+    a.href = url; a.download = window.Vivo.archivoIcs(e); a.hidden = true;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  });
 
   /* ═══ menú móvil ═══ */
   var menu = $('#menu'), botonMenu = $('[data-boton-menu]');

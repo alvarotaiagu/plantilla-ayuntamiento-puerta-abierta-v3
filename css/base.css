@@ -313,6 +313,26 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .hoy__eventos { list-style: none; margin: 0; padding: 0; }
 .hoy__evento + .hoy__evento { margin-top: .5rem; }
 .hoy a { font-weight: 600; }
+/* «Más hoy»: el tiempo, el próximo pleno y la recogida, en líneas cortas */
+.hoy__breves { list-style: none; margin: .15rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.hoy__breve b { font-weight: 600; }
+.hoy__breve .ejemplo { margin-inline-start: .35rem; }
+/* el canal de avisos, al pie del panel */
+.hoy__canal {
+  display: flex; align-items: flex-start; gap: .75rem; margin: 0 -1.25rem -.25rem; padding: .8rem 1.25rem;
+  background: var(--marca-tenue); border-top: 1px solid var(--linea); border-radius: 0 0 var(--radio) var(--radio);
+}
+.hoy__canal { max-width: none; }
+.hoy__canal > span { max-width: 34em; }
+.hoy__canal .icono { flex: none; width: 1.4rem; height: 1.4rem; margin-top: .15rem; color: var(--marca); }
+/* «Añadir a mi calendario» dentro de una frase: un botón (eventos de la hoja) que parece enlace */
+.enlace-ics { font-weight: 600; }
+button.enlace-ics, button.evento__ics {
+  padding: 0; border: 0; background: none; color: var(--marca); cursor: pointer; text-align: left;
+  text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .18em;
+}
+button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
+.evento__ics-tipo { font-weight: 400; }
 .estado__punto { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; margin-right: .45rem; vertical-align: .05em; }
 .esta-abierto .estado__punto { background: var(--marca); }
 .esta-cerrado .estado__punto { background: var(--alerta); }
@@ -502,6 +522,12 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .pie__nav ul, .pie__redes { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 1.25rem; }
 .pie__nav a, .pie__redes a { display: inline-flex; align-items: center; min-height: 44px; }
 .pie__redes { grid-column: 1 / -1; }
+.pie__canal { grid-column: 1 / -1; padding: .9rem 1.1rem; background: var(--superficie); border: 1px solid var(--linea); border-left: 3px solid var(--marca); border-radius: var(--radio); }
+.pie__canal-titulo { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
+.pie__canal-titulo .icono { color: var(--marca); }
+.canal-avisos__como { margin-top: 1.5rem; }
+.canal-avisos__pasos { margin: 0; padding-left: 1.4rem; }
+.canal-avisos__pasos li + li { margin-top: .35rem; }
 .pie__creditos, .pie__propuesta { grid-column: 1 / -1; color: var(--apagado); font-size: .9375rem; }
 .pie__propuesta { color: var(--tinta); font-weight: 600; }
 
@@ -577,6 +603,9 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .evento__lugar, .evento__nota { color: var(--apagado); font-size: 1rem; margin-bottom: .6rem; }
 .eventos--pasados .evento__fecha { color: var(--apagado); }
 .evento:target { outline: 3px solid var(--oro); outline-offset: 2px; }
+.evento__acciones { display: flex; flex-wrap: wrap; gap: 0 1.5rem; margin: -.2rem 0 .35rem; }
+.evento__ics, .evento__enlace { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; font-weight: 600; font-size: 1rem; }
+.evento__ics .icono { width: 1.25rem; height: 1.25rem; }
 
 .listin-completo { display: grid; gap: 2rem 3rem; }
 .listin-completo > * { min-width: 0; }

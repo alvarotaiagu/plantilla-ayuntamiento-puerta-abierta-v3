@@ -64,6 +64,56 @@
     "texto": "Las grabaciones de los plenos se publican en el Facebook del Ayuntamiento.",
     "url": "https://www.facebook.com/AyuntamientodeRiberadelFresno"
   },
+  "ine": "06113",
+  "plenos": [
+    {
+      "fecha": "2026-09-30",
+      "tipo": "ordinario",
+      "grabacion": "https://www.facebook.com/AyuntamientodeRiberadelFresno"
+    },
+    {
+      "fecha": "2026-12-29",
+      "hora": "20:00",
+      "tipo": "ordinario",
+      "lugar": "Salón de plenos del Ayuntamiento",
+      "ejemplo": true
+    }
+  ],
+  "farmacias": {
+    "lista": [
+      {
+        "id": "melendez-7",
+        "nombre": "Farmacia Meléndez Valdés 7",
+        "direccion": "C/ Meléndez Valdés, 7"
+      },
+      {
+        "id": "melendez-37",
+        "nombre": "Farmacia Meléndez Valdés 37",
+        "direccion": "C/ Meléndez Valdés, 37"
+      }
+    ],
+    "cambio": "09:30",
+    "rotacion": {
+      "inicio": "2026-01-05",
+      "dias": 7,
+      "orden": ["melendez-7", "melendez-37"]
+    },
+    "oficial": {
+      "nombre": "Colegio Oficial de Farmacéuticos de Badajoz",
+      "url": "https://cofbadajoz.com/farmacias-de-guardia/"
+    },
+    "ejemplo": true
+  },
+  "recogida": [
+    {
+      "id": "enseres",
+      "nombre": "Recogida de enseres",
+      "dias": [3],
+      "como": "Pídala el día antes en el Ayuntamiento",
+      "telefono": "924 536 011",
+      "ejemplo": true
+    }
+  ],
   "sede": {
     "tipo": "gestiona",
     "base": "https://riberadelfresno.sedelectronica.es",
