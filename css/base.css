@@ -316,6 +316,7 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 /* «Más hoy»: el tiempo, el próximo pleno y la recogida, en líneas cortas */
 .hoy__breves { list-style: none; margin: .15rem 0 0; padding: 0; display: grid; gap: .5rem; }
 .hoy__breve b { font-weight: 600; }
+.hoy a[href^="tel:"] { white-space: nowrap; }   /* «900 000 / 003» partido no se lee como teléfono */
 .hoy__breve .ejemplo { margin-inline-start: .35rem; }
 /* el canal de avisos, al pie del panel */
 .hoy__canal {
