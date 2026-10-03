@@ -27,6 +27,7 @@ import vm from 'node:vm';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { renderizar } from './lib/plantilla.mjs';
 import { derivarTokens, paletaGirada, contraste, nombreMatiz, oscurecerHasta, hexARgb } from './lib/color.mjs';
+import { feedAtom, agendaIcs, organizacion, eventoLd, noticiaLd, migasLd, jsonLd, swCodigo, recursosDe } from './lib/servicio.mjs';   /* v3b · servicio */
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -671,6 +672,14 @@ const PAGINAS = [
   { archivo: 'cookies.html', id: 'legal', titulo: 'Cookies', descripcion: `Esta web no usa cookies.` },
   { archivo: 'accesibilidad.html', id: 'legal', titulo: 'Declaración de accesibilidad', descripcion: `Declaración de accesibilidad de la web del Ayuntamiento de ${N}.` },
   { archivo: '404.html', id: 'error', titulo: 'No encontramos esa página', descripcion: 'Página no encontrada.' },
+  /* v3b · servicio: «La propuesta» es para el alcalde (se manda por correo: ni en el menú ni en el pie) y
+     solo existe mientras la web es maqueta; «Avisos y agenda en su móvil», la agenda y los avisos sin redes */
+  ...(M.propuesta !== false ? [{ archivo: 'propuesta.html', id: 'propuesta', titulo: 'La propuesta', estilos: ['propuesta.css'], scripts: ['propuesta.js'],
+    entradilla: `Una web para el Ayuntamiento de ${N} que se mantiene viva sola, cumple la ley de accesibilidad y se usa bien desde el móvil.`,
+    descripcion: `Qué cambia con la propuesta de web para el Ayuntamiento de ${N}.` }] : []),
+  { archivo: 'suscribirse.html', id: 'suscribirse', titulo: 'Avisos y agenda en su móvil', estilos: ['propuesta.css'],
+    entradilla: 'La agenda del Ayuntamiento en el calendario de su móvil y los avisos en un lector de noticias, sin redes sociales.',
+    descripcion: `Cómo recibir la agenda y los avisos del Ayuntamiento de ${N} sin redes sociales.` },
   ...noticias.map(n => ({ archivo: `noticia-${n.id}.html`, fuente: '_noticia.html', id: 'noticia', nav: 'noticias', titulo: n.titulo,
     migas: [{ href: 'noticias.html', texto: 'Noticias' }], descripcion: n.resumen || n.titulo, noticia: n }))
 ];
@@ -679,7 +688,8 @@ for (const n of noticias) if (!/^[a-z0-9-]+$/.test(n.id)) errores.push('noticias
    Una página interior nueva sin pictograma es un error (sería otra vez el arco vacío) */
 const PICTO_DE = { 'tramites.html': 'tramites', 'ayuntamiento.html': 'ayuntamiento', 'avisos.html': 'megafono', 'noticias.html': 'periodico',
   'agenda.html': 'calendario', 'telefonos.html': 'telefono', 'pueblo.html': 'pueblo', 'contacto.html': 'sobre',
-  'aviso-legal.html': 'balanza', 'privacidad.html': 'candado', 'cookies.html': 'galleta', 'accesibilidad.html': 'accesibilidad' };
+  'aviso-legal.html': 'balanza', 'privacidad.html': 'candado', 'cookies.html': 'galleta', 'accesibilidad.html': 'accesibilidad',
+  'propuesta.html': 'ayuntamiento', 'suscribirse.html': 'megafono' };   /* v3b · servicio */
 const pictoDe = p => PICTO_DE[p.archivo] || (p.id === 'noticia' ? 'periodico' : null);
 for (const p of PAGINAS) {
   if (p.id === 'inicio' || p.id === 'error') continue;
@@ -700,6 +710,7 @@ function escribir(rel, contenido) {
 }
 /* limpia las noticias generadas que ya no existen */
 for (const f of fs.readdirSync(RAIZ)) if (/^noticia-.*\.html$/.test(f) && !PAGINAS.some(p => p.archivo === f)) fs.rmSync(r(f));
+if (M.propuesta === false && existe('propuesta.html')) fs.rmSync(r('propuesta.html'));   /* v3b: la página de venta no viaja a la web oficial */
 
 escribir('css/marca.css', cssMarca());
 /* «Añadir a mi calendario»: un .ics por evento de la agenda (también fiestas y plenos).
@@ -724,6 +735,43 @@ const precargar = [pre(marcaConf.letra.titulares, '700'), pre(marcaConf.letra.te
 const e160 = medidasImagen('marca/escudo-160.png'), e480 = medidasImagen('marca/escudo-480.png');
 const url = (M.url || '').replace(/\/?$/, M.url ? '/' : '');
 const webActual = M.web_actual || null;
+
+/* ───────────────────────── v3b · servicio: la propuesta, suscribirse sin redes y datos estructurados ─────────────────────────
+   municipio.json → propuesta_web (opcional): problemas de la web actual (comprobables), captura de la
+   web actual y contacto. Sin él, «La propuesta» habla en general y el «antes» queda como hueco marcado */
+const PW = M.propuesta_web || {};
+const CAPTURA = 'assets/propuesta-portada.jpg';   /* la escribe scripts/captura-portada.mjs, más abajo */
+const capturaAntes = PW.captura_antes && PW.captura_antes.archivo && existe(PW.captura_antes.archivo)
+  ? { archivo: PW.captura_antes.archivo, ...medidasImagen(PW.captura_antes.archivo), alt: PW.captura_antes.alt || 'Portada de la web actual del Ayuntamiento' } : null;
+if (PW.captura_antes && PW.captura_antes.archivo && !capturaAntes) avisos.push('propuesta_web.captura_antes: no existe ' + PW.captura_antes.archivo + ' (sale el hueco «PENDIENTE»)');
+if (PW.contacto && PW.contacto.telefono && !TEL.test(PW.contacto.telefono)) errores.push('propuesta_web.contacto.telefono: escríbelo como «924 536 011»');
+if (PW.revisada && !ISO.test(PW.revisada)) errores.push('propuesta_web.revisada: la fecha de la revisión como AAAA-MM-DD');
+const despuesDatos = () => (existe(CAPTURA) ? { archivo: CAPTURA, ancho: 1280, alto: 800, huella: huella(CAPTURA) } : null);
+const servicio = {
+  eventos: D.agenda.filter(e => !e.oculto).length, hay_plenos: D.agenda.some(e => !e.oculto && e.tipo === 'pleno'),
+  webcal: url ? url.replace(/^https?:\/\//, 'webcal://') + 'agenda.ics' : null, ics_abs: url ? url + 'agenda.ics' : null, feed_abs: url ? url + 'feed.xml' : null,
+  /* los campos opcionales, a null: el Mustache busca hacia fuera (contacto, nombre…) */
+  propuesta: M.propuesta !== false ? {
+    problemas: (PW.problemas || []).map(x => (typeof x === 'string' ? { texto: x, fuente: null } : { texto: x.texto, fuente: x.fuente || null })),
+    revisada_texto: PW.revisada ? 'revisión del ' + fechaTexto(PW.revisada) : null,
+    antes: capturaAntes, despues: despuesDatos(), farmacias: !!farmacias, tramites_sede: tramitesSede,
+    contacto: PW.contacto && (PW.contacto.correo || PW.contacto.telefono) ? { nombre: PW.contacto.nombre || null, correo: PW.contacto.correo || null,
+      telefono: PW.contacto.telefono || null, tel_href: PW.contacto.telefono ? telHref(PW.contacto.telefono) : null } : null
+  } : null
+};
+/* JSON-LD: el Ayuntamiento (portada, El Ayuntamiento, contacto, agenda y noticias), un Event por acto
+   de la agenda, un NewsArticle por noticia y las migas en cada página interior. Lo de «ejemplo», fuera */
+const ldBase = url || '';
+const ldOrg = organizacion({ M, base: ldBase, telE164: t => telHref(t).replace(/^tel:/, ''), escudo: 'marca/escudo-480.png' });
+const ldEventos = D.agenda.filter(e => !e.oculto && !e.ejemplo).map(e => eventoLd(e, { M, base: ldBase, rutas: D.rutas }));
+function jsonLdDe(p) {
+  const g = [];
+  if (['inicio', 'ayuntamiento', 'contacto', 'agenda', 'noticia'].includes(p.id)) g.push(ldOrg);
+  if (p.id === 'agenda') g.push(...ldEventos);
+  if (p.id === 'noticia' && p.noticia && !p.noticia.ejemplo) g.push(noticiaLd(p.noticia, { base: ldBase, rutas: D.rutas, archivo: p.archivo }));
+  if (p.id !== 'inicio' && p.id !== 'error') g.push(migasLd([{ texto: 'Inicio', href: 'index.html' }, ...(p.migas || []), { texto: p.titulo, href: p.archivo }], ldBase));
+  return jsonLd(g);
+}
 
 const comun = {
   ...M, aviso_generado: 'GENERADO por scripts/aplicar.mjs desde fuente/ y los datos. No editar a mano.',
@@ -754,6 +802,7 @@ const comun = {
   como_llegar_url: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(M.contacto.mapa_consulta || `Ayuntamiento de ${N}`),
   web_actual: webActual, web_actual_texto: webActual ? webActual.replace(/^https?:\/\//, '').replace(/\/$/, '') : null,
   accesibilidad, privacidad,
+  servicio,   /* v3b */
   perfil, plano, pie_enlaces: pieEnlaces, fecha_datos_texto: fechaTexto(M.fecha_datos || ahora.iso), web_texto: url ? url.replace(/^https?:\/\//, '').replace(/\/$/, '') : null
 };
 
@@ -788,13 +837,17 @@ function h2sDelCuerpo(html) {
     .filter(([, attrs]) => !/class="[^"]*\bsr\b/.test(attrs))
     .map(([, attrs, txt]) => ({ id: (attrs.match(/\bid="([^"]+)"/) || [])[1], texto: textoPlano(txt) })).filter(x => x.id && x.texto);
 }
-for (const p of PAGINAS) {
+function pintarPagina(p) {
   const pagina = { ...p, titulo_doc: p.titulo_doc || `${p.titulo} · Ayuntamiento de ${N}`, entradilla: p.entradilla || null, migas: p.migas || [], cortina: !!p.cortina, es_inicio: !!p.es_inicio,
     /* la 404 ya lleva su propio arco en el cuerpo: una puerta por página */
     cabecera: cabeceras[p.id] || null, cabeza_grande: p.id === 'pueblo' && !!cabeceras[p.id], cabeza_arco: p.id !== 'error' && !cabeceras[p.id] };
   /* v3 · dentro del arco de línea, el pictograma de la página (con foto, manda la foto) */
   pagina.picto = pagina.cabeza_arco && pictoDe(p) ? pictoDe(p) : null;
   pagina.pictograma = pagina.picto ? PICTOS[pagina.picto] : null;
+  /* v3b · servicio: datos estructurados y las hojas y scripts propios de una página (versionados) */
+  pagina.jsonld = jsonLdDe(p);
+  pagina.estilos = (p.estilos || []).map(f => ({ href: 'css/' + f + '?v=' + huella('css/' + f) }));
+  pagina.scripts = (p.scripts || []).map(f => ({ href: 'js/' + f + '?v=' + huella('js/' + f) }));
   const datos = {
     ...comun, pagina, noticia: p.noticia || null,
     nav: NAV.map(([id, texto]) => ({ id, texto, href: id + '.html', actual: id === p.id })),
@@ -813,6 +866,7 @@ for (const p of PAGINAS) {
   html = html.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+\n/g, '\n');
   escribir(p.archivo, html);
 }
+for (const p of PAGINAS) pintarPagina(p);
 
 /* favicon: el escudo en PNG, envuelto en un SVG para los navegadores que lo prefieren */
 fs.copyFileSync(r('marca/favicon-64.png'), r('favicon.png')); escritos.push('favicon.png');
@@ -823,6 +877,19 @@ escribir('manifest.json', JSON.stringify({
   icons: [{ src: 'favicon.png', sizes: '64x64', type: 'image/png' }]
 }, null, 2) + '\n');
 if (!existe('.nojekyll')) escribir('.nojekyll', '');
+
+/* v3b · servicio: suscribirse sin redes (feed.xml con avisos y noticias; agenda.ics con toda la agenda)
+   y el listín sin cobertura (sw.js: telefonos.html y lo que necesita, versionado con su huella) */
+escribir('feed.xml', feedAtom({ nombre: N, slug: marcaConf.slug, base: url, avisos: avisosOrden, noticias, rutas: D.rutas, ahoraIso: ahora.iso, escudo: 'marca/escudo-160.png' }));
+escribir('agenda.ics', agendaIcs({ Vivo, D, sello: fechaBuild }));
+{
+  const recursos = ['telefonos.html', ...recursosDe(leer('telefonos.html'), rel => (existe(rel) ? leer(rel) : null)).filter(u => !/\.xml(\?|$)/.test(u))];
+  const faltan = recursos.filter(u => !existe(u.split('?')[0]));
+  if (faltan.length) avisos.push('sw.js: no existen ' + faltan.join(', ') + ' (no se precargan)');
+  const lista = recursos.filter(u => existe(u.split('?')[0]));
+  const version = crypto.createHash('md5').update(lista.map(u => u + ':' + huella(u.split('?')[0])).join('|')).digest('hex').slice(0, 10);
+  escribir('sw.js', swCodigo({ slug: marcaConf.slug, version, rutas: lista }));
+}
 
 const informe = paletas.map(p => `paleta ${p.clave} (${nombreMatiz(p.col.marca)}, marca ${p.tokens['--marca']})\n` +
   p.informe.map(f => `  ${f.ratio >= f.min ? '✓' : '✗'} ${f.uso.padEnd(8)} ${f.texto.padEnd(22)} sobre ${f.fondo.padEnd(14)} ${String(f.ratio).padStart(5)}:1  (mín. ${f.min})`).join('\n')).join('\n\n');
@@ -843,5 +910,17 @@ if (!SIN_OG) {
     log('✓ assets/og.jpg');
   } catch (e) {
     log('! og:image no generada (' + e.message.split('\n')[0] + ')');
+  }
+  /* v3b · servicio: la portada recién escrita, para el «después» del comparador de «La propuesta» */
+  if (servicio.propuesta) {
+    try {
+      const { capturarPortada } = await import(pathToFileURL(r('scripts/captura-portada.mjs')).href);
+      await capturarPortada(RAIZ, marcaConf.slug);
+      servicio.propuesta.despues = despuesDatos();
+      pintarPagina(PAGINAS.find(p => p.id === 'propuesta'));
+      log('✓ ' + CAPTURA);
+    } catch (e) {
+      log('! ' + CAPTURA + ' no generada (' + e.message.split('\n')[0] + ')');
+    }
   }
 }
