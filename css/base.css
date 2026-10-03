@@ -134,7 +134,23 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .franja-urgente__dentro:hover .franja-urgente__ver { text-decoration-thickness: 2px; }
 .franja-urgente .icono { width: 1.35rem; height: 1.35rem; margin-top: .05rem; }
 .franja-urgente__ver { font-weight: 600; text-decoration: underline; text-underline-offset: .18em; white-space: nowrap; margin-left: .35rem; }
-.franja-urgente .ejemplo { border-color: var(--sobre-alerta); }
+.franja-urgente .ejemplo { border-color: var(--sobre-alerta); flex: none; margin: .1rem 0 0; }
+.franja-urgente__texto { min-width: 0; }
+/* móvil: menos cromo arriba. La banda de propuesta, corta y en una línea; la franja urgente, en
+   UNA línea con el texto recortado y «Ver aviso» siempre a la vista (el texto entero sigue en el
+   enlace para el lector de pantalla y en la página del aviso) */
+@media (max-width: 47.99em) {
+  .propuesta { font-size: .875rem; }
+  .propuesta p { padding-block: .35rem; }
+  .propuesta__largo { display: none; }
+  .franja-urgente__dentro { align-items: center; gap: .5rem; padding-block: .3rem; }
+  .franja-urgente .icono { margin-top: 0; }
+  .franja-urgente .ejemplo { margin: 0; padding: .15rem .35rem; }
+  /* el icono ya dice «aviso»: la palabra la oye el lector y el sitio se lo queda el texto */
+  .franja-urgente__texto b { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .franja-urgente__texto { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .franja-urgente__ver { flex: none; margin-left: 0; }
+}
 
 .cabecera__barra { background: var(--papel); border-bottom: 3px solid var(--oro); }
 .cabecera__dentro {
@@ -268,8 +284,8 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .resultados mark { background: var(--marca-tenue); color: inherit; border-radius: 2px; }
 
 /* ═══════════════ PORTADA: HERO «HOY» ═══════════════ */
-.hero { padding-block: clamp(1rem, 2.5vw, 3rem) clamp(2.5rem, 5vw, 4.5rem); }
-.hero__rejilla { display: grid; gap: 1.25rem; align-items: center; }
+.hero { padding-block: clamp(1rem, 2.5vw, 2.75rem) clamp(2.5rem, 5vw, 4.5rem); }
+.hero__rejilla { display: grid; gap: 1.25rem; align-items: start; }
 .puerta { position: relative; width: 100%; max-width: 22rem; margin-inline: auto; }
 .arco {
   display: block; margin: 0; overflow: hidden;
@@ -282,23 +298,39 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .arco--vacio img { width: 38%; height: auto; opacity: .22; filter: grayscale(1); object-fit: contain; }
 .puerta__arco { aspect-ratio: 5 / 3; width: 100%; }   /* alto ≥ ancho/2: medio punto entero */
 .puerta__umbral { display: block; height: 6px; margin-inline: -5%; background: var(--oro); border-radius: 2px; }
-.hero__ante {
-  margin: 0 0 .15rem; font: 600 .875rem/1.3 var(--f-texto); letter-spacing: .08em; text-transform: uppercase; color: var(--marca);
-}
 .hero__titulo { font-size: clamp(2rem, 1.35rem + 3.4vw, 4.5rem); margin: 0; }
 .hero__lema { margin: .35rem 0 0; font: italic 600 1.25rem/1.3 var(--f-titulo); color: var(--apagado); }
-/* pantallas bajas (375 × 667): el arco cede para que el panel «Hoy» asome sin bajar */
-@media (max-width: 55.99em) and (max-height: 760px) { .puerta { max-width: 18.5rem; } .hero { padding-top: .75rem; } .hoy { margin-top: 1rem; } }
-.hero__botones { list-style: none; padding: 0; margin: 1.25rem 0 0; display: flex; flex-wrap: wrap; gap: .65rem; }
+/* buscador de trámites a la vista: lo primero que se puede hacer, por encima del panel «Hoy» */
+.hero__buscador { margin: 1.1rem 0 0; max-width: 36rem; }
+.hero__etiqueta { display: block; margin-bottom: .35rem; font-size: 1.125rem; }
+.hero__fila { display: flex; gap: .5rem; }
+.hero__fila .campo__entrada { flex: 1 1 10rem; min-width: 0; }
+.hero__buscar { flex: none; min-height: 52px; padding-inline: .9rem; }
+.hero__ayuda { margin: .45rem 0 0; color: var(--apagado); font-size: 1rem; line-height: 1.45; }
+.hero__cuenta { margin: .6rem 0 .25rem; color: var(--apagado); font-size: 1rem; }
+.hero__cuenta:empty { margin: 0; }
+.hero__resultados { background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); padding: 0 .85rem; }
+.hero__resultados:empty { display: none; }
+.hero__resultados li:last-child a { border-bottom: 0; }
+.hero__botones { list-style: none; padding: 0; margin: 1rem 0 0; display: flex; flex-wrap: wrap; gap: .65rem; }
+/* móvil: la ayuda del buscador solo la oye el lector de pantalla (el ejemplo ya está en el campo),
+   para que el buscador y «Hacer un trámite» quepan en la primera pantalla */
+@media (max-width: 47.99em) {
+  .hero__ayuda { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .hero__buscador { margin-top: .9rem; }
+}
+/* pantallas bajas (375 × 667): el arco cede para que el buscador y el botón principal no bajen */
+@media (max-width: 55.99em) and (max-height: 760px) { .puerta { max-width: 15rem; } .hero { padding-top: .75rem; } .hero__rejilla { gap: 1rem; } }
 @media (min-width: 56em) {
   .hero__rejilla { grid-template-columns: minmax(15rem, 5fr) 7fr; gap: clamp(2.5rem, 5vw, 5rem); }
-  .puerta { max-width: 28rem; }
-  .puerta__arco { aspect-ratio: 4 / 5; }
+  /* el arco arranca a la altura de las mayúsculas del nombre, y algo más alto que antes */
+  .puerta { max-width: 28rem; margin-top: var(--arco-ajuste, .7rem); }
+  .puerta__arco { aspect-ratio: 3 / 4; }
   .puerta__umbral { margin-inline: -8%; }
 }
 
 .hoy {
-  margin-top: 1.25rem; background: var(--superficie);
+  margin-top: 1.5rem; background: var(--superficie);
   border: 1px solid var(--linea); border-top: 3px solid var(--oro); border-radius: var(--radio);
   padding: 1rem 1.25rem .25rem;
 }
@@ -365,19 +397,29 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
 
 /* ── atajos y temas de trámites ── */
 .atajos { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15.5rem), 1fr)); }
+/* cada atajo con su icono y la flecha de salida en la esquina (el destino lo dice el texto oculto) */
 .atajo {
-  display: flex; flex-direction: column; gap: .2rem; height: 100%;
-  padding: 1.05rem 1.2rem; color: var(--tinta); text-decoration: none;
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; height: 100%;
+  padding: 1.15rem 3rem 1.15rem 1.2rem; color: var(--tinta); text-decoration: none;
   transition: border-color .15s, background-color .15s;
 }
 .atajo:hover { border-color: var(--marca); background: var(--marca-tenue); color: var(--tinta); }
+.atajo__icono {
+  box-sizing: content-box; width: 1.7rem; height: 1.7rem; padding: .55rem; margin-bottom: .45rem;
+  border-radius: 50%; background: var(--marca-tenue); color: var(--marca); stroke-width: 1.6;
+}
+.atajo:hover .atajo__icono { background: var(--superficie); }
+.atajo__flecha { position: absolute; top: 1.1rem; right: 1.1rem; width: 1.3rem; height: 1.3rem; color: var(--marca); }
 .atajo__nombre { font: 700 1.3rem/1.2 var(--f-titulo); color: var(--marca); }
 .atajo:hover .atajo__nombre { text-decoration: underline; }
 .atajo__nota { color: var(--apagado); font-size: 1rem; line-height: 1.45; }
-.atajo__destino { margin-top: auto; padding-top: .7rem; display: flex; align-items: center; gap: .4rem; font-size: .875rem; color: var(--apagado); }
+.atajo__destino { margin-top: auto; padding-top: .6rem; font-size: .875rem; font-weight: 600; color: var(--apagado); }
 
+/* temas: dos columnas que se apilan cada una por su cuenta. Todos cerrados de entrada; al abrir
+   uno, solo baja su columna (con una rejilla de filas, la columna de al lado quedaba con un hueco) */
 .temas { display: grid; gap: .75rem; align-items: start; }
 @media (min-width: 64em) { .temas { grid-template-columns: 1fr 1fr; } }
+.temas__columna { display: grid; gap: .75rem; align-content: start; min-width: 0; }
 .tema__resumen {
   display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center;
   min-height: 48px; padding: 1rem 1.2rem; cursor: pointer; list-style: none;
@@ -411,23 +453,43 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
 .filtro[aria-pressed="true"] { background: var(--marca); border-color: var(--marca); color: var(--sobre-marca); }
 .tablon__cuenta { margin: 0 0 .5rem; color: var(--apagado); font-size: 1rem; }
 .tablon__lista { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--linea); }
-.tablon__fila { border-bottom: 1px solid var(--linea); }
+.tablon__fila { border-bottom: 1px solid var(--linea); max-width: none; }
+.seccion--tablon .tablon { max-width: 56rem; }
 .tablon__enlace {
-  display: grid; grid-template-columns: 1fr auto; gap: .3rem 1rem; align-items: center;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .3rem 1rem; align-items: center;
   padding: .95rem .25rem; color: var(--tinta); text-decoration: none;
 }
-.tablon__meta { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .75rem; font-size: .9375rem; color: var(--apagado); }
-.tablon__titulo { grid-column: 1; font-weight: 600; font-size: 1.125rem; line-height: 1.4; }
+/* la fecha en bloque, con la letra de titulares: «02» sobre «OCT» (el año solo si no es este) */
+.tablon__dia {
+  grid-column: 1; grid-row: 1 / span 2; align-self: start;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 3.75rem; min-height: 3.75rem; padding: .35rem .2rem;
+  background: var(--papel); border: 1px solid var(--linea); border-radius: var(--radio);
+  font-family: var(--f-titulo); color: var(--tinta); line-height: 1;
+}
+.tablon__dia b { font-size: 1.55rem; font-weight: 700; }
+.tablon__dia b::after { content: ""; display: block; width: 1.1rem; height: 2px; margin: .3rem auto .25rem; background: var(--oro); }
+.tablon__dia span { font-size: .8125rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.tablon__dia .tablon__anio { margin-top: .15rem; font-size: .75rem; letter-spacing: .02em; color: var(--apagado); }
+.tablon__meta { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .75rem; font-size: .9375rem; color: var(--apagado); }
+.tablon__titulo { grid-column: 2; font-weight: 600; font-size: 1.125rem; line-height: 1.4; }
 .tablon__enlace:hover .tablon__titulo { color: var(--marca); text-decoration: underline; }
-.tablon__flecha { grid-column: 2; grid-row: 1 / span 2; color: var(--marca); }
-.tablon__fila > .ejemplo { margin: -.4rem 0 .85rem .25rem; }
+.tablon__enlace:hover .tablon__dia { border-color: var(--marca); }
+.tablon__flecha { grid-column: 3; grid-row: 1 / span 2; color: var(--marca); }
+.tablon__fila > .ejemplo { margin: -.4rem 0 .85rem calc(3.75rem + 1.25rem); }
 
 /* ── lo que viene y lo que pasó ── */
 /* minmax(0, …): sin él, la columna crece hasta lo que pida la tarjeta más rígida y la portada
    desborda a 320 px (una miniatura más una palabra larga en el título) */
 .linea-rejilla { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
 @media (min-width: 64em) { .linea-rejilla { grid-template-columns: minmax(0, 1fr) 22rem; align-items: start; gap: 4rem; } }
-.linea { list-style: none; margin: 1.25rem 0 .5rem; padding: 0; position: relative; }
+/* «Hoy» arriba; debajo, «Lo que viene» y «Lo que pasó» (en dos columnas cuando hay sitio) */
+.linea__bloques { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.75rem 2.5rem; }
+@media (min-width: 80em) { .linea__bloques { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.linea__subtitulo { font-size: 1.3rem; margin: 0; }
+.linea__vacio { margin-top: .9rem; padding: 1rem 1.15rem .1rem; background: var(--superficie); border: 1px dashed var(--linea-fuerte); border-radius: var(--radio); }
+.linea__vacio p { margin-bottom: .9rem; }
+.linea { list-style: none; margin: 1rem 0 .5rem; padding: 0; position: relative; }
 .linea::before { content: ""; position: absolute; left: .7rem; top: .6rem; bottom: 1rem; width: 2px; background: var(--linea-fuerte); }
 .linea__item { position: relative; padding: 0 0 1.4rem 2.6rem; }
 .linea__item::before {
@@ -439,13 +501,13 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
 .linea__cuando time { font-weight: 600; color: var(--tinta); }
 .chip--noticia { background: var(--superficie-2); color: var(--tinta); }
 .linea__tarjeta { display: flex; gap: 1rem; align-items: flex-start; background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); padding: 1rem 1.15rem; }
-.linea__titulo { margin: 0; font-size: 1.2rem; line-height: 1.3; }
+.linea__titulo { margin: 0; font: 700 1.2rem/1.3 var(--f-titulo); color: var(--tinta); text-wrap: balance; }
 .linea__titulo a { color: var(--tinta); text-decoration: none; }
 .linea__titulo a:hover { color: var(--marca); text-decoration: underline; }
 .linea__lugar { margin: .3rem 0 0; color: var(--apagado); font-size: 1rem; }
 .linea__foto { flex: 0 0 5.5rem; height: 7rem; margin: 0; overflow: hidden; }
 .linea__foto img { width: 100%; height: 100%; object-fit: cover; }
-.linea__hoy { position: relative; display: flex; align-items: center; gap: .75rem; padding: .2rem 0 1.6rem 2.6rem; }
+.linea__hoy { position: relative; display: flex; align-items: center; gap: .75rem; max-width: none; margin: 1.25rem 0 1.5rem; padding: .2rem 0 .2rem 2.6rem; }
 .linea__hoy::after { content: ""; flex: 1; height: 2px; background: var(--oro); }
 .linea__marca {
   position: absolute; left: -.05rem; top: -.1rem; width: 1.65rem; height: 1.65rem; border-radius: 50%;
@@ -486,16 +548,63 @@ button.enlace-ics:hover, button.evento__ics:hover { text-decoration-thickness: 2
 .quien__cargo { display: block; color: var(--apagado); font-size: 1rem; line-height: 1.4; }
 
 /* ── el año ── */
-.anio { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 1fr)); }
-.mes { padding: .85rem 1rem; min-height: 7rem; }
-.mes.es-mes-actual { border: 3px solid var(--oro); padding: calc(.85rem - 2px) calc(1rem - 2px); }
-.mes__nombre { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .3rem .5rem; margin: 0 0 .45rem; font: 700 1.15rem/1.3 var(--f-titulo); }
+/* Una tira de 12 meses. En móvil, una fila por mes (los vacíos, finos); en escritorio, dos tiras
+   de seis (enero–junio y julio–diciembre) donde los meses con fiesta se despliegan y los vacíos
+   se quedan en la abreviatura. Sigue siendo UNA lista ordenada: el salto entre las dos tiras es
+   un ::after con order, y los meses no cambian de orden */
+.anio { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+.mes { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: .3rem 1rem; align-items: baseline; padding: .75rem 1rem; }
+.mes.es-vacio { padding-block: .35rem; }
+.mes.es-mes-actual { border: 3px solid var(--oro); padding-inline: calc(1rem - 2px); }
+.mes__nombre { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .5rem; margin: 0; font: 700 1.15rem/1.3 var(--f-titulo); }
+.mes__corto { display: none; }
 .mes__ahora { padding: .15rem .45rem; border-radius: 4px; background: var(--tinta); color: var(--papel); font: 600 .75rem/1.3 var(--f-texto); letter-spacing: .06em; text-transform: uppercase; }
 .mes__fiestas { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.mes__fiestas li { max-width: none; }
 .mes__fiestas b { display: block; font-size: 1rem; line-height: 1.3; }
 .mes__fiestas span:not(.chip) { display: block; color: var(--apagado); font-size: .9375rem; line-height: 1.35; }
 .mes__fiestas .chip { margin-block: .2rem; font-size: .75rem; }
-.mes__vacio { margin: 0; color: var(--apagado); font-size: .9375rem; }
+.mes__vacio { margin: 0; color: var(--apagado); font-size: .9375rem; align-self: center; }
+.mes__raya { display: inline-block; width: 1.75rem; height: 2px; vertical-align: middle; background: var(--linea-fuerte); }
+/* «Sin fiestas señaladas»: a la vista solo en el mes en curso; en los demás, la raya (y el texto oculto) */
+.mes:not(.es-mes-actual) .mes__vacio-texto, .mes.es-mes-actual .mes__raya {
+  position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+@media (min-width: 64em) {
+  .anio { display: flex; flex-wrap: wrap; column-gap: .5rem; row-gap: 0; }
+  .anio::after { content: ""; order: 2; flex-basis: 100%; height: 0; }
+  .mes { order: 1; display: block; flex: 3 1 12rem; min-width: 0; margin-bottom: .5rem; padding: .85rem 1rem; }
+  .mes:nth-child(n+7) { order: 3; }
+  .mes__nombre { margin-bottom: .45rem; }
+  .mes.es-vacio { flex: 0 0 4.75rem; display: flex; flex-direction: column; align-items: center; gap: .6rem; padding: .85rem .25rem; text-align: center; }
+  .mes.es-vacio .mes__nombre { margin: 0; }
+  .mes.es-vacio:not(.es-mes-actual) .mes__largo { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .mes.es-vacio:not(.es-mes-actual) .mes__corto { display: block; text-transform: capitalize; }
+  .mes.es-vacio.es-mes-actual { flex: 1.3 1 9rem; align-items: flex-start; text-align: left; padding-inline: calc(1rem - 2px); }
+  .mes.es-mes-actual { padding-block: calc(.85rem - 2px); }
+}
+
+/* ═══════════════ BANDAS DE LA PORTADA ═══════════════
+   Ritmo por bandas a todo lo ancho, todo con tokens: el tablón sobre la hoja, «Quién se ocupa»
+   sobre el tenue de la marca y «El año» en banda oscura (tinta) con el oro de acento. */
+.banda { border-top: 0; }
+.banda--superficie { background: var(--superficie); border-block: 1px solid var(--linea); }
+.banda--superficie + .seccion { border-top: 0; }
+.banda--tenue { background: var(--marca-tenue); }
+.banda--tenue .quien__iniciales { background: var(--superficie); }
+.banda--oscura { background: var(--oscuro); color: var(--sobre-oscuro); }
+.banda--oscura .seccion__titulo, .banda--oscura h2, .banda--oscura h3 { color: var(--sobre-oscuro); }
+.banda--oscura a, .banda--oscura a:hover { color: var(--sobre-oscuro); }
+.banda--oscura .ver-todo { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+.banda--oscura .ver-todo:hover { text-decoration-thickness: 2px; }
+.banda--oscura :focus-visible { outline-color: var(--foco-claro); }
+.banda--oscura .mes { background: var(--superficie-oscura); border-color: var(--linea-oscura); color: var(--sobre-oscuro); }
+.banda--oscura .mes.es-mes-actual { border-color: var(--oro); }
+.banda--oscura .mes__fiestas span:not(.chip), .banda--oscura .mes__vacio, .banda--oscura .mes__corto { color: var(--sobre-oscuro-apagado); }
+.banda--oscura .mes__raya { background: var(--linea-oscura); }
+.banda--oscura .chip--mayor, .banda--oscura .mes__ahora { background: var(--oro); color: var(--tinta); }
+/* respiro: sin «Quién se ocupa» detrás, la banda oscura no se pega a la franja verde de la sede */
+main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 
 /* ═══════════════ PIE ═══════════════ */
 .sede-franja { background: var(--marca); color: var(--sobre-marca); padding-block: clamp(2.25rem, 5vw, 3.5rem); }

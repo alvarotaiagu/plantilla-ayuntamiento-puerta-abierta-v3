@@ -72,7 +72,8 @@ Fuentes que funcionaron en Ribera y Segura:
 | `servicios` | sí | Nombre, teléfono, dirección, horario, `tramos`, `nota` y `grupo`. El grupo ordena el listín. Sin teléfono (la recogida de basura, por ejemplo) sale solo con su detalle, y entonces lleva al menos `nota` u `horario` |
 | `urgencias` | no | El 112 va el primero, en rojo |
 | `listin_corto` | no | 4 nombres de `servicios` o `urgencias` para la portada |
-| `tramites.atajos`, `temas`, `momentos` | sí | Cada trámite con `id` (Gestiona), `url` u `opc` (Diputación). `tipo: "pdf"`, `"doc"` (impreso en Word) o `"documento"` cambia el aviso «se abre la sede» |
+| `tramites.atajos`, `temas`, `momentos` | sí | Cada trámite con `id` (Gestiona), `url` u `opc` (Diputación). `tipo: "pdf"`, `"doc"` (impreso en Word) o `"documento"` cambia el aviso «se abre la sede». Los atajos llevan `icono` (opcional): el nombre de un símbolo de `fuente/_iconos.html` sin el `i-` (`padron`, `recibo`, `obra`, `carrito`, `volante`, `incidencia`, `casa`, `familia`…); sin él, `documento`. `aplicar.mjs` se niega si el icono no existe |
+| `horizonte_agenda_dias` | no | Cuántos días por delante enseña «Lo que viene» en la portada (60 si no se dice). Si no hay nada en ese plazo, lo dice y nombra lo siguiente de la agenda |
 | `tramites.todos` | sí | Todo el catálogo. `vigente: false` lo oculta sin borrarlo. Los impresos de su web van aquí con `url` y `tipo: "pdf"` o `"doc"`: salen con la etiqueta PDF o Word |
 | `tramites.sinonimos` | no | Palabras del vecino que llevan al nombre oficial: `"boda": ["matrimonio"]` |
 | `pueblo.*` | no | Entradilla, historia, lugares (con foto), visitas (ver abajo), placa, patrimonio, fiestas (`mes`, `fecha_fija: "MM-DD"` y `mayor`), gastronomía, personajes y rutas. Cada bloque vacío desaparece |
@@ -176,7 +177,7 @@ node scripts/servir.mjs                     # http://127.0.0.1:4192/?revision
 ```
 
 Mira las capturas, sobre todo estas:
-- `primera-pantalla-375x667.png`: el panel «Hoy» tiene que asomar;
+- `primera-pantalla-375x667.png`: el buscador de trámites y «Hacer un trámite» se ven sin bajar (lo mide también la verificación);
 - la portada en las dos densidades;
 - el listín;
 - el pie.

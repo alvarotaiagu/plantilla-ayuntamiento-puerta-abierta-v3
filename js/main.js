@@ -229,6 +229,8 @@
   function montarBuscador(caja) {
     var campo = $('[data-buscador-campo]', caja), lista = $('[data-buscador-resultados]', caja), cuenta = $('[data-buscador-cuenta]', caja);
     if (!campo) return;
+    /* el de la portada enseña pocos (data-buscador-max) y manda el resto a la página de trámites */
+    var max = Number(caja.getAttribute('data-buscador-max')) || 0;
     var espera;
     campo.addEventListener('input', function () {
       clearTimeout(espera);
@@ -236,20 +238,30 @@
         var q = campo.value.trim();
         if (!q) { lista.innerHTML = ''; cuenta.textContent = ''; return; }
         cargarDatosTramites(function () {
-          var r = buscar(q);
+          var todos = buscar(q), r = max ? todos.slice(0, max) : todos;
           lista.innerHTML = r.map(function (t) {
             var claro = (t.c && t.c[0]) ? t.c[0].split(' · ')[0] : '';
             return '<li><a href="' + escHtml(t.h) + '"><span class="resultado__nombre">' + escHtml(claro || t.n) + '</span>' +
               (claro && normal(claro) !== normal(t.n) ? '<span class="resultado__oficial">' + escHtml(t.n) + '</span>' : '') +
               '<span class="sr">' + escHtml(t.s) + '</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>';
           }).join('');
-          cuenta.textContent = r.length ? (r.length === 1 ? '1 trámite encontrado.' : r.length + ' trámites encontrados.')
+          cuenta.textContent = todos.length > r.length ? todos.length + ' trámites encontrados; aquí, los ' + r.length + ' primeros. «Buscar» los enseña todos.'
+            : r.length ? (r.length === 1 ? '1 trámite encontrado.' : r.length + ' trámites encontrados.')
             : 'No hay ningún trámite con esas palabras. Pruebe con otras o mire la lista completa.';
         });
       }, 160);
     });
   }
   $$('[data-buscador-pagina], #buscador').forEach(montarBuscador);
+  /* llega del buscador de la portada (?q=…): se escribe en el de la página y se busca */
+  (function () {
+    var q = null;
+    try { q = new URLSearchParams(location.search).get('q'); } catch (e) {}
+    var campo = q && $('[data-buscador-pagina] [data-buscador-campo]');
+    if (!campo || campo.closest('form[action]')) return;
+    campo.value = q.slice(0, 120);
+    campo.dispatchEvent(new Event('input'));
+  })();
   var dialogo = $('#buscador');
   $$('[data-abrir-buscador]').forEach(function (a) {
     a.addEventListener('click', function (ev) {

@@ -115,11 +115,13 @@
   function franja(D, ahora) {
     var u = urgentes(D, ahora)[0];
     if (!u) return '';
-    /* toda la franja es un solo enlace: en móvil cabe en dos líneas y el blanco es grande */
+    /* toda la franja es un solo enlace con el blanco grande. En móvil va en UNA línea: el texto se
+       recorta con puntos suspensivos, pero «Ver aviso» (y la etiqueta «Ejemplo») van fuera del
+       recorte y se ven siempre. El texto entero sigue en el enlace para los lectores de pantalla */
     return '<a class="franja-urgente__dentro contenedor" href="' + esc(enlaceAviso(u, D)) + '"' + marcaEjemplo(u, 'aviso:' + u.id) + '>' +
       '<svg class="icono" aria-hidden="true"><use href="#i-aviso"/></svg>' +
-      '<span class="franja-urgente__texto"><b>Aviso:</b> ' + esc(u.titulo) + (u.ejemplo ? ' ' + EJEMPLO : '') +
-      ' <span class="franja-urgente__ver">Ver el aviso</span></span></a>';
+      '<span class="franja-urgente__texto"><b>Aviso:</b> ' + esc(u.titulo) + '</span>' + (u.ejemplo ? ' ' + EJEMPLO : '') +
+      ' <span class="franja-urgente__ver">Ver aviso</span></a>';
   }
 
   /* ── lo que se añadió al panel «Hoy»: farmacia de guardia, el tiempo, el próximo
@@ -335,9 +337,13 @@
       temas.map(function (t) { return '<button type="button" class="filtro" data-tema="' + esc(t) + '" aria-pressed="false">' + esc(t) + '</button>'; }).join('') + '</div>';
     h += '<p class="tablon__cuenta" role="status" data-limite="' + limite + '">' + (filas.length > limite ? 'Los ' + limite + ' más recientes de ' + filas.length + '.' : filas.length + ' avisos y anuncios.') + '</p>';
     h += '<ul class="tablon__lista">' + filas.map(function (f, i) {
+      /* la fecha en bloque («02 / OCT», con la letra de titulares) es dibujo: la lee el <time> oculto */
+      var p = partes(f.fecha);
+      var bloque = '<span class="tablon__dia" aria-hidden="true"><b>' + (p.d < 10 ? '0' : '') + p.d + '</b><span>' + MESES_C[p.m - 1] + '</span>' +
+        (p.a !== ahora.anio ? '<span class="tablon__anio">' + p.a + '</span>' : '') + '</span>';
       return '<li class="tablon__fila" data-tema="' + esc(f.tema) + '"' + (i >= limite ? ' hidden' : '') + marcaEjemplo(f, 'aviso:' + f.id) + '>' +
-        '<a class="tablon__enlace" href="' + esc(f.href) + '">' +
-        '<span class="tablon__meta"><span class="chip">' + esc(f.tema) + '</span><time datetime="' + f.fecha + '">' + fechaCorta(f.fecha) + '</time>' +
+        '<a class="tablon__enlace" href="' + esc(f.href) + '">' + bloque +
+        '<span class="tablon__meta"><span class="chip">' + esc(f.tema) + '</span><time class="sr" datetime="' + f.fecha + '">' + fechaCorta(f.fecha) + '</time>' +
         (f.oficial ? '<span class="tablon__origen">Tablón oficial</span>' : '<span class="tablon__origen">Ayuntamiento</span>') + '</span>' +
         '<span class="tablon__titulo">' + esc(f.titulo) + '</span>' + (f.oficial ? SEDE : '') +
         '<svg class="icono tablon__flecha" aria-hidden="true"><use href="#' + (f.oficial ? 'i-salida' : 'i-flecha') + '"/></svg></a>' +
@@ -347,39 +353,69 @@
   }
 
   /* ── lo que viene y lo que pasó ── */
+  /* «Hoy» arriba y, debajo, dos bloques: lo que viene (lo más cercano primero, solo dentro del
+     horizonte de D.horizonte_dias, 60 por defecto) y lo que pasó (las últimas noticias) */
   function linea(D, ahora) {
-    var vienen = proximos(D, ahora, 3).reverse();      /* lo más cercano, pegado a «Hoy» */
+    var dias = D.horizonte_dias || 60, tope = sumarDias(ahora.iso, dias);
+    var todos = proximos(D, ahora);
+    var vienen = todos.filter(function (e) { return e.fecha <= tope; }).slice(0, 3);
+    var luego = todos.filter(function (e) { return e.fecha > tope; })[0];
     var pasaron = (D.noticias || []).filter(function (n) { return !n.oculto && n.fecha <= ahora.iso; })
       .sort(function (a, b) { return b.fecha.localeCompare(a.fecha); }).slice(0, 3);
-    var h = vienen.map(function (e) {
-      return '<li class="linea__item linea__item--evento"' + marcaEjemplo(e, 'evento:' + e.id) + '>' +
-        '<p class="linea__cuando"><time datetime="' + e.fecha + '">' + esc(cuando(e.fecha, ahora)) + (e.hora ? ', ' + hora(e.hora) : '') + '</time><span class="chip chip--agenda">Agenda</span>' + (e.ejemplo ? EJEMPLO : '') + '</p>' +
-        '<div class="linea__tarjeta"><div><h3 class="linea__titulo"><a href="' + esc(enlaceEvento(e, D)) + '">' + esc(e.titulo) + '</a></h3>' +
-        (e.lugar ? '<p class="linea__lugar">' + esc(e.lugar) + '</p>' : '') + '</div></div></li>';
-    }).join('');
-    h += '<li class="linea__hoy"><span class="linea__marca" aria-hidden="true"><svg class="linea__arquito" viewBox="0 0 20 24"><path d="M2 23V10a8 8 0 0 1 16 0v13"/></svg></span>' +
-      '<span class="linea__hoy-texto"><b>Hoy</b>, ' + esc(fechaLarga(ahora.iso)) + '</span></li>';
-    h += pasaron.map(function (n) {
-      return '<li class="linea__item linea__item--noticia"' + marcaEjemplo(n, 'noticia:' + n.id) + '>' +
-        '<p class="linea__cuando"><time datetime="' + n.fecha + '">' + esc(cuando(n.fecha, ahora)) + '</time><span class="chip chip--noticia">Noticia</span>' + (n.ejemplo ? EJEMPLO : '') + '</p>' +
-        '<div class="linea__tarjeta">' + (n.imagen ? '<figure class="linea__foto arco-opcional"><img src="' + esc(D.rutas.media + n.imagen + '-800.jpg') + '" alt="' + esc(n.imagen_alt || '') + '" width="400" height="300" loading="lazy" decoding="async"></figure>' : '') +
-        '<div><h3 class="linea__titulo"><a href="' + esc(enlaceNoticia(n, D)) + '">' + esc(n.titulo) + '</a></h3>' +
-        (n.resumen ? '<p class="linea__lugar">' + esc(n.resumen) + '</p>' : '') + '</div></div></li>';
-    }).join('');
-    return h;
+    var h = '<p class="linea__hoy"><span class="linea__marca" aria-hidden="true"><svg class="linea__arquito" viewBox="0 0 20 24"><path d="M2 23V10a8 8 0 0 1 16 0v13"/></svg></span>' +
+      '<span class="linea__hoy-texto"><b>Hoy</b>, ' + esc(fechaLarga(ahora.iso)) + '</span></p>';
+    h += '<div class="linea__bloques"><div class="linea__bloque linea__bloque--viene"><h3 class="linea__subtitulo">Lo que viene</h3>';
+    if (vienen.length) {
+      h += '<ol class="linea linea--viene">' + vienen.map(function (e) {
+        return '<li class="linea__item linea__item--evento"' + marcaEjemplo(e, 'evento:' + e.id) + '>' +
+          '<p class="linea__cuando"><time datetime="' + e.fecha + '">' + esc(cuando(e.fecha, ahora)) + (e.hora ? ', ' + hora(e.hora) : '') + '</time><span class="chip chip--agenda">Agenda</span>' + (e.ejemplo ? EJEMPLO : '') + '</p>' +
+          '<div class="linea__tarjeta"><div><h4 class="linea__titulo"><a href="' + esc(enlaceEvento(e, D)) + '">' + esc(e.titulo) + '</a></h4>' +
+          (e.lugar ? '<p class="linea__lugar">' + esc(e.lugar) + '</p>' : '') + '</div></div></li>';
+      }).join('') + '</ol>';
+    } else {
+      /* estado vacío: lo dice, y si hay algo más adelante, cuál es */
+      h += '<div class="linea__vacio"><p>No hay nada anunciado en los próximos ' + dias + ' días.</p>' +
+        (luego ? '<p>Lo siguiente en la agenda: <a href="' + esc(enlaceEvento(luego, D)) + '">' + esc(luego.titulo) + '</a>, ' + esc(fechaLarga(luego.fecha, ahora)) + '.</p>' : '') + '</div>';
+    }
+    h += '</div><div class="linea__bloque linea__bloque--paso"><h3 class="linea__subtitulo">Lo que pasó</h3>';
+    if (pasaron.length) {
+      h += '<ol class="linea linea--paso">' + pasaron.map(function (n) {
+        return '<li class="linea__item linea__item--noticia"' + marcaEjemplo(n, 'noticia:' + n.id) + '>' +
+          '<p class="linea__cuando"><time datetime="' + n.fecha + '">' + esc(cuando(n.fecha, ahora)) + '</time><span class="chip chip--noticia">Noticia</span>' + (n.ejemplo ? EJEMPLO : '') + '</p>' +
+          '<div class="linea__tarjeta">' + (n.imagen ? '<figure class="linea__foto arco-opcional"><img src="' + esc(D.rutas.media + n.imagen + '-800.jpg') + '" alt="' + esc(n.imagen_alt || '') + '" width="400" height="300" loading="lazy" decoding="async"></figure>' : '') +
+          '<div><h4 class="linea__titulo"><a href="' + esc(enlaceNoticia(n, D)) + '">' + esc(n.titulo) + '</a></h4>' +
+          (n.resumen ? '<p class="linea__lugar">' + esc(n.resumen) + '</p>' : '') + '</div></div></li>';
+      }).join('') + '</ol>';
+    } else if (pasados(D, ahora).length) {
+      /* sin noticias, lo último de la agenda que ya pasó */
+      h += '<ol class="linea linea--paso">' + pasados(D, ahora).slice(0, 3).map(function (e) {
+        return '<li class="linea__item linea__item--noticia"' + marcaEjemplo(e, 'evento:' + e.id) + '>' +
+          '<p class="linea__cuando"><time datetime="' + e.fecha + '">' + esc(cuando(e.fecha, ahora)) + '</time><span class="chip chip--noticia">Agenda</span>' + (e.ejemplo ? EJEMPLO : '') + '</p>' +
+          '<div class="linea__tarjeta"><div><h4 class="linea__titulo"><a href="' + esc(enlaceEvento(e, D)) + '">' + esc(e.titulo) + '</a></h4>' +
+          (e.lugar ? '<p class="linea__lugar">' + esc(e.lugar) + '</p>' : '') + '</div></div></li>';
+      }).join('') + '</ol>';
+    } else {
+      h += '<div class="linea__vacio"><p>Todavía no hay noticias publicadas.</p></div>';
+    }
+    return h + '</div></div>';
   }
 
   /* ── el año en fiestas ── */
+  /* Tira de 12 meses: los que tienen fiesta se despliegan; los vacíos ocupan poco (en escritorio,
+     solo la abreviatura; el nombre entero y «sin fiestas» siguen ahí para el lector de pantalla).
+     El mes en curso, con el borde de oro. Sigue siendo una lista ordenada de 12 meses */
   function anio(D, ahora) {
     return MESES.map(function (m, i) {
       var mes = i + 1;
       var fs = (D.fiestas || []).filter(function (f) { return f.mes === mes; });
       var actual = mes === ahora.mes;
-      return '<li class="mes' + (fs.length ? ' con-fiesta' : '') + (actual ? ' es-mes-actual' : '') + '">' +
-        '<p class="mes__nombre">' + m.charAt(0).toUpperCase() + m.slice(1) + (actual ? ' <span class="mes__ahora">Este mes</span>' : '') + '</p>' +
+      var nombre = m.charAt(0).toUpperCase() + m.slice(1);
+      return '<li class="mes' + (fs.length ? ' con-fiesta' : ' es-vacio') + (actual ? ' es-mes-actual' : '') + '">' +
+        '<p class="mes__nombre"><span class="mes__largo">' + nombre + '</span><span class="mes__corto" aria-hidden="true">' + MESES_C[i] + '</span>' +
+        (actual ? ' <span class="mes__ahora">Este mes</span>' : '') + '</p>' +
         (fs.length ? '<ul class="mes__fiestas">' + fs.map(function (f) {
           return '<li><b>' + esc(f.nombre) + '</b>' + (f.mayor ? ' <span class="chip chip--mayor">Fiesta mayor</span>' : '') + '<span>' + esc(f.cuando) + '</span></li>';
-        }).join('') + '</ul>' : '<p class="mes__vacio">Sin fiestas señaladas</p>') + '</li>';
+        }).join('') + '</ul>' : '<p class="mes__vacio"><span class="mes__raya" aria-hidden="true"></span><span class="mes__vacio-texto">Sin fiestas señaladas</span></p>') + '</li>';
     }).join('');
   }
 

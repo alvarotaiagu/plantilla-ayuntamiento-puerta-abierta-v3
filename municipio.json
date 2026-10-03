@@ -415,6 +415,7 @@
       "telefono": "112"
     }
   ],
+  "horizonte_agenda_dias": 60,
   "listin_corto": [
     "Emergencias",
     "Policía Local",
@@ -426,21 +427,25 @@
       {
         "nombre": "Empadronarme",
         "nota": "Alta o renovación en el padrón",
+        "icono": "padron",
         "id": "d120f65c-c936-4a95-bd50-e7ae970ca149"
       },
       {
         "nombre": "Domiciliar recibos",
         "nota": "Alta, baja o cambio de cuenta",
+        "icono": "recibo",
         "id": "a93cd417-195c-40c5-acf2-9a92b36c8809"
       },
       {
         "nombre": "Licencia de obra",
         "nota": "Licencia o autorización urbanística",
+        "icono": "obra",
         "id": "15fabacb-83b1-47d1-b435-508245672051"
       },
       {
         "nombre": "Ayudas a la natalidad",
         "nota": "Convocatoria 2026: bases y solicitud en el tablón",
+        "icono": "carrito",
         "url": "https://riberadelfresno.sedelectronica.es/preview-document/02af28b6-9fdb-4b29-968c-eee1a7582f0a",
         "tipo": "documento"
       }
