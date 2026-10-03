@@ -88,8 +88,20 @@
     return (D.avisos || []).filter(function (a) { return !a.oculto && (!a.caduca || a.caduca >= ahora.iso); })
       .sort(function (a, b) { return b.fecha.localeCompare(a.fecha); });
   }
+  /* gravedad de un aviso: «urgente» (rojo), «programado» o «informativo» (ámbar). Sin el campo,
+     un aviso con `urgente: true` (los de antes) es urgente y los demás, informativos */
+  var GRAVEDAD = { urgente: 'Urgente', programado: 'Programado', informativo: 'Informativo' };
+  function gravedad(a) {
+    var g = String((a && a.gravedad) || '').toLowerCase().trim();
+    return GRAVEDAD[g] ? g : (a && a.urgente ? 'urgente' : 'informativo');
+  }
   function urgentes(D, ahora) {
-    return avisosVigentes(D, ahora).filter(function (a) { return a.urgente && a.caduca && a.caduca >= ahora.iso; });
+    return destacados(D, ahora).filter(function (a) { return gravedad(a) === 'urgente'; });
+  }
+  /* los de la franja de arriba: con fecha de caducidad y urgentes o programados (lo urgente, primero) */
+  function destacados(D, ahora) {
+    return avisosVigentes(D, ahora).filter(function (a) { return a.caduca && a.caduca >= ahora.iso && (a.urgente || gravedad(a) !== 'informativo'); })
+      .sort(function (a, b) { return (gravedad(b) === 'urgente') - (gravedad(a) === 'urgente') || b.fecha.localeCompare(a.fecha); });
   }
   function eventoPendiente(e, ahora) {
     if (e.fecha > ahora.iso) return true;
@@ -113,15 +125,18 @@
 
   /* ── franja urgente (todas las páginas) ── */
   function franja(D, ahora) {
-    var u = urgentes(D, ahora)[0];
+    var u = destacados(D, ahora)[0];
     if (!u) return '';
-    /* toda la franja es un solo enlace con el blanco grande. En móvil va en UNA línea: el texto se
-       recorta con puntos suspensivos, pero «Ver aviso» (y la etiqueta «Ejemplo») van fuera del
-       recorte y se ven siempre. El texto entero sigue en el enlace para los lectores de pantalla */
-    return '<a class="franja-urgente__dentro contenedor" href="' + esc(enlaceAviso(u, D)) + '"' + marcaEjemplo(u, 'aviso:' + u.id) + '>' +
-      '<svg class="icono" aria-hidden="true"><use href="#i-aviso"/></svg>' +
-      '<span class="franja-urgente__texto"><b>Aviso:</b> ' + esc(u.titulo) + '</span>' + (u.ejemplo ? ' ' + EJEMPLO : '') +
-      ' <span class="franja-urgente__ver">Ver aviso</span></a>';
+    /* toda la franja es un solo enlace, con el color de su gravedad: rojo solo lo urgente; lo
+       programado, en ámbar. La palabra («Urgente:», «Programado:») y el icono lo dicen
+       también sin color. El texto no se recorta: en móvil cabe en dos líneas (para eso está
+       `titulo_corto`, si el título es largo) y «Ver aviso» se queda en la flecha */
+    var g = gravedad(u), urg = g === 'urgente';
+    return '<a class="franja-urgente__enlace es-' + g + '" href="' + esc(enlaceAviso(u, D)) + '"' + marcaEjemplo(u, 'aviso:' + u.id) + '>' +
+      '<span class="contenedor franja-urgente__dentro">' + icono(urg ? 'i-aviso' : 'i-calendario') +
+      '<span class="franja-urgente__texto"><b>' + (urg ? 'Urgente' : g === 'programado' ? 'Programado' : 'Aviso') + ':</b> ' + esc(u.titulo_corto || u.titulo) +
+      (u.ejemplo ? ' ' + EJEMPLO : '') + '</span>' +
+      ' <span class="franja-urgente__ver"><span class="franja-urgente__ver-texto">Ver aviso</span>' + icono('i-flecha') + '</span></span></a>';
   }
 
   /* ── lo que se añadió al panel «Hoy»: farmacia de guardia, el tiempo, el próximo
@@ -166,19 +181,23 @@
     if (!F) return '';
     var g = farmaciaDeGuardia(F, ahora), of = F.oficial && F.oficial.url ? F.oficial : null;
     if (!g && !of) return '';
-    var h = '<li class="hoy__fila hoy__fila--farmacia"' + (g ? marcaEjemplo(F, 'farmacia') : '') + '>' + icono('i-farmacia') + '<div><p class="hoy__etiqueta">Farmacia de guardia</p>';
+    var h = '<li class="hoy__fila hoy__fila--farmacia"' + (g ? marcaEjemplo(F, 'farmacia') : '') + '>' + etiquetaHoy('i-farmacia', 'Farmacia de guardia');
     if (g) {
       var f = g.farmacia;
       var donde = [f.direccion ? esc(f.direccion) + (f.localidad ? ' (' + esc(f.localidad) + ')' : '') : esc(f.localidad || ''),
         f.telefono ? '<a href="' + telHref(f.telefono) + '">' + esc(f.telefono) + '</a>' : ''].filter(Boolean).join(' · ');
-      h += '<p><b>' + esc(f.nombre) + '</b>' + (F.ejemplo ? ' ' + EJEMPLO : '') +
-        (donde ? '<span class="hoy__nota">' + donde + '</span>' : '') +
-        '<span class="hoy__nota">De guardia hasta ' + cuandoMin(g.hasta, ahora) + ' a las ' + hora(g.cambio) + '</span>' +
-        (of ? '<span class="hoy__nota hoy__mas"><a href="' + esc(of.url) + '">Todas las guardias, en la web del ' + esc(of.nombre) + FUERA + '</a></span>' : '') + '</p>';
+      h += '<p class="hoy__valor"><b>' + esc(f.nombre) + '</b>' + (F.ejemplo ? ' ' + EJEMPLO : '') + '</p>' +
+        (donde ? '<p class="hoy__nota">' + donde + '</p>' : '') +
+        '<p class="hoy__nota">De guardia hasta ' + cuandoMin(g.hasta, ahora) + ' a las ' + hora(g.cambio) + '</p>' +
+        (of ? '<p class="hoy__nota hoy__mas"><a href="' + esc(of.url) + '">Todas las guardias, en la web del ' + esc(of.nombre) + FUERA + '</a></p>' : '');
     } else {
-      h += '<p><a href="' + esc(of.url) + '">Consulte la de hoy en la web del ' + esc(of.nombre) + FUERA + '</a></p>';
+      h += '<p class="hoy__valor hoy__valor--enlace"><a href="' + esc(of.url) + '">Consulte la de hoy en la web del ' + esc(of.nombre) + FUERA + '</a></p>';
     }
-    return h + '</div></li>';
+    return h + '</li>';
+  }
+  /* la cabecera de cada ficha: el icono en su círculo y lo que es («Farmacia de guardia») */
+  function etiquetaHoy(id, texto) {
+    return '<p class="hoy__etiqueta"><span class="hoy__icono">' + icono(id) + '</span><span class="hoy__etiqueta-texto">' + texto + '</span></p>';
   }
 
   /* recogida de enseres, basura, poda…: días de la semana (1 = lunes) o fechas sueltas */
@@ -207,14 +226,19 @@
       (p.convocatoria ? ' · <a href="' + esc(p.convocatoria) + '">Convocatoria<span class="sr"> del pleno' + esc(p.convocatoria_sr || ', se abre otra web') + '</span></a>' : '') +
       ' · ' + icsHtml(p, D, true) + '</span></li>';
   }
-  function filaMasHoy(D, ahora) {
+  /* «Más hoy», debajo de las fichas: el tiempo, el próximo pleno y la recogida en líneas cortas,
+     el dato de la sede (solo en la versión sobria) y el canal de avisos. Cada cosa, solo con datos */
+  function pieHoy(D, ahora) {
     var breves = [];
     if (D.tiempo && D.tiempo.url) breves.push('<li class="hoy__breve"><b>El tiempo:</b> <a href="' + esc(D.tiempo.url) + '">previsión de AEMET para ' + esc(D.tiempo.lugar) + FUERA + '</a></li>');
     breves.push(brevePleno(D, ahora));
     (D.recogida || []).slice(0, 2).forEach(function (r) { breves.push(breveRecogida(r, ahora)); });
     breves = breves.filter(Boolean);
-    if (!breves.length) return '';
-    return '<li class="hoy__fila hoy__fila--mas">' + icono('i-mas') + '<div><p class="hoy__etiqueta">Más hoy</p><ul class="hoy__breves">' + breves.join('') + '</ul></div></li>';
+    var mas = breves.length ? '<div class="hoy__mas-hoy"><p class="hoy__etiqueta hoy__etiqueta--mas">' + icono('i-mas') + 'Más hoy</p><ul class="hoy__breves">' + breves.join('') + '</ul></div>' : '';
+    var canal = canalHoy(D);
+    /* solo en la sobria: el dato en vez del dibujo */
+    var sede = '<p class="hoy__sede solo-sobria">' + icono('i-sede') + '<span><b>Sede electrónica:</b> <a href="' + esc(D.rutas.tramites) + '">' + D.tramites_sede + ' trámites en la sede, las 24 horas</a></span></p>';
+    return '<div class="hoy__pie' + (mas || canal ? '' : ' solo-sobria') + '">' + mas + sede + canal + '</div>';
   }
   function canalHoy(D) {
     var c = D.canal;
@@ -275,47 +299,47 @@
   }
 
   /* ── panel «Hoy en …» ── */
+  /* «Hoy en …»: una tira a todo lo ancho bajo el hero. Cuatro fichas como un tablero (Ayuntamiento,
+     farmacia de guardia, lo próximo de la agenda y el último aviso) y «Más hoy» debajo. Una ficha
+     sin datos no sale y la rejilla se reparte entre las que quedan: nunca un hueco */
   function hoy(D, ahora) {
     var h = '<h2 class="hoy__titulo" id="hoy-titulo">Hoy en ' + esc(D.nombre_corto) + ' <span class="hoy__fecha">' + esc(fechaLarga(ahora.iso)) + '</span></h2><ul class="hoy__lista">';
-    /* Ayuntamiento */
+    /* Ayuntamiento: abierto o cerrado ahora (se calcula) y el horario */
     var e = estado(D.horario.tramos, ahora);
-    h += '<li class="hoy__fila"' + marcaEjemplo(D.horario, 'horario') + '><svg class="icono" aria-hidden="true"><use href="#i-reloj"/></svg><div>' +
-      '<p class="hoy__etiqueta">Ayuntamiento</p>' +
-      (e ? '<p class="hoy__estado ' + (e.abierto ? 'esta-abierto' : 'esta-cerrado') + '"><span class="estado__punto" aria-hidden="true"></span><b>' + e.texto + '</b>' + (e.detalle ? ' · ' + e.detalle : '') + '</p>' : '') +
-      '<p class="hoy__nota">' + esc(D.horario.texto) + (D.horario.ejemplo ? ' ' + EJEMPLO : '') + '</p></div></li>';
+    h += '<li class="hoy__fila hoy__fila--ayto"' + marcaEjemplo(D.horario, 'horario') + '>' + etiquetaHoy('i-reloj', 'Ayuntamiento') +
+      (e ? '<p class="hoy__valor hoy__estado ' + (e.abierto ? 'esta-abierto' : 'esta-cerrado') + '"><span class="estado__punto" aria-hidden="true"></span><b>' + e.texto + '</b>' +
+        (e.detalle ? '<span class="hoy__detalle"> · ' + e.detalle + '</span>' : '') + '</p>' : '') +
+      '<p class="hoy__nota">' + esc(D.horario.texto) + (D.horario.ejemplo ? ' ' + EJEMPLO : '') + '</p></li>';
     /* farmacia de guardia: lo segundo que más se busca un domingo */
     h += filaFarmacia(D, ahora);
     /* agenda: 1 en la versión cargada, 3 en la sobria (CSS oculta .hoy__mas).
        Los plenos van en «Más hoy», no aquí, para no salir dos veces */
     var prox = proximos(D, ahora).filter(function (ev) { return ev.tipo !== 'pleno'; }).slice(0, 3);
-    h += '<li class="hoy__fila"><svg class="icono" aria-hidden="true"><use href="#i-calendario"/></svg><div><p class="hoy__etiqueta">Lo próximo en la agenda</p>';
-    if (!prox.length) h += '<p>No hay nada anunciado estos días.</p>';
+    h += '<li class="hoy__fila hoy__fila--agenda">' + etiquetaHoy('i-calendario', 'Lo próximo en la agenda');
+    if (!prox.length) h += '<p class="hoy__nota">No hay nada anunciado estos días.</p>';
     else {
       h += '<ul class="hoy__eventos">' + prox.map(function (ev, i) {
-        return '<li class="hoy__evento' + (i ? ' hoy__mas' : '') + '"' + marcaEjemplo(ev, 'evento:' + ev.id) + '><a href="' + esc(enlaceEvento(ev, D)) + '">' + esc(ev.titulo) + '</a>' + (ev.ejemplo ? ' ' + EJEMPLO : '') +
-          '<span class="hoy__cuando">' + esc(cuando(ev.fecha, ahora)) + (ev.hora ? ', ' + hora(ev.hora) : '') + (ev.lugar ? ' · ' + esc(ev.lugar) : '') + '</span></li>';
+        return '<li class="hoy__evento' + (i ? ' hoy__mas' : '') + '"' + marcaEjemplo(ev, 'evento:' + ev.id) + '><p class="hoy__valor hoy__valor--enlace"><a href="' + esc(enlaceEvento(ev, D)) + '">' + esc(ev.titulo) + '</a>' + (ev.ejemplo ? ' ' + EJEMPLO : '') + '</p>' +
+          '<p class="hoy__cuando">' + esc(cuando(ev.fecha, ahora)) + (ev.hora ? ', ' + hora(ev.hora) : '') + (ev.lugar ? ' · ' + esc(ev.lugar) : '') + '</p></li>';
       }).join('') + '</ul>';
     }
-    h += '</div></li>';
-    /* último aviso: propio o del tablón */
+    h += '</li>';
+    /* último aviso: propio (con su gravedad: rojo solo si es urgente) o del tablón oficial */
     var ult = ultimos(D, ahora)[0];
     if (ult) {
-      h += '<li class="hoy__fila"' + marcaEjemplo(ult, 'aviso:' + ult.id) + '><svg class="icono" aria-hidden="true"><use href="#i-aviso"/></svg><div><p class="hoy__etiqueta">Último aviso</p>' +
-        '<p><a href="' + esc(ult.href) + '">' + esc(ult.titulo) + (ult.oficial ? SEDE : '') + '</a>' + (ult.ejemplo ? ' ' + EJEMPLO : '') +
-        '<span class="hoy__cuando">' + esc(cuando(ult.fecha, ahora)) + (ult.oficial ? ' · Tablón oficial' : '') + '</span></p></div></li>';
+      var g = ult.oficial ? null : ult.gravedad;
+      h += '<li class="hoy__fila hoy__fila--aviso' + (g ? ' es-' + g : '') + '"' + marcaEjemplo(ult, 'aviso:' + ult.id) + '>' +
+        etiquetaHoy('i-tablon', 'Último aviso') + (g ? '<p class="hoy__gravedad"><span class="chip chip--' + g + '">' + GRAVEDAD[g] + '</span></p>' : '') +
+        '<p class="hoy__valor hoy__valor--enlace"><a href="' + esc(ult.href) + '">' + esc(ult.titulo) + (ult.oficial ? SEDE : '') + '</a>' + (ult.ejemplo ? ' ' + EJEMPLO : '') + '</p>' +
+        '<p class="hoy__cuando">' + esc(cuando(ult.fecha, ahora)) + (ult.oficial ? ' · Tablón oficial' : '') + '</p></li>';
     }
-    /* el tiempo, el próximo pleno y la recogida: una sola fila de líneas cortas */
-    h += filaMasHoy(D, ahora);
-    /* solo en la sobria: el dato en vez del dibujo */
-    h += '<li class="hoy__fila solo-sobria"><svg class="icono" aria-hidden="true"><use href="#i-sede"/></svg><div><p class="hoy__etiqueta">Sede electrónica</p>' +
-      '<p><a href="' + esc(D.rutas.tramites) + '"><b>' + D.tramites_sede + ' trámites</b> en la sede, las 24 horas</a></p></div></li>';
-    return h + '</ul>' + canalHoy(D);
+    return h + '</ul>' + pieHoy(D, ahora);
   }
 
   /* avisos propios + anuncios del tablón oficial, lo más nuevo primero */
   function ultimos(D, ahora) {
     var propios = avisosVigentes(D, ahora).map(function (a) {
-      return { id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, href: enlaceAviso(a, D), ejemplo: a.ejemplo, oficial: false };
+      return { id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, href: enlaceAviso(a, D), ejemplo: a.ejemplo, oficial: false, gravedad: gravedad(a) };
     });
     var oficiales = ((D.tablon && D.tablon.entradas) || []).filter(function (t) { return !t.oculto; }).map(function (t, i) {
       return { id: 'tablon-' + i, fecha: t.fecha, tema: t.tema, titulo: t.titulo_claro || t.titulo, href: t.url, oficial: true };
@@ -452,7 +476,7 @@
 
   raiz.Vivo = {
     ahoraEn: ahoraEn, estado: estado, fechaLarga: fechaLarga, fechaCorta: fechaCorta,
-    urgentes: urgentes, proximos: proximos, ultimos: ultimos,
+    urgentes: urgentes, destacados: destacados, gravedad: gravedad, proximos: proximos, ultimos: ultimos,
     farmaciaDeGuardia: farmaciaDeGuardia, proximaRecogida: proximaRecogida, proximoPleno: proximoPleno, ics: ics, archivoIcs: archivoIcs,
     pintar: function (nombre, D, ahora, op) { return BLOQUES[nombre](D, ahora, op || {}); },
     bloques: Object.keys(BLOQUES)

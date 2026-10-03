@@ -1619,11 +1619,29 @@
     ]
   },
   "fotos": {
-    "hero": {
-      "archivo": "calle-torre",
-      "alt": "Avenida arbolada que lleva a una torre blanca con reloj",
-      "posicion": "58% 50%"
-    }
+    "_leeme": "hero: la foto del arco de la portada. hero_fotos (opcional): varias, y en cada visita sale una al azar; la primera es la de sin JavaScript y la de la imagen para compartir. Con hero_fotos, hero no hace falta.",
+    "hero_fotos": [
+      {
+        "archivo": "calle-torre",
+        "alt": "Avenida arbolada que lleva a una torre blanca con reloj",
+        "posicion": "60% 50%"
+      },
+      {
+        "archivo": "casa-cultura",
+        "alt": "Fachada encalada de la Casa de la Cultura, con rejas y balcones",
+        "posicion": "40% 50%"
+      },
+      {
+        "archivo": "monumento-melendez",
+        "alt": "Busto de bronce de Meléndez Valdés en la plaza, junto a una casa amarilla",
+        "posicion": "22% 50%"
+      },
+      {
+        "archivo": "pozo-tinajona",
+        "alt": "Pozo de cuerpo rojo y brocal blanco con su arco de hierro, en el campo",
+        "posicion": "56% 50%"
+      }
+    ]
   },
   "cabeceras": {
     "_leeme": "Foto opcional en la cabecera de cada página interior (por id de página), recortada en arco. Sin foto, el arco de línea. «El pueblo» la pinta grande.",

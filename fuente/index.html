@@ -20,25 +20,37 @@
   <section class="hero" aria-labelledby="titulo-pagina">
     <div class="contenedor hero__rejilla">
       <div class="puerta">
+        <!-- Con varias fotos (fotos.hero_fotos), el <head> elige una al azar y la precarga; este
+             script la pinta aquí mismo, antes del primer pintado y con el hueco ya medido (sin CLS).
+             Sin JavaScript sale la primera (noscript); si algo falla, el script pinta la del noscript -->
         {{#hero_foto}}<figure class="arco puerta__arco" id="arco-hero">
-          <img src="media/{{archivo}}.jpg" srcset="media/{{archivo}}-800.jpg 800w, media/{{archivo}}.jpg {{ancho}}w" sizes="(min-width: 56em) 36vw, 92vw" width="{{ancho}}" height="{{alto}}" alt="{{alt}}" style="object-position: {{posicion}}" fetchpriority="high" decoding="async">
+          {{#varias}}<noscript>{{/varias}}<img src="media/{{archivo}}.jpg" srcset="media/{{archivo}}-800.jpg 800w, media/{{archivo}}.jpg {{ancho}}w" sizes="{{sizes}}" width="{{ancho}}" height="{{alto}}" alt="{{alt}}" style="object-position: {{posicion}}" fetchpriority="high" decoding="async">{{#varias}}</noscript><script>(function (s) {
+            var F = window.__heroFotos, f = F && F[window.__heroFoto || 0], n = s.previousElementSibling;
+            if (!f) { if (n) n.insertAdjacentHTML('afterend', n.textContent); return; }
+            var im = document.createElement('img');
+            im.width = f.ancho; im.height = f.alto; im.alt = f.alt; im.style.objectPosition = f.pos;
+            im.setAttribute('fetchpriority', 'high'); im.decoding = 'async';
+            im.sizes = '{{sizes}}'; im.srcset = f.srcset; im.src = f.src;
+            s.parentNode.insertBefore(im, s);
+          })(document.currentScript);</script>{{/varias}}
         </figure>{{/hero_foto}}
         {{^hero_foto}}<div class="arco puerta__arco arco--vacio" id="arco-hero"><img src="marca/escudo-480.png" width="{{escudo.ancho480}}" height="480" alt=""></div>{{/hero_foto}}
         <span class="puerta__umbral" aria-hidden="true"></span>
       </div>
       <div class="hero__texto">
-        <!-- «Ayuntamiento de» ya está en la cabecera: aquí solo lo oye el lector de pantalla -->
-        <h1 class="hero__titulo" id="titulo-pagina"><span class="sr">Ayuntamiento de </span>{{nombre}}</h1>
+        <!-- «Ayuntamiento de» ya está en la cabecera: aquí solo lo oye el lector de pantalla.
+             Cada palabra del nombre va en su caja sin partir: la entrada del hero las sube una a una -->
+        <h1 class="hero__titulo" id="titulo-pagina"><span class="sr">Ayuntamiento de </span>{{#nombre_palabras}}<span class="hero__palabra" style="--n: {{n}}">{{palabra}}</span>{{^@ultimo}} {{/@ultimo}}{{/nombre_palabras}}</h1>
         {{#lema}}<p class="hero__lema">{{lema}}</p>{{/lema}}
         <!-- Buscador de trámites a la vista. Sin JavaScript, el formulario lleva a la página de
              trámites con lo escrito (?q=…#buscar); con él, los resultados salen aquí debajo -->
         <form class="hero__buscador" action="tramites.html#buscar" method="get" role="search" aria-label="Trámites" data-buscador-pagina data-buscador-max="5">
           <label class="campo__etiqueta hero__etiqueta" for="hero-buscar">¿Qué necesita hacer?</label>
           <div class="hero__fila">
-            <input class="campo__entrada" id="hero-buscar" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="Empadronarme, pagar un recibo, una obra…" aria-describedby="hero-buscar-ayuda" data-buscador-campo>
-            <button class="boton boton--marca hero__buscar" type="submit"><svg class="icono" aria-hidden="true"><use href="#i-lupa"/></svg>Buscar</button>
+            <input class="campo__entrada" id="hero-buscar" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="Padrón, recibos, obras…" aria-describedby="hero-buscar-ayuda" data-buscador-campo>
+            <button class="boton boton--marca hero__buscar" type="submit"><svg class="icono" aria-hidden="true"><use href="#i-lupa"/></svg><span class="hero__buscar-texto">Buscar</span></button>
           </div>
-          <p class="hero__ayuda" id="hero-buscar-ayuda">Con sus palabras. Cada resultado le lleva a su trámite en la sede electrónica.</p>
+          <p class="hero__ayuda" id="hero-buscar-ayuda">Con sus palabras: cada resultado le lleva a su trámite en la sede electrónica.</p>
           <p class="hero__cuenta" role="status" data-buscador-cuenta></p>
           <ul class="resultados hero__resultados" data-buscador-resultados></ul>
         </form>
@@ -47,8 +59,15 @@
           <li><a class="boton boton--borde" href="telefonos.html"><svg class="icono" aria-hidden="true"><use href="#i-telefono"/></svg>Teléfonos</a></li>
           <li><a class="boton boton--borde" href="agenda.html"><svg class="icono" aria-hidden="true"><use href="#i-calendario"/></svg>Agenda</a></li>
         </ul>
-        <section class="hoy" aria-labelledby="hoy-titulo" data-vivo="hoy">{{{vivo.hoy}}}</section>
       </div>
+    </div>
+  </section>
+
+  <!-- «Hoy en …»: una tira a todo lo ancho, justo bajo el hero. La pinta js/vivo.js (aquí, con la
+       fecha en que se generó; en el navegador, con la hora real cada minuto) -->
+  <section class="hoy-tira" aria-labelledby="hoy-titulo">
+    <div class="contenedor">
+      <div class="hoy" data-vivo="hoy">{{{vivo.hoy}}}</div>
     </div>
   </section>
 

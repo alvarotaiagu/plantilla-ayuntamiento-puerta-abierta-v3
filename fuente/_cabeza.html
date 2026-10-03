@@ -38,7 +38,22 @@
   } catch (e) {}
   /* con cortina no hay transición de página (css/movimiento.css): la cortina ya es la entrada */
   window.addEventListener('pagereveal', function (ev) { if (ev.viewTransition && h.classList.contains('con-cortina')) ev.viewTransition.skipTransition(); });
+  /* sin cortina (ya se vio en la sesión), el hero entra solo: el nombre sube palabra a palabra y la
+     foto se asienta (css/movimiento.css). Nunca con movimiento reducido */
+  try { if (!quieto && !h.classList.contains('con-cortina')) h.classList.add('entrada-hero'); } catch (e) {}
 {{/pagina.cortina}}
+{{#pagina.es_inicio}}{{#hero_varias}}
+  /* la foto del arco, al azar entre varias (municipio.json → fotos.hero_fotos): se elige aquí, antes
+     del primer pintado, y se precarga; el <figure> del hero la pinta con su srcset, su alt y su encuadre */
+  try {
+    var fotos = window.__heroFotos = {{{hero_varias}}};
+    var i = window.__heroFoto = Math.min(fotos.length - 1, Math.floor(Math.random() * fotos.length));
+    var pre = document.createElement('link');
+    pre.rel = 'preload'; pre.as = 'image'; pre.href = fotos[i].src;
+    pre.setAttribute('imagesrcset', fotos[i].srcset); pre.setAttribute('imagesizes', '{{hero_foto.sizes}}'); pre.setAttribute('fetchpriority', 'high');
+    document.head.appendChild(pre);
+  } catch (e) {}
+{{/hero_varias}}{{/pagina.es_inicio}}
   /* [MANDO DE MAQUETA] inicio */
   /* Solo con ?revision: lo guardado no cuenta fuera de la reunión, o un móvil
      donde se probó la versión sobria la seguiría viendo sin mando para volver. */
