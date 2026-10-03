@@ -102,6 +102,9 @@ const PATRONES_PERSONALES = [
   [/candidatos\s+a\s+jurado|sorteo\s+de\s+jurados?/i, 'lista de jurados'],
   [/notificaci[oó]n|comparecencia|edicto\s+de\s+notificaci|abandono\s+de\s+veh[ií]culo|veh[ií]culo\s+abandonado|abandono\s+veh[ií]culo/i, 'notificación a una persona'],
   [/relaci[oó]n\s+nominal/i, 'relación nominal de personas'],
+  /* una expropiación cita a los titulares por su nombre: la relación de afectados y la citación al
+     levantamiento de actas previas (en Segura de León, el acceso al Monte de los Silos, 17/09/2026) */
+  [/relaci[oó]n\s+de\s+(bienes\s+y\s+derechos\s+)?(afectad|propietari|titulares)|actas?\s+previas?\s+a\s+la\s+ocupaci[oó]n|expropiaci[oó]n/i, 'expropiación con titulares'],
   [/acta\s+(de\s+(la\s+)?)?mesa\s+(de\s+)?contrataci[oó]n/i, 'acta de mesa de contratación'],
   [/mesas?\s+electoral(es)?.*(lista|miembros|sorteo)|(lista(do)?|miembros|sorteo).*mesas?\s+electoral/i, 'miembros de mesas electorales'],
   [/\b\d{8}[A-HJ-NP-TV-Z]\b|\*{3}\d{3,4}\*{1,3}|\b[XYZ]\d{7}[A-Z]\b/i, 'contiene un DNI o NIE']
@@ -189,5 +192,8 @@ export const CASOS_PRUEBA = [
   [{ titulo: 'ANUNCIO COBRANZA IAE 2026' }, null],
   [{ titulo: 'Anuncio celebración sesión Ordinaria Pleno 30 de septiembre de 2026' }, null],
   [{ titulo: 'Bases de la convocatoria de dos plazas de socorrista', categoria: 'Empleo Público' }, null],
+  [{ titulo: 'RELACION DE AFECTADOS', descripcion: 'ANUNCIO DE CITACION AL LEVANTAMIENTO DE ACTAS PREVIAS A LA OCUPACION MEJORA ACCESO MONTE DE LOS SILOS' }, 'expropiación con titulares'],
+  [{ titulo: 'ANUNCIO DE CITACION', descripcion: 'ANUNCIO DE CITACION AL LEVANTAMIENTO DE ACTAS PREVIAS A LA OCUPACION MEJORA ACCESO MONTE DE LOS SILOS' }, 'expropiación con titulares'],
+  [{ titulo: 'Relación de bienes y derechos afectados por la obra' }, 'expropiación con titulares'],
   [{ titulo: 'B.O.P. nº. 91 - Anuncio 1752_2026 Bases reguladoras para ayudas mínimos vitales 2026' }, null]
 ];
