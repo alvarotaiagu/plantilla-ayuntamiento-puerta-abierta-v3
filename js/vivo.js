@@ -115,11 +115,13 @@
   function franja(D, ahora) {
     var u = urgentes(D, ahora)[0];
     if (!u) return '';
-    /* toda la franja es un solo enlace: en móvil cabe en dos líneas y el blanco es grande */
+    /* toda la franja es un solo enlace con el blanco grande. En móvil va en UNA línea: el texto se
+       recorta con puntos suspensivos, pero «Ver aviso» (y la etiqueta «Ejemplo») van fuera del
+       recorte y se ven siempre. El texto entero sigue en el enlace para los lectores de pantalla */
     return '<a class="franja-urgente__dentro contenedor" href="' + esc(enlaceAviso(u, D)) + '"' + marcaEjemplo(u, 'aviso:' + u.id) + '>' +
       '<svg class="icono" aria-hidden="true"><use href="#i-aviso"/></svg>' +
-      '<span class="franja-urgente__texto"><b>Aviso:</b> ' + esc(u.titulo) + (u.ejemplo ? ' ' + EJEMPLO : '') +
-      ' <span class="franja-urgente__ver">Ver el aviso</span></span></a>';
+      '<span class="franja-urgente__texto"><b>Aviso:</b> ' + esc(u.titulo) + '</span>' + (u.ejemplo ? ' ' + EJEMPLO : '') +
+      ' <span class="franja-urgente__ver">Ver aviso</span></a>';
   }
 
   /* ── panel «Hoy en …» ── */

@@ -134,7 +134,23 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .franja-urgente__dentro:hover .franja-urgente__ver { text-decoration-thickness: 2px; }
 .franja-urgente .icono { width: 1.35rem; height: 1.35rem; margin-top: .05rem; }
 .franja-urgente__ver { font-weight: 600; text-decoration: underline; text-underline-offset: .18em; white-space: nowrap; margin-left: .35rem; }
-.franja-urgente .ejemplo { border-color: var(--sobre-alerta); }
+.franja-urgente .ejemplo { border-color: var(--sobre-alerta); flex: none; margin: .1rem 0 0; }
+.franja-urgente__texto { min-width: 0; }
+/* móvil: menos cromo arriba. La banda de propuesta, corta y en una línea; la franja urgente, en
+   UNA línea con el texto recortado y «Ver aviso» siempre a la vista (el texto entero sigue en el
+   enlace para el lector de pantalla y en la página del aviso) */
+@media (max-width: 47.99em) {
+  .propuesta { font-size: .875rem; }
+  .propuesta p { padding-block: .35rem; }
+  .propuesta__largo { display: none; }
+  .franja-urgente__dentro { align-items: center; gap: .5rem; padding-block: .3rem; }
+  .franja-urgente .icono { margin-top: 0; }
+  .franja-urgente .ejemplo { margin: 0; padding: .15rem .35rem; }
+  /* el icono ya dice «aviso»: la palabra la oye el lector y el sitio se lo queda el texto */
+  .franja-urgente__texto b { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .franja-urgente__texto { flex: 1 1 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .franja-urgente__ver { flex: none; margin-left: 0; }
+}
 
 .cabecera__barra { background: var(--papel); border-bottom: 3px solid var(--oro); }
 .cabecera__dentro {
