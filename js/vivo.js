@@ -182,9 +182,13 @@
       temas.map(function (t) { return '<button type="button" class="filtro" data-tema="' + esc(t) + '" aria-pressed="false">' + esc(t) + '</button>'; }).join('') + '</div>';
     h += '<p class="tablon__cuenta" role="status" data-limite="' + limite + '">' + (filas.length > limite ? 'Los ' + limite + ' más recientes de ' + filas.length + '.' : filas.length + ' avisos y anuncios.') + '</p>';
     h += '<ul class="tablon__lista">' + filas.map(function (f, i) {
+      /* la fecha en bloque («02 / OCT», con la letra de titulares) es dibujo: la lee el <time> oculto */
+      var p = partes(f.fecha);
+      var bloque = '<span class="tablon__dia" aria-hidden="true"><b>' + (p.d < 10 ? '0' : '') + p.d + '</b><span>' + MESES_C[p.m - 1] + '</span>' +
+        (p.a !== ahora.anio ? '<span class="tablon__anio">' + p.a + '</span>' : '') + '</span>';
       return '<li class="tablon__fila" data-tema="' + esc(f.tema) + '"' + (i >= limite ? ' hidden' : '') + marcaEjemplo(f, 'aviso:' + f.id) + '>' +
-        '<a class="tablon__enlace" href="' + esc(f.href) + '">' +
-        '<span class="tablon__meta"><span class="chip">' + esc(f.tema) + '</span><time datetime="' + f.fecha + '">' + fechaCorta(f.fecha) + '</time>' +
+        '<a class="tablon__enlace" href="' + esc(f.href) + '">' + bloque +
+        '<span class="tablon__meta"><span class="chip">' + esc(f.tema) + '</span><time class="sr" datetime="' + f.fecha + '">' + fechaCorta(f.fecha) + '</time>' +
         (f.oficial ? '<span class="tablon__origen">Tablón oficial</span>' : '<span class="tablon__origen">Ayuntamiento</span>') + '</span>' +
         '<span class="tablon__titulo">' + esc(f.titulo) + '</span>' + (f.oficial ? SEDE : '') +
         '<svg class="icono tablon__flecha" aria-hidden="true"><use href="#' + (f.oficial ? 'i-salida' : 'i-flecha') + '"/></svg></a>' +

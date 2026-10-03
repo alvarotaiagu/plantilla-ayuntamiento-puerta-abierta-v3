@@ -432,16 +432,30 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .filtro[aria-pressed="true"] { background: var(--marca); border-color: var(--marca); color: var(--sobre-marca); }
 .tablon__cuenta { margin: 0 0 .5rem; color: var(--apagado); font-size: 1rem; }
 .tablon__lista { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--linea); }
-.tablon__fila { border-bottom: 1px solid var(--linea); }
+.tablon__fila { border-bottom: 1px solid var(--linea); max-width: none; }
+.seccion--tablon .tablon { max-width: 56rem; }
 .tablon__enlace {
-  display: grid; grid-template-columns: 1fr auto; gap: .3rem 1rem; align-items: center;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: .3rem 1rem; align-items: center;
   padding: .95rem .25rem; color: var(--tinta); text-decoration: none;
 }
-.tablon__meta { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .75rem; font-size: .9375rem; color: var(--apagado); }
-.tablon__titulo { grid-column: 1; font-weight: 600; font-size: 1.125rem; line-height: 1.4; }
+/* la fecha en bloque, con la letra de titulares: «02» sobre «OCT» (el año solo si no es este) */
+.tablon__dia {
+  grid-column: 1; grid-row: 1 / span 2; align-self: start;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 3.75rem; min-height: 3.75rem; padding: .35rem .2rem;
+  background: var(--papel); border: 1px solid var(--linea); border-radius: var(--radio);
+  font-family: var(--f-titulo); color: var(--tinta); line-height: 1;
+}
+.tablon__dia b { font-size: 1.55rem; font-weight: 700; }
+.tablon__dia b::after { content: ""; display: block; width: 1.1rem; height: 2px; margin: .3rem auto .25rem; background: var(--oro); }
+.tablon__dia span { font-size: .8125rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.tablon__dia .tablon__anio { margin-top: .15rem; font-size: .75rem; letter-spacing: .02em; color: var(--apagado); }
+.tablon__meta { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .75rem; font-size: .9375rem; color: var(--apagado); }
+.tablon__titulo { grid-column: 2; font-weight: 600; font-size: 1.125rem; line-height: 1.4; }
 .tablon__enlace:hover .tablon__titulo { color: var(--marca); text-decoration: underline; }
-.tablon__flecha { grid-column: 2; grid-row: 1 / span 2; color: var(--marca); }
-.tablon__fila > .ejemplo { margin: -.4rem 0 .85rem .25rem; }
+.tablon__enlace:hover .tablon__dia { border-color: var(--marca); }
+.tablon__flecha { grid-column: 3; grid-row: 1 / span 2; color: var(--marca); }
+.tablon__fila > .ejemplo { margin: -.4rem 0 .85rem calc(3.75rem + 1.25rem); }
 
 /* ── lo que viene y lo que pasó ── */
 /* minmax(0, …): sin él, la columna crece hasta lo que pida la tarjeta más rígida y la portada
