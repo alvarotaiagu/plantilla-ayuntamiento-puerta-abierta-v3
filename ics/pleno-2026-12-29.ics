@@ -22,12 +22,12 @@ END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
 UID:pleno-2026-12-29@ribera-del-fresno.agenda
-DTSTAMP:20261003T130349Z
+DTSTAMP:20261003T154855Z
 DTSTART;TZID=Europe/Madrid:20261229T200000
 DTEND;TZID=Europe/Madrid:20261229T210000
 SUMMARY:Pleno ordinario
 LOCATION:Salón de plenos del Ayuntamiento\, Ribera del Fresno
-URL:https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-we
- b/agenda.html#evento-pleno-2026-12-29
+URL:https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v2
+ /agenda.html#evento-pleno-2026-12-29
 END:VEVENT
 END:VCALENDAR

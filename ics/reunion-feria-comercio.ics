@@ -22,12 +22,12 @@ END:STANDARD
 END:VTIMEZONE
 BEGIN:VEVENT
 UID:reunion-feria-comercio@ribera-del-fresno.agenda
-DTSTAMP:20261003T130349Z
+DTSTAMP:20261003T154855Z
 DTSTART;TZID=Europe/Madrid:20261002T203000
 DTEND;TZID=Europe/Madrid:20261002T213000
 SUMMARY:Reunión de la V Feria del Comercio
 LOCATION:Casa de la Cultura\, Ribera del Fresno
-URL:https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-we
- b/agenda.html#evento-reunion-feria-comercio
+URL:https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v2
+ /agenda.html#evento-reunion-feria-comercio
 END:VEVENT
 END:VCALENDAR
