@@ -24,9 +24,13 @@
       if (el.hasAttribute('data-limite')) op.limite = Number(el.getAttribute('data-limite'));
       if (el.hasAttribute('data-clave')) op.clave = el.getAttribute('data-clave');
       var nuevo = window.Vivo.pintar(bloque, D, a, op);
-      if (el.innerHTML !== nuevo) el.innerHTML = nuevo;
+      /* se compara con lo último que se pintó, no con el DOM (los filtros y el calendario lo tocan):
+         así el repintado de cada minuto no se lleva el foco si no ha cambiado nada */
+      if ((el.__pintado != null ? el.__pintado : el.innerHTML) !== nuevo) el.innerHTML = nuevo;
+      el.__pintado = nuevo;
       if (bloque === 'franja') el.hidden = !nuevo;
       if (bloque === 'tablon') montarTablon(el);
+      if (bloque === 'agenda') montarCalendario(el);
     });
   }
 
@@ -68,6 +72,45 @@
     }
     var existe = !activo || $$('.filtro', grupo).some(function (b) { return b.getAttribute('data-tema') === activo; });
     aplicar(existe ? activo : '');
+  }
+
+  /* ═══ v3 · calendario de la agenda: un mes a la vista y paso al anterior y al siguiente.
+     El mes elegido se guarda en la caja, así un repintado (la hoja, el minuto) no lo pierde ═══ */
+  function montarCalendario(caja) {
+    var cal = $('.calendario', caja);
+    if (!cal) return;
+    var meses = $$('.calendario__mes', cal);
+    if (meses.length < 2) return;
+    $('.calendario__nav', cal).hidden = false;
+    var claves = meses.map(function (m) { return m.getAttribute('data-mes'); });
+    var hoy = cal.getAttribute('data-mes-hoy');
+    function mostrar(clave) {
+      var i = Math.max(0, claves.indexOf(clave));
+      caja.setAttribute('data-mes-actual', claves[i]);
+      meses.forEach(function (m, j) { m.hidden = j !== i; });
+      $$('[data-cal-paso]', cal).forEach(function (b) {
+        var paso = Number(b.getAttribute('data-cal-paso')), destino = claves[i + paso];
+        b.setAttribute('aria-disabled', String(!destino));
+        $('.sr', b).textContent = (paso < 0 ? 'Mes anterior' : 'Mes siguiente') + (destino ? ': ' + $('caption', meses[i + paso]).textContent : '');
+      });
+    }
+    var guardado = caja.getAttribute('data-mes-actual');
+    mostrar(guardado && claves.indexOf(guardado) >= 0 ? guardado : hoy);
+    if (!caja.__calendario) {
+      caja.__calendario = true;
+      caja.addEventListener('click', function (ev) {
+        var b = ev.target.closest('[data-cal-paso]');
+        if (!b || b.getAttribute('aria-disabled') === 'true') return;
+        var lista = $$('.calendario__mes', caja).map(function (m) { return m.getAttribute('data-mes'); });
+        var i = lista.indexOf(caja.getAttribute('data-mes-actual'));
+        var destino = lista[i + Number(b.getAttribute('data-cal-paso'))];
+        if (!destino) return;
+        caja.setAttribute('data-mes-actual', destino);
+        montarCalendario(caja);
+        var cal2 = $('.calendario', caja), act = $('.calendario__mes:not([hidden]) caption', cal2);
+        $('[data-cal-estado]', cal2).textContent = act ? act.textContent : '';
+      });
+    }
   }
 
   /* ═══ el tablón más fresco (lo refresca una tarea diaria en el servidor) ═══ */
