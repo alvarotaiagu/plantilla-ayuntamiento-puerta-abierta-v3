@@ -27,7 +27,7 @@
   <div class="contenedor termino">
     <h2 class="seccion__titulo" id="t-termino">{{t.termino_titulo}}</h2>
     <figure class="termino__figura">
-      <svg class="termino__mapa" viewBox="{{viewbox}}" aria-hidden="true" focusable="false">{{{svg_cuerpo}}}{{#puntos}}<a class="termino-punto" href="#{{ancla}}" tabindex="-1"><circle cx="{{x}}" cy="{{y}}" r="11"/><text x="{{x}}" y="{{ty}}" text-anchor="middle" dy=".35em">{{n}}</text></a>{{/puntos}}</svg>
+      <svg class="termino__mapa" viewBox="{{viewbox}}" aria-hidden="true" focusable="false">{{{svg_cuerpo}}}{{#puntos}}<a class="termino-punto" href="#{{ancla}}" tabindex="-1"><circle cx="{{x}}" cy="{{y}}" r="{{radio}}"/><text x="{{x}}" y="{{ty}}" text-anchor="middle" dy=".35em" font-size="{{letra}}">{{n}}</text></a>{{/puntos}}</svg>
       <figcaption class="termino__pie">{{t.termino_pie}} <a href="{{atribucion_url}}">{{atribucion}}<span class="sr">{{t.otra_web}}</span></a>.{{#muestra}} <span class="ejemplo">Ejemplo</span> {{muestra}}.{{/muestra}}</figcaption>
     </figure>
     <div class="termino__leyenda">

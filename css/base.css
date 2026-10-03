@@ -1328,6 +1328,48 @@ a.calendario__dia:focus-visible { outline-offset: 1px; }
 .gastronomia__marco { aspect-ratio: 4 / 3; overflow: hidden; background: var(--superficie-2); }
 .gastronomia__marco img { width: 100%; height: 100%; object-fit: cover; }
 
+/* ── v3b · V16. El término en un mapa: SVG propio desde OpenStreetMap (scripts/termino.mjs), sin
+   peticiones. El mapa es de adorno para el lector de pantalla (aria-hidden): lo mismo está en la
+   leyenda, en texto y con enlaces. Los puntos se pulsan con el ratón; con el teclado, la lista.
+   Escala uniforme (width 100 %, height auto) y sin max-width en el <svg>: lo limita la figura ── */
+.termino { display: grid; gap: 1.5rem 3rem; align-items: start; }
+@media (min-width: 56em) { .termino { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); } .termino .seccion__titulo { grid-column: 1 / -1; } }
+.termino__figura { margin: 0; min-width: 0; max-width: 36rem; }
+.termino__mapa { display: block; width: 100%; height: auto; background: var(--superficie); border: 1px solid var(--linea-fuerte); border-radius: var(--radio); }
+.termino__pie { margin-top: .6rem; color: var(--apagado); font-size: .9375rem; line-height: 1.45; }
+.termino__leyenda { min-width: 0; }
+.termino__titulo { font-size: 1.15rem; margin: 0 0 .5rem; }
+.termino__titulo:not(:first-child) { margin-top: 1.5rem; }
+.termino__lugares, .termino__claves { list-style: none; margin: 0; padding: 0; }
+.termino__lugares a { display: inline-flex; align-items: center; gap: .6rem; min-height: 44px; }
+.termino__num { flex: none; display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%;
+  background: var(--marca); color: var(--sobre-marca); font: 700 .875rem/1 var(--f-texto); text-decoration: none; }
+.termino__claves li { display: flex; align-items: center; gap: .6rem; padding: .3rem 0; font-size: 1rem; line-height: 1.45; }
+.termino__clave { flex: none; width: 2rem; height: 1rem; }
+.termino-fondo { fill: var(--superficie); }
+.termino-area { fill: var(--superficie-2); }
+.termino-casco { fill: var(--marca-tenue); stroke: var(--marca); stroke-width: 1; }
+.termino-limite { fill: none; stroke: var(--tinta); stroke-width: 1.6; stroke-dasharray: 7 4; stroke-linejoin: round; }
+.termino-carretera { fill: none; stroke: var(--apagado); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.termino-ruta { fill: none; stroke: var(--marca); stroke-width: 2; stroke-dasharray: 1 4; stroke-linecap: round; }
+.termino-ref rect { fill: var(--superficie); stroke: var(--apagado); stroke-width: 1; }
+.termino-ref text { font: 700 11px var(--f-texto); fill: var(--tinta); }
+.termino-escala { fill: none; stroke: var(--tinta); stroke-width: 1.4; }
+.termino-escala-texto { font: 500 12px var(--f-texto); fill: var(--tinta); }
+.termino-punto circle, .termino-punto-clave { fill: var(--marca); stroke: var(--superficie); stroke-width: 2; }
+.termino-punto text { font-family: var(--f-texto); font-weight: 700; fill: var(--sobre-marca); pointer-events: none; }
+.termino-punto:hover circle { fill: var(--marca-fuerte); }
+/* al llegar desde el mapa, la ficha se marca (sin animación) */
+.lugar:target .lugar__nombre, .patrimonio__fila:target .patrimonio__nombre { text-decoration: underline 3px var(--oro); text-underline-offset: .2em; }
+
+/* ── v3b · F12. Idiomas de «El pueblo»: solo en esta página y sus traducciones ── */
+.idiomas { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem 1.25rem; padding-top: 1rem; }
+.idiomas__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 .25rem; }
+.idiomas__enlace { display: inline-flex; align-items: center; min-height: 44px; padding: 0 .75rem; border: 1px solid var(--linea-fuerte); border-radius: var(--radio); text-decoration: none; }
+.idiomas__enlace[aria-current] { background: var(--marca); border-color: var(--marca); color: var(--sobre-marca); font-weight: 700; }
+.idiomas__enlace:not([aria-current]):hover { border-color: var(--marca); }
+.idiomas__aviso { margin: 0; color: var(--apagado); font-size: 1rem; }
+
 .rutas { list-style: none; margin: 0; padding: 0; display: grid; gap: 0 2.5rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); }
 .ruta { padding: .9rem 0 .2rem; border-top: 1px solid var(--linea); }
 .ruta__nombre { font-size: 1.15rem; margin-bottom: .25rem; }

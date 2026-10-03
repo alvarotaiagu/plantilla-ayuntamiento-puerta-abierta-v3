@@ -157,23 +157,6 @@ for (const e of datos.elementos.filter(e => e.type === 'way' && e.tags && CARRET
 const rutas = datos.elementos.filter(e => e.type === 'relation' && e.tags && /^(hiking|foot|bicycle|mtb)$/.test(e.tags.route || ''));
 const rutasD = rutas.map(r => ({ r, d: dDe((r.members || []).filter(m => m.type === 'way' && m.geometry).flatMap(m => recortar(m.geometry.filter(Boolean).map(proy))).map(l => simplificar(l, 0.5))) })).filter(x => x.d);
 
-/* rótulos de las carreteras: en el punto medio de su tramo más largo, sin chocar entre ellos */
-const rotulos = [], cajas = [];
-for (const [ref, { l, largo }] of [...refs.entries()].sort((a, b) => b[1].largo - a[1].largo)) {
-  if (largo < 60) continue;
-  const total = largo; let acc = 0, punto = l[0];
-  for (let i = 1; i < l.length; i++) {
-    const s = Math.hypot(l[i][0] - l[i - 1][0], l[i][1] - l[i - 1][1]);
-    if (acc + s >= total / 2) { const f = (total / 2 - acc) / (s || 1); punto = [l[i - 1][0] + (l[i][0] - l[i - 1][0]) * f, l[i - 1][1] + (l[i][1] - l[i - 1][1]) * f]; break; }
-    acc += s;
-  }
-  const w = ref.length * 6.6 + 8, h = 15;
-  const c = { x0: punto[0] - w / 2, x1: punto[0] + w / 2, y0: punto[1] - h / 2, y1: punto[1] + h / 2 };
-  if (c.x0 < 2 || c.x1 > VW - 2 || c.y0 < 2 || c.y1 > VH - 30) continue;
-  if (cajas.some(o => !(c.x1 < o.x0 || c.x0 > o.x1 || c.y1 < o.y0 || c.y0 > o.y1))) continue;
-  cajas.push(c); rotulos.push({ ref, x: punto[0], y: punto[1], w, h });
-}
-
 /* ── 4. los lugares: por nombre, dentro del término, sin ambigüedades ── */
 const conNombre = datos.elementos.filter(e => e.tags && e.tags.name && !(e.tags.highway) && !(e.tags.route) && !(e.tags.boundary) && !(e.tags.place));
 /* 2: todas nuestras palabras están en el nombre de OSM; 1: todas las de OSM (alguna que no sea
@@ -215,6 +198,26 @@ for (const nombre of buscados) {
   reclamados.set(id, nombre);
   const [x, y] = proy(c);
   lugares.push({ nombre, osm: id, nombre_osm: (el.tags || {}).name || null, lat: Number(c.lat.toFixed(6)), lon: Number(c.lon.toFixed(6)), x: red(x), y: red(y), ...(fijado ? { fijado: true } : {}) });
+}
+
+/* rótulos de las carreteras: en el punto medio de su tramo más largo, sin chocar entre ellos */
+const rotulos = [], cajas = [];
+/* que no tapen los puntos de los lugares ni el pueblo */
+for (const l of lugares) cajas.push({ x0: l.x - 18, x1: l.x + 18, y0: l.y - 18, y1: l.y + 18 });
+if (datos.pueblo) { const [px, py] = proy(datos.pueblo); cajas.push({ x0: px - 22, x1: px + 22, y0: py - 22, y1: py + 22 }); }
+for (const [ref, { l, largo }] of [...refs.entries()].sort((a, b) => b[1].largo - a[1].largo)) {
+  if (largo < 60) continue;
+  const total = largo; let acc = 0, punto = l[0];
+  for (let i = 1; i < l.length; i++) {
+    const s = Math.hypot(l[i][0] - l[i - 1][0], l[i][1] - l[i - 1][1]);
+    if (acc + s >= total / 2) { const f = (total / 2 - acc) / (s || 1); punto = [l[i - 1][0] + (l[i][0] - l[i - 1][0]) * f, l[i - 1][1] + (l[i][1] - l[i - 1][1]) * f]; break; }
+    acc += s;
+  }
+  const w = ref.length * 6.6 + 8, h = 15;
+  const c = { x0: punto[0] - w / 2, x1: punto[0] + w / 2, y0: punto[1] - h / 2, y1: punto[1] + h / 2 };
+  if (c.x0 < 2 || c.x1 > VW - 2 || c.y0 < 2 || c.y1 > VH - 30) continue;
+  if (cajas.some(o => !(c.x1 < o.x0 || c.x0 > o.x1 || c.y1 < o.y0 || c.y0 > o.y1))) continue;
+  cajas.push(c); rotulos.push({ ref, x: punto[0], y: punto[1], w, h });
 }
 
 /* ── 5. la escala: una barra redonda de en torno a un cuarto del ancho ── */

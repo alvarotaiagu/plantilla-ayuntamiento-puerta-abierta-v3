@@ -613,7 +613,7 @@ const perfil = perfilSvg ? {
 /* v3b · M9: el plano del pie se dibuja una vez al asomar, desde el Ayuntamiento hacia fuera.
    plano.mjs centra el lienzo en el Ayuntamiento: cada tramo de calle (cada «M…» de los <path>
    de calles) pasa a ser su propio <path pathLength="1">, empezando por su punta más cercana al
-   centro, con --plano-d = su distancia al centro (0 a 1). css/movimiento.css lo traza con un
+   centro, con --plano-d = su distancia al centro (0 el más cercano, 1 el más lejano). css/movimiento.css lo traza con un
    retraso proporcional (600 ms en total). En reposo, sin JS o con movimiento reducido, entero */
 function callesEnOrden(cuerpo, vb) {
   const [x0, y0, w, h] = vb.trim().split(/\s+/).map(Number), cx = x0 + w / 2, cy = y0 + h / 2;
@@ -629,10 +629,10 @@ function callesEnOrden(cuerpo, vb) {
     return '<!--calles-->';
   });
   if (!tramos.length) return cuerpo;
-  const lejos = Math.max(...tramos.map(t => t.cerca)) || 1;
+  const cerca = Math.min(...tramos.map(t => t.cerca)), lejos = (Math.max(...tramos.map(t => t.cerca)) - cerca) || 1;   /* el primero, en 0; el último, en 1 */
   /* las principales encima (como en plano.svg); dentro de cada capa, de dentro afuera */
   tramos.sort((a, b) => (a.clase.length - b.clase.length) || (a.cerca - b.cerca));
-  const paths = tramos.map(t => `<path class="${t.clase}" pathLength="1" style="--plano-d: ${(t.cerca / lejos).toFixed(3)}" d="M${t.pts.map(p => p.join(' ')).join('L')}"/>`).join('');
+  const paths = tramos.map(t => `<path class="${t.clase}" pathLength="1" style="--plano-d: ${((t.cerca - cerca) / lejos).toFixed(3)}" d="M${t.pts.map(p => p.join(' ')).join('L')}"/>`).join('');
   let puesto = false;
   return sinCalles.replace(/<!--calles-->/g, () => (puesto ? '' : (puesto = true, paths)));
 }
@@ -667,7 +667,7 @@ if (existe('marca/termino.svg') && existe('marca/termino.json')) {
     .map((l, i) => ({ n: i + 1, nombre: l.nombre, ancla: 'lugar-' + slugDe(l.nombre), x: l.x, y: l.y, osm: l.osm, ty: (l.y + 0.5).toFixed(1) }));
   for (const l of meta.lugares || []) if (!anclas.has('lugar-' + slugDe(l.nombre))) avisos.push(`marca/termino.json: «${l.nombre}» ya no está en pueblo.lugares ni en pueblo.patrimonio; su punto no sale`);
   if (s) termino = {
-    svg_cuerpo: s.cuerpo.replace(/\s*\n\s*/g, ''), viewbox: s.vb, puntos, hay_puntos: puntos.length > 0,
+    svg_cuerpo: s.cuerpo.replace(/\s*\n\s*/g, ''), viewbox: s.vb, puntos, radio: Math.round(Number(s.vb.split(/\s+/)[2]) / 40), letra: Math.round(Number(s.vb.split(/\s+/)[2]) / 40), hay_puntos: puntos.length > 0,
     rutas_texto: (meta.rutas || []).length ? meta.rutas.map(r => r.nombre).join(', ').replace(/, ([^,]*)$/, ' y $1') : null, carreteras: (meta.carreteras || []).length ? (meta.carreteras || []).join(', ').replace(/, ([^,]*)$/, ' y $1') : null,
     atribucion: meta.atribucion || '© colaboradores de OpenStreetMap', atribucion_url: meta.atribucion_url || 'https://www.openstreetmap.org/copyright',
     fecha_texto: meta.fecha && ISO.test(meta.fecha) ? fechaTexto(meta.fecha) : null, fecha_iso: meta.fecha && ISO.test(meta.fecha) ? meta.fecha : null, muestra: meta.muestra || null,
@@ -704,7 +704,9 @@ for (const f of (existe('contenido') ? fs.readdirSync(r('contenido')) : []).sort
   const de = (grupo, clave, campo) => { const x = (tp[grupo] || {})[clave]; if (!x || (campo && !x[campo])) faltan.push(grupo + ' «' + clave + '»' + (campo ? ' → ' + campo : '')); return x || {}; };
   const lista = (clave, base) => { if (!base || !base.length) return []; const x = tp[clave]; if (!Array.isArray(x) || x.length !== base.length) { faltan.push(clave + ' (' + base.length + ' elementos)'); return base; } return x; };
   const t = { ...T_ES, ...(tr.ui || {}), lang, lang_placa: 'es' };
-  const lugares = pueblo.lugares.map(l => { const x = de('lugares', l.nombre, 'texto'); if (l.foto && !x.alt) faltan.push('lugares «' + l.nombre + '» → alt'); return { ...l, nombre: x.nombre || l.nombre, texto: x.texto, alt: x.alt || l.alt, credito: l.credito ? l.credito.replace(/^Foto:/, t.foto) : null }; });
+  /* el pie de cada foto («Foto: autor · licencia»), con el autor traducido si lo trae (la web del Ayuntamiento) */
+  const creditoT = archivo => { const c = creditosMedia[archivo]; if (!c) return null; const y = (tr.creditos || {})[archivo] || {}; return t.foto + ' ' + (y.autor || c.autor) + (c.licencia ? ' · ' + c.licencia : ''); };
+  const lugares = pueblo.lugares.map(l => { const x = de('lugares', l.nombre, 'texto'); if (l.foto && !x.alt) faltan.push('lugares «' + l.nombre + '» → alt'); return { ...l, nombre: x.nombre || l.nombre, texto: x.texto, alt: x.alt || l.alt, credito: l.credito ? creditoT(l.foto) : null }; });
   const g = pueblo.gastronomia;
   const pt = {
     ...pueblo, lugares,
@@ -713,7 +715,7 @@ for (const f of (existe('contenido') ? fs.readdirSync(r('contenido')) : []).sort
     patrimonio_grupos: pueblo.patrimonio_grupos.map(gr => ({ ...gr, titulo: gr.titulo ? ((tp.grupos || {})[gr.titulo] || (faltan.push('grupos «' + gr.titulo + '»'), gr.titulo)) : null,
       items: gr.items.map(i => { const x = de('patrimonio', i.nombre, i.detalle ? 'detalle' : null); return { ...i, nombre: x.nombre || i.nombre, detalle: i.detalle ? x.detalle : null }; }) })),
     gastronomia: g ? { ...g, platos: lista('platos', g.platos), dulces: lista('dulces', g.dulces), bebidas: lista('bebidas', g.bebidas),
-      foto_datos: g.foto_datos ? { ...g.foto_datos, alt: tp.gastronomia_alt || (faltan.push('gastronomia_alt'), ''), credito: g.foto_datos.credito ? g.foto_datos.credito.replace(/^Foto:/, t.foto) : null } : null } : null,
+      foto_datos: g.foto_datos ? { ...g.foto_datos, alt: tp.gastronomia_alt || (faltan.push('gastronomia_alt'), ''), credito: g.foto_datos.credito ? creditoT(g.foto_datos.archivo) : null } : null } : null,
     personajes: pueblo.personajes.map(x => { const y = de('personajes', x.nombre, 'texto'); return { ...x, texto: y.texto, fechas: y.fechas || x.fechas }; }),
     rutas: pueblo.rutas.map(x => { const y = de('rutas', x.nombre, 'resumen'); return { ...x, nombre: y.nombre || x.nombre, resumen: y.resumen }; }),
     /* lo que se visita y dónde comer: horarios, precios y negocios, sin traducir; no sale en otros idiomas */
@@ -737,7 +739,7 @@ for (const f of (existe('contenido') ? fs.readdirSync(r('contenido')) : []).sort
   for (const k of ['aviso_idioma', 'idiomas']) if (!(tr.ui || {})[k]) faltan.push('ui → ' + k);
   if (faltan.length) { avisos.push(`contenido/${f}: «El pueblo» en ${lang} no se genera; faltan ${faltan.length} traducciones: ${faltan.slice(0, 6).join(', ')}${faltan.length > 6 ? '…' : ''}`); continue; }
   traducciones.push({ lang, nombre: tr.nombre_idioma || NOMBRE_IDIOMA[lang] || lang, og_locale: tr.og_locale || null, archivo: `pueblo-${lang}.html`, t, pagina: pag, pueblo: pt, anio: anioT, creditos: creditosT,
-    cabecera: cabeceras.pueblo ? { ...cabeceras.pueblo, alt: tr.cabecera_alt || cabeceras.pueblo.alt, credito: cabeceras.pueblo.credito ? cabeceras.pueblo.credito.replace(/^Foto:/, t.foto) : null } : null,
+    cabecera: cabeceras.pueblo ? { ...cabeceras.pueblo, alt: tr.cabecera_alt || cabeceras.pueblo.alt, credito: cabeceras.pueblo.credito ? creditoT(cabeceras.pueblo.archivo) : null } : null,
     termino: termino ? { ...termino, puntos: termino.puntos.map(x => ({ ...x, nombre: (pt.lugares.find(l => l.ancla === x.ancla) || pt.patrimonio_grupos.flatMap(gr => gr.items).find(i => i.ancla === x.ancla) || x).nombre })) } : null,
     fecha_termino: termino && termino.fecha_iso ? new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(termino.fecha_iso + 'T12:00:00Z')) : null });
 }
