@@ -54,7 +54,7 @@ function estaticas() {
   }
   /* colores y letras solo en css/marca.css y css/fuentes.css */
   const colorLiteral = /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(|\boklch\(/;
-  const revisar = ['css/base.css', 'js/main.js', 'js/vivo.js', 'js/cortina.js', ...fs.readdirSync(path.join(RAIZ, 'fuente')).map(n => 'fuente/' + n)];
+  const revisar = ['css/base.css', 'css/movimiento.css', 'js/main.js', 'js/vivo.js', 'js/cortina.js', 'js/movimiento.js', ...fs.readdirSync(path.join(RAIZ, 'fuente')).map(n => 'fuente/' + n)];
   const conColor = [], conLetra = [];
   for (const rel of revisar) leer(RAIZ, rel).split(/\r?\n/).forEach((l, i) => {
     const sinIds = l.replace(/url\(#[^)]*\)|href="#[^"]*"|'#[a-z][\w-]*'|"#[a-z][\w-]*"|#[a-z][\w-]*/gi, '');
@@ -359,6 +359,196 @@ async function cortina() {
   await espera(150);
   comprobar(!(await page.evaluate(() => document.documentElement.classList.contains('con-cortina'))), 'cortina: la rueda (o un clic o una tecla) la salta');
   await ctx.close();
+}
+
+/* ── movimiento (css/movimiento.css y js/movimiento.js) ──
+   Con movimiento reducido no hay nada que se mueva y todo se ve; con
+   movimiento, nada se queda a medias: tras bajar hasta el final ningún texto
+   queda apagado ni desplazado, y el menú, el buscador, el tablón y las
+   transiciones de página siguen respondiendo igual. */
+async function movimiento() {
+  /* solo las animaciones de reloj (las ligadas al scroll no «corren»: valen lo que dice el scroll) */
+  const deReloj = () => document.getAnimations().filter(a => a.timeline === document.timeline && a.playState !== 'finished')
+    .map(a => (a.animationName || a.transitionProperty || 'waapi') + (a.effect && a.effect.pseudoElement ? a.effect.pseudoElement : ''));
+  /* a. reducido: quieto, completo y sin animaciones ni al usarse */
+  {
+    const { ctx, page } = await nueva({ viewport: { width: 390, height: 844 } });
+    const malos = [];
+    for (const p of ['index.html', 'ayuntamiento.html', 'tramites.html']) {
+      await ir(page, p);
+      await espera(200);
+      const r = await page.evaluate(deReloj);
+      if (r.length) malos.push(p + ' al cargar: ' + r.join(', '));
+      const quietos = await page.evaluate(() => {
+        const mal = [];
+        for (const h of document.querySelectorAll('.seccion__titulo')) { if (getComputedStyle(h).translate !== 'none') mal.push('h2 desplazado'); if (!/^(none|1)$/.test(getComputedStyle(h, '::before').scale)) mal.push('raya sin dibujar'); }
+        for (const c of document.querySelectorAll('.pleno__figura circle')) if (getComputedStyle(c).scale !== 'none') mal.push('escaño');
+        for (const f of document.querySelectorAll('.hoy__fila')) if (getComputedStyle(f).transform !== 'none') mal.push('fila de «Hoy»');
+        if (document.querySelector('.mov-escanos, .mov-tablon')) mal.push('clase de movimiento puesta');
+        return [...new Set(mal)];
+      });
+      if (quietos.length) malos.push(p + ': ' + quietos.join(', '));
+    }
+    await ir(page, 'index.html');
+    await page.hover('.atajo'); await page.focus('.ver-todo');
+    let r = await page.evaluate(deReloj);
+    if (r.length) malos.push('hover/foco: ' + r.join(', '));
+    await page.click('[data-boton-menu]');
+    r = await page.evaluate(deReloj);
+    if (r.length) malos.push('menú: ' + r.join(', '));
+    await page.keyboard.press('Escape');
+    await page.click('[data-abrir-buscador]');
+    r = await page.evaluate(deReloj);
+    if (r.length) malos.push('buscador: ' + r.join(', '));
+    await page.keyboard.press('Escape');
+    await ir(page, 'tramites.html');
+    /* el desplegable se abre entero en el mismo fotograma */
+    r = await page.evaluate(() => {
+      const d = document.querySelector('details.tema:not([open])');
+      if (!d) return [];
+      d.querySelector('summary').click();
+      const ul = d.querySelector('.tema__lista'), cont = getComputedStyle(d, '::details-content').blockSize;
+      return ul && d.getBoundingClientRect().bottom >= ul.getBoundingClientRect().bottom - 1 && cont !== '0px' ? [] : ['se abre a medias (' + cont + ')'];
+    });
+    if (r.length) malos.push('desplegable: ' + r.join(', '));
+    await ctx.close();
+    comprobar(!malos.length, 'movimiento reducido: ninguna animación ni transición al cargar ni al usar menú, buscador, hover y foco; títulos, rayas, escaños y filas de «Hoy» en su sitio' + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+  /* b. con movimiento: bajar hasta el final con la rueda y que nada se quede a medias */
+  {
+    const { ctx, page } = await nueva({ reducido: false });
+    const malos = [], bucles = [];
+    for (const p of ['index.html', 'ayuntamiento.html', 'agenda.html', 'noticias.html', 'tramites.html', 'pueblo.html', 'telefonos.html']) {
+      await ir(page, p);
+      await page.mouse.move(720, 450);
+      for (let i = 0; i < 80; i++) {
+        await page.mouse.wheel(0, 500); await espera(40);
+        if (await page.evaluate(() => innerHeight + scrollY >= document.documentElement.scrollHeight - 2)) break;
+      }
+      await espera(1500);
+      const r = await page.evaluate(() => {
+        const mal = [];
+        const desplazado = el => {   /* opacidad acumulada y desplazamiento vertical de los antepasados */
+          let op = 1, dy = 0;
+          for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+            const cs = getComputedStyle(n);
+            op *= parseFloat(cs.opacity);
+            const t = cs.translate.split(' ');
+            if (t[1]) dy += parseFloat(t[1]);
+            const m = cs.transform.match(/matrix\(([^)]+)\)/);
+            if (m) dy += parseFloat(m[1].split(',')[5]);
+          }
+          return { op, dy };
+        };
+        for (const el of document.querySelectorAll('main *, footer *')) {
+          if (el.closest('.sr, svg, script, dialog')) continue;
+          if (![...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) continue;
+          if (!el.checkVisibility()) continue;
+          const { op, dy } = desplazado(el);
+          if (op < 0.99 || Math.abs(dy) > 0.5) mal.push(el.tagName.toLowerCase() + '.' + (el.className || '') + ` (opacidad ${op.toFixed(2)}, ${dy.toFixed(1)} px): «${el.textContent.trim().slice(0, 30)}»`);
+        }
+        for (const h of document.querySelectorAll('.seccion__titulo')) if (!/^(none|1|1 1)$/.test(getComputedStyle(h, '::before').scale) && getComputedStyle(h, '::before').display !== 'none') mal.push('raya a medias: ' + h.textContent.trim().slice(0, 30));
+        for (const c of document.querySelectorAll('.pleno__figura circle')) if (getComputedStyle(c).scale !== 'none') { mal.push('escaño a medias'); break; }
+        const l = document.querySelector('.linea');
+        if (l && !/^(none|1|1 1)$/.test(getComputedStyle(l, '::before').scale)) mal.push('línea de tiempo a medias: ' + getComputedStyle(l, '::before').scale);
+        const infinitas = document.getAnimations().filter(a => a.effect && a.effect.getComputedTiming().iterations > 3).map(a => a.animationName || 'waapi');
+        return { mal, infinitas };
+      });
+      r.mal.forEach(m => malos.push(p + ': ' + m));
+      r.infinitas.forEach(m => bucles.push(p + ': ' + m));
+    }
+    await ctx.close();
+    comprobar(!malos.length, 'con movimiento, tras bajar hasta el final con la rueda: ningún texto apagado (opacity < 1) ni desplazado, y rayas, línea de tiempo y escaños dibujados del todo' + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+    comprobar(!bucles.length, 'con movimiento: ninguna animación de más de 3 repeticiones (WCAG 2.2.2)' + (bucles.length ? ' → ' + bucles.slice(0, 4).join(' | ') : ''));
+  }
+  /* c. con movimiento: menú móvil y buscador abren y cierran con el foco donde toca */
+  {
+    const { ctx, page } = await nueva({ reducido: false, viewport: { width: 390, height: 844 } });
+    await ir(page, 'tramites.html');
+    await page.mouse.wheel(0, 600); await espera(300);
+    await page.click('[data-boton-menu]');
+    const a0 = await page.evaluate(() => ({ exp: document.querySelector('[data-boton-menu]').getAttribute('aria-expanded'), foco: !!document.activeElement.closest('#menu') }));
+    await espera(500);
+    const a1 = await page.evaluate(() => { const b = document.getElementById('menu').getBoundingClientRect(); return { top: b.top, alto: b.height, vh: innerHeight, clip: getComputedStyle(document.getElementById('menu')).clipPath }; });
+    let fuera = 0;
+    for (let i = 0; i < 12; i++) { await page.keyboard.press('Tab'); if (!(await page.evaluate(() => !!document.activeElement.closest('#menu')))) fuera++; }
+    await page.keyboard.press('Escape');
+    const c0 = await page.evaluate(() => ({ exp: document.querySelector('[data-boton-menu]').getAttribute('aria-expanded'), foco: document.activeElement.hasAttribute('data-boton-menu') }));
+    await espera(500);
+    const c1 = await page.evaluate(() => getComputedStyle(document.getElementById('menu')).display);
+    comprobar(a0.exp === 'true' && a0.foco && Math.abs(a1.top) < 1 && a1.alto >= a1.vh - 1 && /inset\(0px\)|none/.test(a1.clip) && !fuera && c0.exp === 'false' && c0.foco && c1 === 'none',
+      `con movimiento, menú móvil: abre con el foco dentro, termina cubriendo la pantalla (clip ${a1.clip}), el Tabulador no se escapa y Esc lo cierra devolviendo el foco (display ${c1} al acabar)`);
+    await ir(page, 'index.html');
+    await page.click('[data-abrir-buscador]');
+    const b0 = await page.evaluate(() => ({ open: document.getElementById('buscador').open, foco: document.activeElement.matches('[data-buscador-campo]') }));
+    await espera(400);
+    const b1 = await page.evaluate(() => { const cs = getComputedStyle(document.getElementById('buscador')); return { scale: cs.scale, op: cs.opacity }; });
+    await page.keyboard.press('Escape');
+    const b2 = await page.evaluate(() => ({ open: document.getElementById('buscador').open, foco: document.activeElement.hasAttribute('data-abrir-buscador') }));
+    await espera(400);
+    const b3 = await page.evaluate(() => getComputedStyle(document.getElementById('buscador')).display);
+    comprobar(b0.open && b0.foco && /^(1|none)$/.test(b1.scale) && b1.op === '1' && !b2.open && b2.foco && b3 === 'none',
+      `con movimiento, buscador: abre con el foco en el campo, llega a escala ${b1.scale} y opacidad ${b1.op}, Esc lo cierra y devuelve el foco a la lupa (display ${b3} al acabar)`);
+    await ctx.close();
+  }
+  /* d. con movimiento: el tablón filtra con View Transition y sigue contando bien */
+  {
+    const { ctx, page } = await nueva({ reducido: false });
+    await ir(page, 'avisos.html');
+    const r = await page.evaluate(async () => {
+      const caja = document.querySelector('[data-vivo="tablon"]');
+      const lim = Number(caja.getAttribute('data-limite')) || Infinity, out = [];
+      for (const b of caja.querySelectorAll('.filtro')) {
+        b.click();
+        await new Promise(r => setTimeout(r, 500));
+        const tema = b.getAttribute('data-tema'), filas = [...caja.querySelectorAll('.tablon__fila')];
+        const vis = filas.filter(f => f.getBoundingClientRect().height > 0).length;
+        const esperadas = Math.min(lim, filas.filter(f => !tema || f.getAttribute('data-tema') === tema).length);
+        out.push({ ok: vis === esperadas && b.getAttribute('aria-pressed') === 'true' && caja.querySelector('.tablon__cuenta').textContent.includes(String(vis)) && !filas.some(f => f.style.viewTransitionName) && !document.documentElement.classList.contains('mov-tablon'), tema: tema || 'Todos', vis });
+      }
+      return { out, vt: typeof document.startViewTransition === 'function' };
+    });
+    const malos = r.out.filter(x => !x.ok);
+    comprobar(r.out.length > 2 && !malos.length, `con movimiento, tablón: ${r.out.length} filtros${r.vt ? ' con View Transition' : ''}, cada uno enseña y cuenta lo suyo y no deja nombres de transición puestos` + (malos.length ? ' → ' + JSON.stringify(malos[0]) : ''));
+    await ctx.close();
+  }
+  /* e. transiciones entre páginas: la foto viaja del listado al artículo; con cortina, se salta */
+  {
+    const vigilar = () => {
+      window.__vt = 'sin evento';
+      addEventListener('pagereveal', e => {
+        if (!e.viewTransition) { window.__vt = 'sin transición'; return; }
+        e.viewTransition.ready.then(() => { window.__vt = 'lista'; window.__grupos = [...new Set(document.getAnimations().map(a => a.effect && a.effect.pseudoElement).filter(Boolean))]; }, () => { window.__vt = 'saltada'; });
+      });
+    };
+    let { ctx, page } = await nueva({ reducido: false });
+    await ctx.addInitScript(vigilar);
+    await ir(page, 'noticias.html');
+    const conFoto = page.locator('.noticia:has(.noticia__foto) .noticia__titulo a').first();
+    if (await conFoto.count()) {
+      const id = (await conFoto.getAttribute('href')).replace(/^noticia-|\.html$/g, '');
+      await conFoto.click();
+      await page.waitForLoadState('networkidle'); await espera(200);
+      const r = await page.evaluate(() => ({ vt: window.__vt, grupos: window.__grupos || [] }));
+      comprobar(r.vt === 'lista' && r.grupos.includes('::view-transition-group(noticia-' + id + ')'),
+        `transición entre páginas: del listado al artículo la foto «${id}» tiene su propio grupo y viaja (${r.vt})`);
+    } else notas.push('NOTA  · transición entre páginas: ninguna noticia lleva foto, no se prueba el viaje de la foto');
+    await ctx.close();
+    ({ ctx, page } = await nueva({ reducido: false, conCortina: true }));
+    await ctx.addInitScript(vigilar);
+    await ir(page, 'tramites.html');
+    await page.click('.cabecera__marca');
+    await page.waitForFunction(() => window.__cortinaFinal, null, { timeout: 5000 }).catch(() => {});
+    await espera(1200);
+    const r = await page.evaluate(() => {
+      const img = document.querySelector('#arco-hero img');
+      return { vt: window.__vt, final: !!window.__cortinaFinal, clase: document.documentElement.classList.contains('con-cortina'),
+        img: img ? getComputedStyle(img).transform : 'none', filas: [...document.querySelectorAll('.hoy__fila')].map(f => getComputedStyle(f).transform).filter(t => t !== 'none').length };
+    });
+    comprobar(r.vt === 'saltada' && r.final && !r.clase && r.img === 'none' && !r.filas,
+      `transición entre páginas: al llegar a la portada con cortina, la transición se salta (${r.vt}), la cortina aterriza y después la foto queda asentada (transform ${r.img}) y las filas de «Hoy» en su sitio`);
+    await ctx.close();
+  }
 }
 
 /* ── «Abierto ahora» con la fecha simulada ── */
@@ -819,7 +1009,7 @@ async function capturas() {
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
 if (!SOLO || SOLO.includes('estaticas')) estaticas();
-for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['cortina', cortina], ['contenido', contenidoEjemplo], ['interaccion', interaccion],
+for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['cortina', cortina], ['movimiento', movimiento], ['contenido', contenidoEjemplo], ['interaccion', interaccion],
   ['estructura', estructura], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();

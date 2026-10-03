@@ -10,6 +10,7 @@
    3. El hueco viaja y crece hasta el arco de la foto del hero, medido con
       getBoundingClientRect: termina exactamente encima. El velo se va y el
       arco de la foto sigue ahí.                                       0,80–1,20 s
+   4. Ya sin cortina, la foto del arco se asienta (1,06 → 1).   +0,6 s, fuera de la línea
    Clic, tecla, rueda o toque la saltan. Sin GSAP se quita al momento.
    strokeDashoffset con pathLength=1 → autoRound:false (memoria «GSAP autoRound»). */
 (function () {
