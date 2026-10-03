@@ -27,15 +27,27 @@
         <span class="puerta__umbral" aria-hidden="true"></span>
       </div>
       <div class="hero__texto">
-        <p class="hero__ante">Ayuntamiento de</p>
-        <h1 class="hero__titulo" id="titulo-pagina">{{nombre}}</h1>
+        <!-- «Ayuntamiento de» ya está en la cabecera: aquí solo lo oye el lector de pantalla -->
+        <h1 class="hero__titulo" id="titulo-pagina"><span class="sr">Ayuntamiento de </span>{{nombre}}</h1>
         {{#lema}}<p class="hero__lema">{{lema}}</p>{{/lema}}
-        <section class="hoy" aria-labelledby="hoy-titulo" data-vivo="hoy">{{{vivo.hoy}}}</section>
+        <!-- Buscador de trámites a la vista. Sin JavaScript, el formulario lleva a la página de
+             trámites con lo escrito (?q=…#buscar); con él, los resultados salen aquí debajo -->
+        <form class="hero__buscador" action="tramites.html#buscar" method="get" role="search" aria-label="Trámites" data-buscador-pagina data-buscador-max="5">
+          <label class="campo__etiqueta hero__etiqueta" for="hero-buscar">¿Qué necesita hacer?</label>
+          <div class="hero__fila">
+            <input class="campo__entrada" id="hero-buscar" name="q" type="search" autocomplete="off" spellcheck="false" placeholder="Empadronarme, pagar un recibo, una obra…" aria-describedby="hero-buscar-ayuda" data-buscador-campo>
+            <button class="boton boton--marca hero__buscar" type="submit"><svg class="icono" aria-hidden="true"><use href="#i-lupa"/></svg>Buscar</button>
+          </div>
+          <p class="hero__ayuda" id="hero-buscar-ayuda">Con sus palabras. Cada resultado le lleva a su trámite en la sede electrónica.</p>
+          <p class="hero__cuenta" role="status" data-buscador-cuenta></p>
+          <ul class="resultados hero__resultados" data-buscador-resultados></ul>
+        </form>
         <ul class="hero__botones">
           <li><a class="boton boton--marca" href="tramites.html"><svg class="icono" aria-hidden="true"><use href="#i-sede"/></svg>Hacer un trámite</a></li>
           <li><a class="boton boton--borde" href="telefonos.html"><svg class="icono" aria-hidden="true"><use href="#i-telefono"/></svg>Teléfonos</a></li>
           <li><a class="boton boton--borde" href="agenda.html"><svg class="icono" aria-hidden="true"><use href="#i-calendario"/></svg>Agenda</a></li>
         </ul>
+        <section class="hoy" aria-labelledby="hoy-titulo" data-vivo="hoy">{{{vivo.hoy}}}</section>
       </div>
     </div>
   </section>
@@ -43,7 +55,7 @@
   <section class="seccion" aria-labelledby="t-tramites">
     <div class="contenedor">
       <div class="seccion__cabeza">
-        <h2 class="seccion__titulo" id="t-tramites">¿Qué necesita hacer?</h2>
+        <h2 class="seccion__titulo" id="t-tramites">Los trámites más pedidos</h2>
         <a class="ver-todo" href="tramites.html">Todos los trámites<svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
       </div>
       <ul class="atajos">

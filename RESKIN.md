@@ -165,7 +165,7 @@ node scripts/servir.mjs                     # http://127.0.0.1:4192/?revision
 ```
 
 Mira las capturas, sobre todo estas:
-- `primera-pantalla-375x667.png`: el panel «Hoy» tiene que asomar;
+- `primera-pantalla-375x667.png`: el buscador de trámites y «Hacer un trámite» se ven sin bajar (lo mide también la verificación);
 - la portada en las dos densidades;
 - el listín;
 - el pie.

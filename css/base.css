@@ -268,8 +268,8 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .resultados mark { background: var(--marca-tenue); color: inherit; border-radius: 2px; }
 
 /* ═══════════════ PORTADA: HERO «HOY» ═══════════════ */
-.hero { padding-block: clamp(1rem, 2.5vw, 3rem) clamp(2.5rem, 5vw, 4.5rem); }
-.hero__rejilla { display: grid; gap: 1.25rem; align-items: center; }
+.hero { padding-block: clamp(1rem, 2.5vw, 2.75rem) clamp(2.5rem, 5vw, 4.5rem); }
+.hero__rejilla { display: grid; gap: 1.25rem; align-items: start; }
 .puerta { position: relative; width: 100%; max-width: 22rem; margin-inline: auto; }
 .arco {
   display: block; margin: 0; overflow: hidden;
@@ -282,23 +282,39 @@ a:hover { text-decoration-thickness: 2px; color: var(--marca-fuerte); }
 .arco--vacio img { width: 38%; height: auto; opacity: .22; filter: grayscale(1); object-fit: contain; }
 .puerta__arco { aspect-ratio: 5 / 3; width: 100%; }   /* alto ≥ ancho/2: medio punto entero */
 .puerta__umbral { display: block; height: 6px; margin-inline: -5%; background: var(--oro); border-radius: 2px; }
-.hero__ante {
-  margin: 0 0 .15rem; font: 600 .875rem/1.3 var(--f-texto); letter-spacing: .08em; text-transform: uppercase; color: var(--marca);
-}
 .hero__titulo { font-size: clamp(2rem, 1.35rem + 3.4vw, 4.5rem); margin: 0; }
 .hero__lema { margin: .35rem 0 0; font: italic 600 1.25rem/1.3 var(--f-titulo); color: var(--apagado); }
-/* pantallas bajas (375 × 667): el arco cede para que el panel «Hoy» asome sin bajar */
-@media (max-width: 55.99em) and (max-height: 760px) { .puerta { max-width: 18.5rem; } .hero { padding-top: .75rem; } .hoy { margin-top: 1rem; } }
-.hero__botones { list-style: none; padding: 0; margin: 1.25rem 0 0; display: flex; flex-wrap: wrap; gap: .65rem; }
+/* buscador de trámites a la vista: lo primero que se puede hacer, por encima del panel «Hoy» */
+.hero__buscador { margin: 1.1rem 0 0; max-width: 36rem; }
+.hero__etiqueta { display: block; margin-bottom: .35rem; font-size: 1.125rem; }
+.hero__fila { display: flex; gap: .5rem; }
+.hero__fila .campo__entrada { flex: 1 1 10rem; min-width: 0; }
+.hero__buscar { flex: none; min-height: 52px; padding-inline: .9rem; }
+.hero__ayuda { margin: .45rem 0 0; color: var(--apagado); font-size: 1rem; line-height: 1.45; }
+.hero__cuenta { margin: .6rem 0 .25rem; color: var(--apagado); font-size: 1rem; }
+.hero__cuenta:empty { margin: 0; }
+.hero__resultados { background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio); padding: 0 .85rem; }
+.hero__resultados:empty { display: none; }
+.hero__resultados li:last-child a { border-bottom: 0; }
+.hero__botones { list-style: none; padding: 0; margin: 1rem 0 0; display: flex; flex-wrap: wrap; gap: .65rem; }
+/* móvil: la ayuda del buscador solo la oye el lector de pantalla (el ejemplo ya está en el campo),
+   para que el buscador y «Hacer un trámite» quepan en la primera pantalla */
+@media (max-width: 47.99em) {
+  .hero__ayuda { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .hero__buscador { margin-top: .9rem; }
+}
+/* pantallas bajas (375 × 667): el arco cede para que el buscador y el botón principal no bajen */
+@media (max-width: 55.99em) and (max-height: 760px) { .puerta { max-width: 15rem; } .hero { padding-top: .75rem; } .hero__rejilla { gap: 1rem; } }
 @media (min-width: 56em) {
   .hero__rejilla { grid-template-columns: minmax(15rem, 5fr) 7fr; gap: clamp(2.5rem, 5vw, 5rem); }
-  .puerta { max-width: 28rem; }
-  .puerta__arco { aspect-ratio: 4 / 5; }
+  /* el arco arranca a la altura de las mayúsculas del nombre, y algo más alto que antes */
+  .puerta { max-width: 28rem; margin-top: var(--arco-ajuste, .7rem); }
+  .puerta__arco { aspect-ratio: 3 / 4; }
   .puerta__umbral { margin-inline: -8%; }
 }
 
 .hoy {
-  margin-top: 1.25rem; background: var(--superficie);
+  margin-top: 1.5rem; background: var(--superficie);
   border: 1px solid var(--linea); border-top: 3px solid var(--oro); border-radius: var(--radio);
   padding: 1rem 1.25rem .25rem;
 }

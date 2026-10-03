@@ -810,9 +810,61 @@ async function capturas() {
   const { ctx, page } = await nueva({ viewport: { width: 375, height: 667 }, conCookies: true });
   await ir(page, 'index.html');
   await page.screenshot({ path: captura('primera-pantalla-375x667.png') });
-  const asoma = await page.evaluate(() => document.querySelector('.hoy').getBoundingClientRect().top);
-  comprobar(asoma < 667 - 24, `a 375 × 667 el panel «Hoy» asoma en la primera pantalla (empieza a ${Math.round(asoma)} px)`);
   await ctx.close();
+}
+
+/* ── primera pantalla: lo que se viene a hacer, sin bajar ──
+   El buscador de trámites (campo y botón) y «Hacer un trámite» caben en la primera pantalla del
+   móvil pequeño y del escritorio; la franja urgente va en una línea en móvil con «Ver aviso» a la
+   vista. Sustituye a «el panel Hoy asoma», que ahora va debajo de los botones a propósito. */
+async function primeraPantalla() {
+  const malos = [];
+  for (const [w, h] of [[375, 667], [390, 844], [1440, 900]]) {
+    const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
+    await ir(page, 'index.html');
+    const r = await page.evaluate(() => {
+      const caja = s => { const e = document.querySelector(s); return e ? e.getBoundingClientRect() : null; };
+      const campo = caja('.hero__buscador [data-buscador-campo]'), boton = caja('.hero__buscador [type="submit"]'), tramite = caja('.hero__botones .boton--marca');
+      const franja = document.querySelector('.franja-urgente:not([hidden])');
+      const ver = franja && franja.querySelector('.franja-urgente__ver');
+      return { campo: campo && campo.bottom, boton: boton && boton.bottom, tramite: tramite && tramite.bottom, ancho: innerWidth,
+        franja: franja ? { alto: franja.getBoundingClientRect().height, ver: ver ? ver.getBoundingClientRect().right : 9999 } : null };
+    });
+    const tope = Math.max(r.campo || 9999, r.boton || 9999, r.tramite || 9999);
+    if (tope > h) malos.push(`${w}×${h}: buscador o «Hacer un trámite» acaban a ${Math.round(tope)} px`);
+    if (w < 768 && r.franja && (r.franja.alto > 52 || r.franja.ver > r.ancho)) malos.push(`${w}×${h}: la franja urgente mide ${Math.round(r.franja.alto)} px o «Ver aviso» se sale`);
+    await ctx.close();
+  }
+  comprobar(!malos.length, 'primera pantalla (375×667, 390×844 y 1440×900): el buscador de trámites y «Hacer un trámite» se ven sin bajar; en móvil la franja urgente va en una línea con «Ver aviso» a la vista' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+
+  /* el buscador de la portada: resultados aquí mismo, cuenta en role=status, como mucho 5; y sin
+     JavaScript el formulario lleva a tramites.html con lo escrito, donde se busca solo */
+  const { ctx, page } = await nueva();
+  await ir(page, 'index.html');
+  const q = (M.tramites.atajos || [])[0] ? M.tramites.atajos[0].nombre : 'certificado';
+  await page.fill('.hero__buscador [data-buscador-campo]', q);
+  await page.waitForFunction(() => document.querySelector('.hero__buscador [data-buscador-cuenta]').textContent.length > 0, null, { timeout: 3000 }).catch(() => {});
+  const b = await page.evaluate(() => {
+    const f = document.querySelector('.hero__buscador');
+    return { estado: f.querySelector('[data-buscador-cuenta]').getAttribute('role'), cuenta: f.querySelector('[data-buscador-cuenta]').textContent,
+      n: f.querySelectorAll('[data-buscador-resultados] a').length, accion: f.getAttribute('action'), metodo: f.getAttribute('method'), nombre: f.querySelector('[data-buscador-campo]').name,
+      etiqueta: (f.querySelector('label[for="' + f.querySelector('[data-buscador-campo]').id + '"]') || {}).textContent || '' };
+  });
+  await page.click('.hero__buscador [type="submit"]');
+  await page.waitForLoadState('networkidle');
+  await page.waitForFunction(() => document.querySelectorAll('[data-buscador-pagina] [data-buscador-resultados] a').length > 0, null, { timeout: 3000 }).catch(() => {});
+  const destino = await page.evaluate(() => ({ url: location.pathname + location.search + location.hash, q: new URLSearchParams(location.search).get('q'), valor: (document.querySelector('[data-buscador-pagina] [data-buscador-campo]') || {}).value, n: document.querySelectorAll('[data-buscador-pagina] [data-buscador-resultados] a').length }));
+  await ctx.close();
+  comprobar(b.estado === 'status' && b.n > 0 && b.n <= 5 && /encontrado/.test(b.cuenta) && b.accion === 'tramites.html#buscar' && b.metodo === 'get' && b.nombre === 'q' && b.etiqueta.trim().length > 3 &&
+    /tramites\.html\?q=[^#]+#buscar$/.test(destino.url) && destino.q === q && destino.valor === q && destino.n > 0,
+    `buscador de la portada: «${q}» → ${b.n} resultados aquí (≤ 5) con la cuenta en role=status («${b.cuenta.slice(0, 60)}»); «Buscar» (o sin JavaScript) lleva a ${destino.url} y allí busca solo (${destino.n} resultados)`);
+
+  /* temas: todos cerrados de entrada */
+  const t = await nueva();
+  await ir(t.page, 'index.html');
+  const temas = await t.page.evaluate(() => ({ total: document.querySelectorAll('.temas .tema').length, abiertos: document.querySelectorAll('.temas .tema[open]').length }));
+  await t.ctx.close();
+  comprobar(temas.total > 0 && temas.abiertos === 0, `temas de trámites: los ${temas.total} desplegables, cerrados de entrada`);
 }
 
 /* ═════════════ orden ═════════════ */
@@ -820,19 +872,11 @@ const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
 if (!SOLO || SOLO.includes('estaticas')) estaticas();
 for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['cortina', cortina], ['contenido', contenidoEjemplo], ['interaccion', interaccion],
-  ['estructura', estructura], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
+  ['estructura', estructura], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ['primera', primeraPantalla], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();
   try { await fn(); } catch (e) { comprobar(false, nombre + ': la prueba se rompió → ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')); }
   console.log(`· ${nombre}: ${Math.round((Date.now() - t) / 1000)} s`);
-}
-if (!CAPTURAS && !SOLO) {
-  /* aunque no se pidan capturas, la de 375 × 667 se mide siempre */
-  const { ctx, page } = await nueva({ viewport: { width: 375, height: 667 } });
-  await ir(page, 'index.html');
-  const asoma = await page.evaluate(() => document.querySelector('.hoy').getBoundingClientRect().top);
-  comprobar(asoma < 667 - 24, `a 375 × 667 el panel «Hoy» asoma en la primera pantalla (empieza a ${Math.round(asoma)} px)`);
-  await ctx.close();
 }
 await navegador.close();
 servidor.close();
