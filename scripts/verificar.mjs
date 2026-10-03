@@ -1306,7 +1306,7 @@ async function capturas() {
 /* ── primera pantalla: lo que se viene a hacer, sin bajar ──
    El buscador de trámites (campo y botón) y «Hacer un trámite» caben en la primera pantalla del
    móvil pequeño y del escritorio; la franja urgente va en una línea en móvil con «Ver aviso» a la
-   vista. Sustituye a «el panel Hoy asoma», que ahora va debajo de los botones a propósito. */
+   vista. (v3: la franja va en dos líneas como mucho, sin recortar; v3pliegue lo mide.) Sustituye a «el panel Hoy asoma», que ahora va debajo de los botones a propósito. */
 async function primeraPantalla() {
   const malos = [];
   for (const [w, h] of [[375, 667], [390, 844], [1440, 900]]) {
@@ -1322,10 +1322,10 @@ async function primeraPantalla() {
     });
     const tope = Math.max(r.campo || 9999, r.boton || 9999, r.tramite || 9999);
     if (tope > h) malos.push(`${w}×${h}: buscador o «Hacer un trámite» acaban a ${Math.round(tope)} px`);
-    if (w < 768 && r.franja && (r.franja.alto > 52 || r.franja.ver > r.ancho)) malos.push(`${w}×${h}: la franja urgente mide ${Math.round(r.franja.alto)} px o «Ver aviso» se sale`);
+    if (w < 768 && r.franja && (r.franja.alto > 64 || r.franja.ver > r.ancho)) malos.push(`${w}×${h}: la franja del aviso mide ${Math.round(r.franja.alto)} px (más de dos líneas) o su flecha se sale`);
     await ctx.close();
   }
-  comprobar(!malos.length, 'primera pantalla (375×667, 390×844 y 1440×900): el buscador de trámites y «Hacer un trámite» se ven sin bajar; en móvil la franja urgente va en una línea con «Ver aviso» a la vista' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  comprobar(!malos.length, 'primera pantalla (375×667, 390×844 y 1440×900): el buscador de trámites y «Hacer un trámite» se ven sin bajar; en móvil la franja del aviso va en dos líneas como mucho con la flecha a la vista' + (malos.length ? ' → ' + malos.join(' | ') : ''));
 
   /* el buscador de la portada: resultados aquí mismo, cuenta en role=status, como mucho 5; y sin
      JavaScript el formulario lleva a tramites.html con lo escrito, donde se busca solo */
@@ -1357,12 +1357,318 @@ async function primeraPantalla() {
   comprobar(temas.total > 0 && temas.abiertos === 0, `temas de trámites: los ${temas.total} desplegables, cerrados de entrada`);
 }
 
+/* ═════════════ v3 · PLIEGUE: la primera pantalla ═════════════
+   Hero entero en 1280 × 720 y 1366 × 768 con las columnas equilibradas; a 375 × 667 con el aviso
+   de cookies, el campo del buscador entero y su placeholder sin cortar; las bandas de arriba
+   compactas (propuesta + aviso en una fila en escritorio, el aviso en ≤ 2 líneas sin puntos
+   suspensivos en móvil); la tira «Hoy» con sus fichas como tablero (y sin huecos si falta un dato);
+   la foto del arco al azar sin CLS (y sin hero_fotos, la de siempre); el aviso programado en ámbar
+   y el urgente en rojo, los dos AA; y con movimiento reducido, nada se mueve. */
+async function v3Pliegue() {
+  const rgbHex = s => '#' + (s.match(/\d+(\.\d+)?/g) || []).slice(0, 3).map(v => Math.round(Number(v)).toString(16).padStart(2, '0')).join('');
+  const datosDe = html => JSON.parse(html.match(/<script type="application\/json" id="datos-vivos">([\s\S]*?)<\/script>/)[1]);
+  /* reescribe los datos vivos de la portada antes de que main.js los pinte */
+  const conDatos = async (page, cambiar) => {
+    await page.route('**/index.html', async r => {
+      const resp = await r.fetch(); const cuerpo = await resp.text();
+      const D = datosDe(cuerpo); cambiar(D);
+      r.fulfill({ response: resp, body: cuerpo.replace(/(<script type="application\/json" id="datos-vivos">)[\s\S]*?(<\/script>)/, (m, a, b) => a + JSON.stringify(D).replace(/</g, '\\u003c') + b) });
+    });
+  };
+
+  /* 1. el hero cabe entero y está equilibrado (escritorio, sin el aviso de cookies) */
+  {
+    const malos = [];
+    for (const [w, h] of [[1280, 720], [1366, 768], [1440, 900]]) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
+      await ir(page, 'index.html');
+      const r = await page.evaluate(() => {
+        const c = s => document.querySelector(s).getBoundingClientRect();
+        const hero = c('.hero'), puerta = c('.puerta'), arco = c('#arco-hero'), texto = c('.hero__texto'), tira = c('.hoy-tira');
+        return { hero: [hero.top, hero.bottom], vh: innerHeight, cp: (puerta.top + puerta.bottom) / 2, ct: (texto.top + texto.bottom) / 2,
+          hueco: hero.bottom - Math.max(puerta.bottom, texto.bottom), arco: [arco.width, arco.height], tira: tira.top, dentro: !!document.querySelector('.hero [data-vivo="hoy"]') };
+      });
+      if (r.hero[0] < 0 || r.hero[1] > r.vh + 0.5) malos.push(`${w}×${h}: el hero va de ${Math.round(r.hero[0])} a ${Math.round(r.hero[1])} px`);
+      if (Math.abs(r.cp - r.ct) > 24) malos.push(`${w}×${h}: arco y texto descentrados (${Math.round(r.cp - r.ct)} px)`);
+      if (r.hueco > 64) malos.push(`${w}×${h}: ${Math.round(r.hueco)} px vacíos bajo el arco o el texto`);
+      if (r.arco[1] < r.arco[0] / 2 - 1) malos.push(`${w}×${h}: el arco no es de medio punto`);
+      if (r.dentro || r.tira < r.hero[1] - 1) malos.push(`${w}×${h}: «Hoy» sigue dentro del hero`);
+      await ctx.close();
+    }
+    comprobar(!malos.length, 'v3 pliegue · hero: entero en 1280×720, 1366×768 y 1440×900, con el arco (de medio punto) y el texto centrados el uno con el otro, sin hueco debajo y «Hoy» fuera, en su tira' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* 2. móvil con el aviso de cookies: el buscador entero, el placeholder sin cortar, el aviso de
+     cookies en ≤ 2 líneas con el botón al lado; en escritorio tampoco tapa el buscador */
+  {
+    const malos = [];
+    for (const [w, h] of [[375, 667], [360, 640], [1366, 768]]) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: h }, conCookies: true });
+      await ir(page, 'index.html');
+      const r = await page.evaluate(() => {
+        const campo = document.querySelector('.hero__buscador [data-buscador-campo]'), boton = document.querySelector('.hero__buscador [type="submit"]');
+        const cookies = document.getElementById('cookies'), texto = cookies.querySelector('.cookies__texto p'), acepta = cookies.querySelector('[data-aceptar-cookies]');
+        const c = campo.getBoundingClientRect(), b = boton.getBoundingClientRect(), k = cookies.getBoundingClientRect(), t = texto.getBoundingClientRect(), a = acepta.getBoundingClientRect();
+        const cs = getComputedStyle(campo), lienzo = document.createElement('canvas').getContext('2d');
+        lienzo.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+        const libre = campo.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        const tapa = (x, y) => { const e = document.elementFromPoint(x, y); return e && e.closest('#cookies'); };
+        return { campo: [c.top, c.bottom], boton: b.bottom, cookies: k.top, visible: cookies.checkVisibility(), placeholder: lienzo.measureText(campo.placeholder).width, libre,
+          lineas: Math.round(t.height / parseFloat(getComputedStyle(texto).lineHeight)), alLado: a.top < t.bottom && a.left > t.left,
+          tapado: tapa(c.left + 4, c.top + 4) || tapa(c.right - 4, c.bottom - 4) || tapa(b.right - 4, b.bottom - 4) };
+      });
+      if (!r.visible) malos.push(`${w}×${h}: no sale el aviso de cookies`);
+      if (r.campo[0] < 0 || Math.max(r.campo[1], r.boton) > Math.min(r.cookies, h) || r.tapado) malos.push(`${w}×${h}: el buscador (${Math.round(r.campo[0])}–${Math.round(Math.max(r.campo[1], r.boton))} px) no se ve entero con el aviso de cookies (desde ${Math.round(r.cookies)} px)`);
+      if (r.placeholder > r.libre) malos.push(`${w}×${h}: el placeholder se corta (${Math.round(r.placeholder)} de ${Math.round(r.libre)} px)`);
+      if (r.lineas > 2 || !r.alLado) malos.push(`${w}×${h}: el aviso de cookies ocupa ${r.lineas} líneas o el botón no va al lado`);
+      if (CAPTURAS && w === 375) await page.screenshot({ path: captura('v3-primera-375x667-cookies.png') });
+      await ctx.close();
+    }
+    comprobar(!malos.length, 'v3 pliegue · móvil (375×667 y 360×640) con el aviso de cookies: el campo del buscador y su botón se ven enteros sin bajar y sin nada encima, el placeholder cabe, y el aviso va en ≤ 2 líneas con el botón al lado (también a 1366×768, sin tapar el buscador)' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* 3. bandas de arriba: la propuesta en todas las páginas y a la vista; en escritorio, propuesta y
+     aviso en UNA fila; en móvil, el aviso en ≤ 2 líneas, sin puntos suspensivos */
+  {
+    const malos = [];
+    const destacado = (contenido('avisos').avisos || []).some(a => a.caduca && a.caduca >= new Date().toISOString().slice(0, 10) && (a.urgente || /urgente|programado/.test(a.gravedad || '')));
+    for (const [w, h] of [[375, 667], [1366, 768]]) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
+      for (const p of ['index.html', 'tramites.html', 'pueblo.html']) {
+        await ir(page, p);
+        const r = await page.evaluate(() => {
+          const pr = document.querySelector('.propuesta'), fr = document.querySelector('.franja-urgente:not([hidden]) .franja-urgente__enlace');
+          const res = { propuesta: pr ? pr.checkVisibility() && pr.getBoundingClientRect().height > 0 : null };
+          if (fr) {
+            const t = fr.querySelector('.franja-urgente__texto'), cs = getComputedStyle(t), pb = pr.getBoundingClientRect(), fb = fr.getBoundingClientRect();
+            res.franja = { lineas: Math.round(t.getBoundingClientRect().height / parseFloat(cs.lineHeight)), recorte: cs.textOverflow === 'ellipsis' || t.scrollWidth > t.clientWidth + 1,
+              misma: Math.abs(pb.top - fb.top) < 1, alto: pb.height + fb.height, juntas: Math.abs(pb.bottom - fb.top) < 1 };
+          }
+          return res;
+        });
+        if (M.propuesta !== false && !r.propuesta) malos.push(`${w} px ${p}: la banda de propuesta no se ve`);
+        if (destacado && !r.franja) malos.push(`${w} px ${p}: no sale la franja del aviso`);
+        if (r.franja) {
+          if (r.franja.recorte || r.franja.lineas > 2) malos.push(`${w} px ${p}: el aviso se recorta o pasa de 2 líneas (${r.franja.lineas})`);
+          if (w >= 1024 && M.propuesta !== false && !r.franja.misma) malos.push(`${w} px ${p}: propuesta y aviso no comparten fila`);
+          if (w < 1024 && (!r.franja.juntas || r.franja.alto > 96)) malos.push(`${w} px ${p}: propuesta + aviso miden ${Math.round(r.franja.alto)} px`);
+        }
+      }
+      if (CAPTURAS) await page.locator('.cabecera').screenshot({ path: captura(`v3-bandas-${w}.png`) });
+      await ctx.close();
+    }
+    comprobar(!malos.length, 'v3 pliegue · bandas: la propuesta a la vista en todas las páginas; en escritorio, propuesta y aviso en una sola fila; en móvil, apiladas en ≤ 96 px con el aviso en ≤ 2 líneas y sin puntos suspensivos' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* 4. la tira «Hoy»: sus fichas como tablero (en fila en escritorio, 2 × 2 en móvil) y, si falta un
+     dato, la ficha no sale y no queda hueco; se sigue repintando en vivo (data-vivo="hoy") */
+  {
+    const malos = [];
+    const fichas = () => [...document.querySelectorAll('.hoy-tira [data-vivo="hoy"] .hoy__lista > .hoy__fila')].map(f => {
+      const b = f.getBoundingClientRect(); return { clase: f.className, x: Math.round(b.left), y: Math.round(b.top), w: b.width, r: Math.round(b.right) };
+    });
+    const lista = () => { const b = document.querySelector('.hoy__lista').getBoundingClientRect(); return { x: Math.round(b.left), r: Math.round(b.right) }; };
+    const tieneFarmacia = !!(M.farmacias && ((M.farmacias.lista || []).length || M.farmacias.oficial));
+    const esperadas = 3 + (tieneFarmacia ? 1 : 0);
+    for (const [w, h, cols] of [[1366, 768, esperadas], [375, 667, 2]]) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
+      await ir(page, 'index.html');
+      const f = await page.evaluate(fichas), l = await page.evaluate(lista);
+      const filas = new Set(f.map(x => x.y)).size, columnas = new Set(f.map(x => x.x)).size;
+      const titulo = await page.evaluate(() => { const h2 = document.getElementById('hoy-titulo'); return h2 && h2.closest('.hoy-tira') ? h2.textContent : null; });
+      if (f.length !== esperadas) malos.push(`${w} px: ${f.length} fichas (esperaba ${esperadas})`);
+      if (!['ayto', 'agenda', 'aviso'].every(k => f.some(x => x.clase.includes('hoy__fila--' + k))) || (tieneFarmacia && !f.some(x => x.clase.includes('hoy__fila--farmacia')))) malos.push(`${w} px: faltan fichas (${f.map(x => x.clase).join(', ')})`);
+      if (columnas !== cols || filas !== Math.ceil(f.length / cols)) malos.push(`${w} px: ${columnas} columnas y ${filas} filas`);
+      if (!titulo) malos.push(`${w} px: la tira no lleva su h2 «Hoy en …»`);
+      const iconos = await page.evaluate(() => [...document.querySelectorAll('.hoy__lista > .hoy__fila')].every(x => x.querySelector(':scope > .hoy__etiqueta .hoy__icono svg') && x.querySelector('.hoy__valor, .hoy__nota')));
+      if (!iconos) malos.push(`${w} px: una ficha sin icono, etiqueta o dato`);
+      if (w === 375 && f.some(x => x.w < 140)) malos.push('375 px: fichas de menos de 140 px');
+      if (CAPTURAS) await page.locator('.hoy-tira').screenshot({ path: captura(`v3-hoy-${w}.png`) });
+      await ctx.close();
+    }
+    /* sin farmacia, sin avisos ni tablón: quedan dos o tres fichas que llenan su fila, sin huecos */
+    for (const [w, h] of [[1366, 768], [375, 667]]) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
+      await conDatos(page, D => { D.farmacias = null; });
+      await ir(page, 'index.html');
+      const f = await page.evaluate(fichas), l = await page.evaluate(lista);
+      const html = await page.evaluate(() => document.querySelector('[data-vivo="hoy"]').innerHTML);
+      if (/Farmacia de guardia/.test(html)) malos.push(`${w} px sin farmacia: sale la ficha`);
+      const n = f.length, ultima = f[n - 1], resto = f.slice(0, -1);
+      if (n !== esperadas - (tieneFarmacia ? 1 : 0)) malos.push(`${w} px sin farmacia: ${n} fichas`);
+      if (w >= 1024 && (new Set(f.map(x => x.y)).size !== 1 || Math.abs(f[0].x - l.x) > 1 || Math.abs(ultima.r - l.r) > 1)) malos.push(`${w} px sin farmacia: las ${n} fichas no llenan la fila`);
+      if (w < 1024 && n % 2 === 1 && (Math.abs(ultima.x - l.x) > 1 || Math.abs(ultima.r - l.r) > 1)) malos.push(`${w} px sin farmacia: la última ficha, sola, no ocupa el ancho (hueco)`);
+      if (!resto.length && n < 2) malos.push('sin farmacia: menos de dos fichas');
+      await ctx.close();
+    }
+    {
+      const { ctx, page } = await nueva({ viewport: { width: 1366, height: 768 } });
+      await conDatos(page, D => { D.farmacias = null; D.avisos = []; D.tablon = { actualizado: '1999-01-01', entradas: [] }; D.tiempo = null; D.recogida = []; D.canal = null; D.agenda = D.agenda.filter(e => e.tipo !== 'pleno'); });
+      await page.route('**/contenido/tablon.json*', r => r.abort());
+      await ir(page, 'index.html');
+      const f = await page.evaluate(fichas), l = await page.evaluate(lista);
+      const pie = await page.evaluate(() => { const p = document.querySelector('.hoy__pie'); return p ? p.checkVisibility() : false; });
+      if (f.length !== 2 || Math.abs(f[0].x - l.x) > 1 || Math.abs(f[1].r - l.r) > 1 || Math.abs(f[0].w - f[1].w) > 1) malos.push(`solo Ayuntamiento y agenda: ${f.length} fichas que no llenan la fila`);
+      if (pie) malos.push('sin «Más hoy» ni canal, el pie de la tira sigue a la vista (vacío)');
+      await ctx.close();
+    }
+    comprobar(!malos.length, `v3 pliegue · tira «Hoy»: ${esperadas} fichas con icono, etiqueta y dato, en una fila a 1366 px y 2 × 2 a 375 px; sin farmacia (o sin avisos ni «Más hoy») las que quedan llenan la fila, la impar ocupa el ancho en móvil y no queda ningún hueco ni pie vacío` + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* 5. la foto del arco cambia entre cargas (varias semillas de Math.random), con su alt y su
+     encuadre, precargada, sin CLS; sin JavaScript, la primera; y sin hero_fotos, la de fotos.hero */
+  {
+    const malos = [];
+    const lista = (M.fotos && M.fotos.hero_fotos) || [];
+    if (lista.length > 1) {
+      const vistas = [];
+      for (const s of [0, 0.26, 0.51, 0.76, 0.999]) {
+        const { ctx, page } = await nueva({ viewport: { width: 1366, height: 768 } });
+        await ctx.addInitScript(s => {
+          Math.random = () => s;
+          window.__cls = 0;
+          /* solo lo que mueve el arco (el cambio de letra al cargar las webfonts es otra cosa y ya estaba) */
+          try { new PerformanceObserver(l => l.getEntries().forEach(e => { if (!e.hadRecentInput && e.sources.some(s => s.node && s.node.nodeType === 1 && s.node.closest('.puerta'))) window.__cls += e.value; })).observe({ type: 'layout-shift', buffered: true }); } catch (e) {}
+        }, s);
+        await ir(page, 'index.html');
+        await espera(300);
+        const r = await page.evaluate(() => {
+          const imgs = document.querySelectorAll('#arco-hero img'), img = imgs[0], a = document.getElementById('arco-hero').getBoundingClientRect();
+          const pre = document.querySelector('link[rel="preload"][as="image"]');
+          return { n: imgs.length, src: img && img.getAttribute('src'), alt: img && img.alt, pos: img && img.style.objectPosition, carga: img && img.complete && img.naturalWidth > 0,
+            pre: pre && pre.getAttribute('href'), arco: [Math.round(a.width), Math.round(a.height), Math.round(a.top)], cls: window.__cls };
+        });
+        const i = Math.min(lista.length - 1, Math.floor(s * lista.length)), f = lista[i];
+        vistas.push(r.src);
+        if (r.n !== 1 || r.src !== 'media/' + f.archivo + '.jpg' || r.alt !== f.alt || !r.carga) malos.push(`semilla ${s}: ${r.n} img, ${r.src} «${r.alt}» (esperaba ${f.archivo})`);
+        if (r.pre !== r.src) malos.push(`semilla ${s}: la precarga (${r.pre}) no es la foto pintada`);
+        if (r.cls > 0.001) malos.push(`semilla ${s}: CLS ${r.cls.toFixed(4)}`);
+        if (vistas.length > 1 && JSON.stringify(r.arco) !== JSON.stringify(vistas.arco0)) malos.push(`semilla ${s}: el arco mide ${r.arco} (antes ${vistas.arco0})`);
+        if (vistas.length === 1) vistas.arco0 = r.arco;
+        await ctx.close();
+      }
+      if (new Set(vistas).size !== Math.min(lista.length, 5)) malos.push(`solo ${new Set(vistas).size} fotos distintas en ${vistas.length} cargas`);
+      /* sin JavaScript: la primera, del noscript */
+      const ctx = await navegador.newContext({ viewport: { width: 1366, height: 768 }, javaScriptEnabled: false });
+      const page = await ctx.newPage();
+      await page.goto(BASE + 'index.html', { waitUntil: 'networkidle' });
+      const sinJs = await page.evaluate(() => [...document.querySelectorAll('#arco-hero img')].map(i => i.getAttribute('src')));
+      if (sinJs.length !== 1 || sinJs[0] !== 'media/' + lista[0].archivo + '.jpg') malos.push('sin JavaScript: ' + JSON.stringify(sinJs));
+      await ctx.close();
+      /* si el <head> falla (sin la lista), el figure pinta la del noscript */
+      const x = await nueva({ viewport: { width: 1366, height: 768 } });
+      await x.ctx.addInitScript(() => { Object.defineProperty(window, '__heroFotos', { get() { return undefined; }, set() { throw new Error('roto'); } }); });
+      await ir(x.page, 'index.html');
+      const roto = await x.page.evaluate(() => [...document.querySelectorAll('#arco-hero img')].map(i => i.complete && i.naturalWidth > 0 && i.getAttribute('src')));
+      if (roto.length !== 1 || roto[0] !== 'media/' + lista[0].archivo + '.jpg') malos.push('con el <head> roto: ' + JSON.stringify(roto));
+      await x.ctx.close();
+    } else notas.push('NOTA  · v3 pliegue: el municipio no tiene fotos.hero_fotos; se prueba solo la copia');
+    /* una copia sin hero_fotos: la de fotos.hero, en un <img> de siempre, sin script ni precarga */
+    const dest = copiar();
+    try {
+      const m = JSON.parse(fs.readFileSync(path.join(dest, 'municipio.json'), 'utf8'));
+      const primera = (m.fotos && (m.fotos.hero_fotos || [])[0]) || (m.fotos && m.fotos.hero);
+      m.fotos = primera ? { hero: { archivo: primera.archivo, alt: 'Foto única de prueba', posicion: '50% 50%' } } : {};
+      fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(m, null, 2));
+      const ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
+      const idx = ap.status === 0 ? fs.readFileSync(path.join(dest, 'index.html'), 'utf8') : '';
+      const fig = (idx.match(/<figure class="arco puerta__arco" id="arco-hero">([\s\S]*?)<\/figure>/) || [, ''])[1];
+      if (ap.status !== 0) malos.push('sin hero_fotos, aplicar.mjs falla → ' + (ap.stderr || ap.stdout).slice(-200));
+      else if (!primera) malos.push('sin foto que probar');
+      else if (/<script|<noscript/.test(fig) || /__heroFotos/.test(idx.slice(0, idx.indexOf('</head>'))) || !fig.includes(`src="media/${primera.archivo}.jpg"`) || !fig.includes('alt="Foto única de prueba"')) malos.push('sin hero_fotos no sale fotos.hero en un <img> normal');
+    } finally { fs.rmSync(dest, { recursive: true, force: true }); }
+    comprobar(!malos.length, `v3 pliegue · foto del arco: con ${lista.length} fotos en hero_fotos cambia según Math.random (5 semillas), cada una con su alt, precargada, sin CLS y con el arco del mismo tamaño; sin JavaScript (o con el <head> roto) sale la primera; sin hero_fotos, la de fotos.hero en un <img> de siempre` + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* 6. avisos por gravedad: el programado en ámbar, el urgente en rojo, distintos y los dos AA, en la
+     franja y en la ficha «Último aviso»; el informativo no va a la franja */
+  {
+    const malos = [];
+    const V = cargarVivo(), ahora = V.ahoraEn('Europe/Madrid', new Date('2026-10-14T10:00:00+02:00'));
+    const rutas = { tramites: 't.html', avisos: 'avisos.html', agenda: 'a.html', noticia: 'n-{id}.html', media: 'media/' };
+    const base = { nombre_corto: 'P', horario: { texto: 'x', tramos: [] }, agenda: [], noticias: [], tablon: { entradas: [] }, rutas, tramites_sede: 1 };
+    const av = (o) => ({ id: 'x', fecha: '2026-10-13', tema: 'Agua', titulo: 'Corte', caduca: '2026-10-20', ...o });
+    const franjaDe = a => V.pintar('franja', { ...base, avisos: [a] }, ahora);
+    if (!/es-programado/.test(franjaDe(av({ gravedad: 'programado' }))) || !/<b>Programado:<\/b>/.test(franjaDe(av({ gravedad: 'programado' })))) malos.push('programado en la franja');
+    if (!/es-urgente/.test(franjaDe(av({ gravedad: 'urgente' }))) || !/es-urgente/.test(franjaDe(av({ urgente: true })))) malos.push('urgente (también el «urgente: true» de antes)');
+    if (franjaDe(av({}))) malos.push('un informativo sale en la franja');
+    const dos = V.pintar('franja', { ...base, avisos: [av({ id: 'p', gravedad: 'programado', fecha: '2026-10-13' }), av({ id: 'u', gravedad: 'urgente', fecha: '2026-10-01' })] }, ahora);
+    if (!/es-urgente/.test(dos)) malos.push('con uno urgente y otro programado, la franja no da el urgente');
+    if (!/titulo corto/.test(franjaDe(av({ gravedad: 'programado', titulo_corto: 'titulo corto' })))) malos.push('titulo_corto');
+    const ficha = V.pintar('hoy', { ...base, avisos: [av({ gravedad: 'urgente' })] }, ahora);
+    if (!/hoy__fila--aviso es-urgente[\s\S]*chip chip--urgente">Urgente/.test(ficha) || !/chip--informativo">Informativo/.test(V.pintar('hoy', { ...base, avisos: [av({})] }, ahora))) malos.push('la gravedad en la ficha «Último aviso»');
+    /* en el navegador: los colores de verdad */
+    const colores = {};
+    for (const g of ['programado', 'urgente']) {
+      const { ctx, page } = await nueva({ viewport: { width: 1366, height: 768 } });
+      await conDatos(page, D => { D.avisos = [{ id: 'prueba-' + g, fecha: new Date().toISOString().slice(0, 10), tema: 'Agua', titulo: 'Aviso de prueba ' + g, gravedad: g, caduca: '2999-01-01', ejemplo: false, oculto: false }]; });
+      await ir(page, 'index.html');
+      colores[g] = await page.evaluate(() => {
+        const f = document.querySelector('.franja-urgente__enlace'), ch = document.querySelector('.hoy__fila--aviso .chip');
+        const cs = e => e ? [getComputedStyle(e).backgroundColor, getComputedStyle(e).color] : null;
+        return { franja: cs(f), chip: cs(ch) };
+      });
+      await ctx.close();
+    }
+    for (const g of ['programado', 'urgente']) for (const k of ['franja', 'chip']) {
+      const c = colores[g][k];
+      if (!c) { malos.push(`${g}: no sale ${k}`); continue; }
+      const r = contraste(rgbHex(c[0]), rgbHex(c[1]));
+      if (r < 4.5) malos.push(`${g} ${k}: ${rgbHex(c[1])} sobre ${rgbHex(c[0])} = ${r.toFixed(2)}:1`);
+    }
+    if (colores.programado.franja && colores.urgente.franja && rgbHex(colores.programado.franja[0]) === rgbHex(colores.urgente.franja[0])) malos.push('programado y urgente del mismo color');
+    if (colores.programado.chip && colores.urgente.chip && rgbHex(colores.programado.chip[0]) === rgbHex(colores.urgente.chip[0])) malos.push('los chips de gravedad del mismo color');
+    comprobar(!malos.length, `v3 pliegue · avisos por gravedad: programado en ámbar (${colores.programado.franja ? rgbHex(colores.programado.franja[0]) : '?'}) y urgente en rojo (${colores.urgente.franja ? rgbHex(colores.urgente.franja[0]) : '?'}), distintos y ≥ 4,5:1 con su texto en la franja y en la ficha «Último aviso»; lo urgente gana la franja, «urgente: true» sigue valiendo, el informativo no sale arriba y titulo_corto la resume` + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* 7. movimiento: reducido, nada (ni la entrada del hero ni las fichas); con movimiento y sin
+     cortina, la entrada del hero dura ≤ 600 ms y solo mueve; las fichas esperan a asomar */
+  {
+    const malos = [];
+    let { ctx, page } = await nueva({ viewport: { width: 1366, height: 768 } });
+    await ir(page, 'index.html');
+    await page.mouse.move(600, 400); await page.mouse.wheel(0, 500); await espera(400);
+    let r = await page.evaluate(() => ({ anims: document.getAnimations().map(a => a.animationName || 'waapi'), clase: document.documentElement.classList.contains('entrada-hero'),
+      quietos: [...document.querySelectorAll('.hero__palabra, #arco-hero img, .hoy__fila')].every(e => { const cs = getComputedStyle(e); return cs.translate === 'none' && cs.scale === 'none' && cs.transform === 'none'; }) }));
+    if (r.anims.length || r.clase || !r.quietos) malos.push('reducido: ' + JSON.stringify(r));
+    await ctx.close();
+    ({ ctx, page } = await nueva({ viewport: { width: 375, height: 600 }, reducido: false }));
+    await ctx.addInitScript(() => { window.__entrada = []; addEventListener('DOMContentLoaded', () => { window.__entrada = document.getAnimations().filter(a => /^mov-(palabra|asienta)$/.test(a.animationName)).map(a => ({ n: a.animationName, fin: a.effect.getComputedTiming().endTime })); }); });
+    await ir(page, 'index.html');
+    const e = await page.evaluate(() => ({ clase: document.documentElement.classList.contains('entrada-hero'), anims: window.__entrada, fuera: document.querySelector('.hoy-tira').getBoundingClientRect().top > innerHeight - 40,
+      fichasAnim: document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.classList && a.effect.target.classList.contains('hoy__fila')).length }));
+    const palabras = e.anims.filter(a => a.n === 'mov-palabra'), foto = e.anims.filter(a => a.n === 'mov-asienta');
+    if (!e.clase || palabras.length !== M.nombre.trim().split(/\s+/).length || foto.length !== 1) malos.push(`entrada del hero: clase ${e.clase}, ${palabras.length} palabras y ${foto.length} foto animadas`);
+    if (e.anims.some(a => a.fin > 600)) malos.push('la entrada del hero pasa de 600 ms: ' + Math.max(...e.anims.map(a => a.fin)));
+    if (!e.fuera) malos.push('la prueba necesita la tira fuera de la pantalla al cargar (375×600)');
+    if (e.fichasAnim) malos.push('las fichas de «Hoy» se animan sin haber asomado');
+    await espera(700);
+    r = await page.evaluate(() => [...document.querySelectorAll('.hero__palabra, #arco-hero img')].every(x => { const cs = getComputedStyle(x); return cs.translate === 'none' && cs.scale === 'none'; }));
+    if (!r) malos.push('tras la entrada, el nombre o la foto no están en su sitio');
+    await page.mouse.move(180, 300); await page.mouse.wheel(0, 400); await espera(150);
+    const vivas = await page.evaluate(() => document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.classList && a.effect.target.classList.contains('hoy__fila')).length);
+    if (!vivas) malos.push('las fichas de «Hoy» no entran al asomar');
+    await espera(900);
+    r = await page.evaluate(() => [...document.querySelectorAll('.hoy__fila')].every(x => getComputedStyle(x).transform === 'none'));
+    if (!r) malos.push('las fichas de «Hoy» se quedan a medias');
+    await ctx.close();
+    /* con cortina: sin entrada del hero (la cortina ya es la entrada) */
+    ({ ctx, page } = await nueva({ viewport: { width: 1366, height: 768 }, reducido: false, conCortina: true }));
+    await page.goto(BASE + 'index.html', { waitUntil: 'domcontentloaded' });
+    if (await page.evaluate(() => document.documentElement.classList.contains('entrada-hero'))) malos.push('con cortina también sale la entrada del hero');
+    await ctx.close();
+    comprobar(!malos.length, 'v3 pliegue · movimiento: con movimiento reducido no se anima nada (ni el hero ni las fichas, ni al bajar); sin cortina, el nombre sube palabra a palabra y la foto se asienta en ≤ 600 ms y acaban en su sitio; las fichas de «Hoy» esperan a asomar y no se quedan a medias; con cortina no hay entrada doble' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+}
+
 /* ═════════════ orden ═════════════ */
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
 if (!SOLO || SOLO.includes('estaticas')) estaticas();
 for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', panelHoy], ['cortina', cortina], ['movimiento', movimiento], ['contenido', contenidoEjemplo], ['interaccion', interaccion],
-  ['estructura', estructura], ['interiores', interiores], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ['primera', primeraPantalla], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
+  ['estructura', estructura], ['interiores', interiores], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ['primera', primeraPantalla],
+  ['v3pliegue', v3Pliegue],
+  ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();
   try { await fn(); } catch (e) { comprobar(false, nombre + ': la prueba se rompió → ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')); }
