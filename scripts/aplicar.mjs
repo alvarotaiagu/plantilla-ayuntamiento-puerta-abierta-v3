@@ -221,9 +221,22 @@ const lista = todos.map(conHref).sort((a, b) => a.nombre.localeCompare(b.nombre,
   .map(t => ({ ...t, formato: FORMATOS[t.tipo] ? FORMATOS[t.tipo].etiqueta : null, texto_busqueda: normal(t.nombre) }));
 const tramitesSede = lista.filter(t => enSede(t.href)).length;
 const DESTINO = { pdf: 'Impreso en PDF', doc: 'Impreso en Word', documento: 'Documento en el tablón de la sede' };
+/* iconos del sprite (fuente/_iconos.html): un atajo con un icono que no existe sería un hueco */
+const ICONOS = new Set([...leer('fuente/_iconos.html').matchAll(/id="i-([\w-]+)"/g)].map(m => m[1]));
+const temasDatos = (M.tramites.temas || []).map(tm => ({ ...tm, tramites: tm.tramites.map(conHref) }));
+/* temas en dos columnas que se apilan (sin huecos al abrir un desplegable): la primera mitad a
+   la izquierda, así el orden de lectura y de tabulación baja por cada columna */
+const mitadTemas = Math.ceil(temasDatos.length / 2);
 const tramites = {
-  atajos: (M.tramites.atajos || []).map(conHref).map(t => ({ ...t, destino: DESTINO[t.tipo] || (enSede(t.href) ? 'Se abre la sede electrónica' : 'Se abre otra web') })),
-  temas: (M.tramites.temas || []).map(tm => ({ ...tm, tramites: tm.tramites.map(conHref) })),
+  /* atajos: icono (opcional, del sprite) y la flecha en la esquina. El destino solo se ve si no es
+     la sede (un impreso, un documento); «se abre la sede» lo dice el texto oculto */
+  atajos: (M.tramites.atajos || []).map(conHref).map(t => {
+    const icono = t.icono || 'documento';
+    if (!ICONOS.has(icono)) errores.push('tramites.atajos «' + t.nombre + '»: no hay icono «' + icono + '» en fuente/_iconos.html');
+    return { ...t, icono, destino: DESTINO[t.tipo] || null, sr: DESTINO[t.tipo] ? '' : t.sr };
+  }),
+  temas: temasDatos,
+  temas_columnas: [temasDatos.slice(0, mitadTemas), temasDatos.slice(mitadTemas)].filter(c => c.length).map(temas => ({ temas })),
   momentos: (M.tramites.momentos || []).map(m => ({ ...m, pasos: m.pasos.map(p => (p.id || p.url ? conHref(p) : { ...p, href: null, sr: '' })) })),
   lista, total: lista.length, en_sede: tramitesSede, impresos: lista.filter(t => t.formato).length
 };

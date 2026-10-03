@@ -60,9 +60,11 @@
       </div>
       <ul class="atajos">
         {{#tramites.atajos}}<li><a class="atajo" href="{{href}}">
-          <span class="atajo__nombre">{{nombre}}</span>
+          <svg class="icono atajo__icono" aria-hidden="true"><use href="#i-{{icono}}"/></svg>
+          <svg class="icono atajo__flecha" aria-hidden="true"><use href="#i-salida"/></svg>
+          <span class="atajo__nombre">{{nombre}}<span class="sr">{{sr}}</span></span>
           <span class="atajo__nota">{{nota}}</span>
-          <span class="atajo__destino"><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg>{{destino}}</span>
+          {{#destino}}<span class="atajo__destino">{{destino}}</span>{{/destino}}
         </a></li>
         {{/tramites.atajos}}
       </ul>
