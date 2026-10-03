@@ -40,13 +40,16 @@
         {{{pleno.svg}}}
         <figcaption class="sr">{{pleno.descripcion}}</figcaption>
       </figure>
-      <ul class="pleno__leyenda">
-        {{#pleno.grupos}}<li><svg class="pleno__muestra" viewBox="0 0 28 28" aria-hidden="true">{{{muestra}}}</svg><span><b>{{sigla}}</b> · {{n}} {{concejales}}<span class="pleno__papel">{{nombre}} · {{papel}}</span></span></li>
-        {{/pleno.grupos}}
-      </ul>
+      <div class="pleno__lado">
+        <ul class="pleno__leyenda">
+          {{#pleno.grupos}}<li data-grupo="{{clave}}" data-sigla="{{sigla}}"><svg class="pleno__muestra" viewBox="0 0 28 28" aria-hidden="true">{{{muestra}}}</svg><span><b>{{sigla}}</b> · {{n}} {{concejales}}<span class="pleno__papel">{{nombre}} · {{papel}}</span></span></li>
+          {{/pleno.grupos}}
+        </ul>
+        <p class="pleno__ayuda" id="pleno-ayuda" data-pleno-ayuda hidden>Pase el ratón o lleve el foco a un grupo para ver sus escaños; púlselo para dejarlos marcados.</p>
+      </div>
     </div>
     <div class="grupos">
-      {{#pleno.grupos}}<div class="grupo">
+      {{#pleno.grupos}}<div class="grupo" data-grupo="{{clave}}">
         <h3 class="grupo__titulo"><svg class="pleno__muestra" viewBox="0 0 28 28" aria-hidden="true">{{{muestra}}}</svg>{{nombre}} ({{sigla}})</h3>
         <ul class="grupo__lista">
           {{#miembros}}<li><b>{{nombre}}</b><span>{{cargo}}</span></li>{{/miembros}}

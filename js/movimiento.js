@@ -10,6 +10,7 @@
      · las filas del panel «Hoy» entran escalonadas: al acabar la cortina o,
        si no la hay, una vez al cargar
      · los escaños del hemiciclo aparecen en orden al entrar en pantalla
+     · v3: el perfil del pueblo del pie se traza al asomar
      · la foto de la noticia que se abre desde la portada se transforma en la
        del artículo (pageswap / pagereveal de las View Transitions) */
 (function () {
@@ -85,6 +86,20 @@
       });
     }, { rootMargin: '0px 0px 40px 0px', threshold: 0 });
     figuras.forEach(function (f) { io.observe(f); });
+  }
+
+  /* ═══ v3. el perfil del pueblo del pie se traza una vez, al asomar ═══
+     Margen 0: arranca con el primer píxel a la vista (arriba del perfil solo hay cielo) */
+  var perfiles = $$('.pie__perfil').filter(function (p) { return p.querySelector('path'); });
+  if (perfiles.length && 'IntersectionObserver' in window) {
+    var ioPerfil = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('mov-perfil');
+        ioPerfil.unobserve(e.target);
+      });
+    }, { rootMargin: '0px', threshold: 0 });
+    perfiles.forEach(function (p) { ioPerfil.observe(p); });
   }
 
   /* ═══ 15. la foto de la noticia viaja de la portada al artículo ═══

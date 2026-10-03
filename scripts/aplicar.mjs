@@ -303,12 +303,13 @@ function hemiciclo() {
   const descripcion = `Pleno de ${N} concejales. ` + (gob.length ? `Gobierno: ${enumerar(gob)}. ` : '') + (opo.length ? `Oposición: ${enumerar(opo)}.` : '');
   const svg = `<svg class="hemiciclo" viewBox="28 28 244 140" role="img" aria-labelledby="hemiciclo-t hemiciclo-d"><title id="hemiciclo-t">Reparto del pleno</title><desc id="hemiciclo-d">${descripcion}</desc>` +
     `<defs>${grupos.map(trama).join('')}</defs>` +
-    puntos.map((p, i) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${rAs}" fill="url(#trama-${slugDe(asientos[i].sigla)})" stroke="${asientos[i].color}" stroke-width="1.5"/>`).join('') +
+    /* data-grupo: js/identidad.js resalta los escaños de un grupo al pasar por su leyenda */
+    puntos.map((p, i) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${rAs}" fill="url(#trama-${slugDe(asientos[i].sigla)})" stroke="${asientos[i].color}" stroke-width="1.5" data-grupo="${slugDe(asientos[i].sigla)}"/>`).join('') +
     `<text class="hemiciclo__total" x="150" y="138" text-anchor="middle" font-size="40">${N}</text><text class="hemiciclo__rotulo" x="150" y="158" text-anchor="middle" font-size="12">concejales</text></svg>`;
   return {
     svg, descripcion,
     grupos: grupos.map(g => ({
-      sigla: g.sigla, nombre: g.nombre, n: cuenta(g), concejales: cuenta(g) === 1 ? 'concejal' : 'concejales',
+      sigla: g.sigla, clave: slugDe(g.sigla), nombre: g.nombre, n: cuenta(g), concejales: cuenta(g) === 1 ? 'concejal' : 'concejales',
       papel: g.gobierno ? 'gobierno' : 'oposición',
       muestra: `<rect x="1" y="1" width="26" height="26" rx="13" fill="url(#trama-${slugDe(g.sigla)})" stroke="${g.color}" stroke-width="1.5"/>`,
       miembros: miembros.filter(m => m.grupo === g.sigla).map(m => ({ nombre: m.nombre, cargo: m.cargo }))
@@ -527,6 +528,47 @@ for (const [id, c] of Object.entries(M.cabeceras || {})) {
 if (cabeceras.pueblo && pueblo.lugares.length > 1 && pueblo.lugares[0].foto === cabeceras.pueblo.archivo) pueblo.lugares.push(pueblo.lugares.shift());
 const creditos = [...usadas.values()];
 
+/* ───────────────────────── identidad (v3): el perfil del pueblo y el plano del pie ─────────────────────────
+   marca/perfil.svg (scripts/perfil.mjs) es el perfil del pueblo a línea; sin él, el genérico de
+   fuente/_perfil_generico.svg. marca/plano.svg (scripts/plano.mjs, desde OpenStreetMap) es el plano
+   de las calles del Ayuntamiento; sin él, el pie va a dos columnas. Se incrustan: ni una petición.
+   Solo se aceptan sus elementos de dibujo, sin colores ni estilos (los pone css/base.css) */
+function svgLimpio(rel, permitidos) {
+  const src = leer(rel).replace(/<\?xml[^>]*>|<!--[\s\S]*?-->/g, '');
+  const vb = (/<svg\b[^>]*\bviewBox="([-\d.\s]+)"/.exec(src) || [])[1];
+  if (!vb) { errores.push(rel + ': falta el viewBox'); return null; }
+  const etiquetas = [...src.matchAll(/<([a-zA-Z][\w-]*)\b/g)].map(m => m[1]).filter(t => t !== 'svg');
+  const raras = [...new Set(etiquetas.filter(t => !permitidos.includes(t)))];
+  if (raras.length) errores.push(rel + ': solo puede llevar ' + permitidos.join(', ') + ' (lleva ' + raras.join(', ') + ')');
+  if (/#[0-9a-f]{3,8}\b|\b(rgba?|hsla?|oklch)\(|\bstyle=|\bfill=|\bstroke=|\bon[a-z]+=|<script|href=/i.test(src.replace(/viewBox="[^"]*"/, ''))) errores.push(rel + ': sin colores, estilos, enlaces ni scripts (los colores salen de los tokens)');
+  const cuerpo = src.replace(/^[\s\S]*?<svg\b[^>]*>/, '').replace(/<\/svg>\s*$/, '').trim();
+  return { vb, cuerpo, nombre: (/<svg\b[^>]*\bdata-(?:perfil|plano)="([^"]*)"/.exec(src) || [])[1] || null };
+}
+const perfilRel = existe('marca/perfil.svg') ? 'marca/perfil.svg' : 'fuente/_perfil_generico.svg';
+const perfilSvg = svgLimpio(perfilRel, ['path']);
+/* cada trazo con pathLength="1": la animación lo dibuja de 1 a 0 (css/movimiento.css) */
+const perfil = perfilSvg ? {
+  propio: perfilRel.startsWith('marca/'), nombre: perfilSvg.nombre || (perfilRel.startsWith('marca/') ? 'propio' : 'generico'),
+  svg: `<svg class="pie__perfil-dibujo" viewBox="${perfilSvg.vb}" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">` +
+    perfilSvg.cuerpo.replace(/<path\b/g, '<path pathLength="1"').replace(/\s*\n\s*/g, '') + '</svg>'
+} : null;
+let plano = null;
+if (existe('marca/plano.svg')) {
+  const s = svgLimpio('marca/plano.svg', ['rect', 'path', 'circle', 'text', 'g']);
+  const meta = leerJSON('marca/plano.json', {});
+  if (!meta.atribucion || !meta.atribucion_url) errores.push('marca/plano.json: falta la atribución de OpenStreetMap (atribucion y atribucion_url). Vuelve a ejecutar node scripts/plano.mjs');
+  if (s) plano = {
+    svg: `<svg class="pie__plano-dibujo" viewBox="${s.vb}" aria-hidden="true" focusable="false">${s.cuerpo.replace(/\s*\n\s*/g, '')}</svg>`,
+    atribucion: meta.atribucion || '© colaboradores de OpenStreetMap', atribucion_url: meta.atribucion_url || 'https://www.openstreetmap.org/copyright',
+    fecha_texto: meta.fecha && ISO.test(meta.fecha) ? fechaTexto(meta.fecha) : null,
+    calles: (meta.calles_rotuladas || []).length ? meta.calles_rotuladas.join(', ').replace(/, ([^,]*)$/, ' y $1') : null
+  };
+}
+/* enlaces útiles del pie: los de la sede solo si existen (como la franja de la sede) */
+const pieEnlaces = [['Sede electrónica', sede.inicio], ['Tablón de anuncios', sede.tablon], ['Transparencia', sede.transparencia], ['Perfil del contratante', sede.perfil],
+  ['Trámites', 'tramites.html'], ['Teléfonos', 'telefonos.html'], ['Agenda', 'agenda.html'], ['Accesibilidad', 'accesibilidad.html']]
+  .filter(([, href]) => href).map(([texto, href]) => ({ texto, href, interno: !/^https?:/.test(href), sr: /^https?:/.test(href) ? srDe(href) : null }));
+
 /* ───────────────────────── legal ───────────────────────── */
 const instancia = { href: sede.instancia, nombre: 'Instancia general' };
 const deCatalogo = (re) => { const t = buscarTramite(re); return t ? { href: t.href, nombre: t.nombre } : instancia; };
@@ -607,6 +649,7 @@ escribir('js/tramites-datos.js', '/* GENERADO por scripts/aplicar.mjs desde muni
 const huella = rel => existe(rel) ? crypto.createHash('md5').update(fs.readFileSync(r(rel))).digest('hex').slice(0, 8) : '0';
 const v = { fuentes: huella('css/fuentes.css'), marca: huella('css/marca.css'), base: huella('css/base.css'), main: huella('js/main.js'), vivo: huella('js/vivo.js'), cortina: huella('js/cortina.js'), datos: huella('js/tramites-datos.js') };
 v.movimiento = huella('css/movimiento.css'); v.movimiento_js = huella('js/movimiento.js');   /* animaciones (todo bajo prefers-reduced-motion: no-preference) */
+v.imprimir = huella('css/imprimir.css'); v.identidad = huella('js/identidad.js');                /* v3: hoja de impresión; hemiciclo y botón de imprimir */
 const fuentesDir = existe('fonts') ? fs.readdirSync(r('fonts')) : [];
 const pre = (fam, peso) => fuentesDir.find(f => f.startsWith(slugDe(fam) + '-' + peso + '-latin.'));
 const precargar = [pre(marcaConf.letra.titulares, '700'), pre(marcaConf.letra.texto, '400')].filter(Boolean).map(f => 'fonts/' + f);
@@ -640,7 +683,8 @@ const comun = {
   mapa_embed_url: 'https://www.google.com/maps?q=' + encodeURIComponent(M.contacto.mapa_consulta || `Ayuntamiento de ${N}, ${M.contacto.direccion}, ${M.contacto.cp} ${N}`) + '&output=embed',
   como_llegar_url: 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(M.contacto.mapa_consulta || `Ayuntamiento de ${N}`),
   web_actual: webActual, web_actual_texto: webActual ? webActual.replace(/^https?:\/\//, '').replace(/\/$/, '') : null,
-  accesibilidad, privacidad
+  accesibilidad, privacidad,
+  perfil, plano, pie_enlaces: pieEnlaces, fecha_datos_texto: fechaTexto(M.fecha_datos || ahora.iso), web_texto: url ? url.replace(/^https?:\/\//, '').replace(/\/$/, '') : null
 };
 
 const conParciales = (src, n = 0) => {
