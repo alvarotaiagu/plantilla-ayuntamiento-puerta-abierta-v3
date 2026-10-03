@@ -1,0 +1,117 @@
+/* movimiento.js — el movimiento que necesita JavaScript. Sin dependencias.
+   Va después de main.js (defer, en orden), cuando lo vivo ya está pintado.
+
+   Mejora progresiva estricta: nada empieza oculto. Cada animación se crea al
+   vuelo y solo pone su «desde» mientras corre (WAAPI con fill: backwards o una
+   clase que añade una animación CSS). Si esto no carga, falla o el navegador
+   pide movimiento reducido, la página se queda exactamente como viene.
+     · window.Movimiento.transicion(fn, caja): los filtros del tablón con
+       document.startViewTransition (lo llama main.js; sin soporte, fn() a secas)
+     · las filas del panel «Hoy» entran escalonadas: al acabar la cortina o,
+       si no la hay, una vez al cargar
+     · los escaños del hemiciclo aparecen en orden al entrar en pantalla
+     · la foto de la noticia que se abre desde la portada se transforma en la
+       del artículo (pageswap / pagereveal de las View Transitions) */
+(function () {
+  'use strict';
+  var html = document.documentElement;
+  var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+  var quieto = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+  function hayMovimiento() { return !quieto.matches; }
+  var SALIDA = 'cubic-bezier(.22, 1, .36, 1)';
+
+  /* ═══ 22. filtros del tablón: las filas se recolocan en vez de saltar ═══ */
+  var enCurso = 0;
+  function transicion(fn, caja) {
+    if (!hayMovimiento() || typeof document.startViewTransition !== 'function') { fn(); return; }
+    var n = ++enCurso;
+    var filas = caja ? $$('.tablon__fila', caja) : [];
+    /* nombres únicos solo mientras dura: fuera de la transición no pintan nada */
+    filas.forEach(function (f, i) { f.style.viewTransitionName = 'mov-tablon-' + i; });
+    html.classList.add('mov-tablon');
+    var limpiar = function () {
+      if (n !== enCurso) return;
+      html.classList.remove('mov-tablon');
+      filas.forEach(function (f) { f.style.viewTransitionName = ''; });
+    };
+    try {
+      var t = document.startViewTransition(fn);
+      t.finished.then(limpiar, limpiar);
+    } catch (e) { limpiar(); fn(); }
+  }
+  window.Movimiento = { transicion: transicion };
+
+  if (!hayMovimiento()) return;
+
+  /* ═══ 21. las filas de «Hoy» entran escalonadas ═══
+     Con cortina: se preparan ya (en pausa, con su «desde») y arrancan cuando
+     la cortina se va, venga de cortina.js, de main.js o de la red de seguridad
+     del <head>. Sin cortina: al cargar. Sin medir nada (getBoundingClientRect
+     forzaría un layout dentro de la tarea de carga): una fila oculta o fuera de
+     pantalla anima sin que se vea, y no cuesta. */
+  function filasHoy() {
+    return $$('.hoy__fila').map(function (f, i) {
+      if (typeof f.animate !== 'function') return null;
+      return f.animate([{ transform: 'translateY(12px)' }, { transform: 'none' }],
+        { duration: 480, delay: 90 + i * 70, easing: SALIDA, fill: 'backwards' });
+    }).filter(Boolean);
+  }
+  var anims = filasHoy();
+  if (html.classList.contains('con-cortina') && anims.length) {
+    anims.forEach(function (a) { a.pause(); });
+    var soltar = function () {
+      if (!anims) return;
+      anims.forEach(function (a) { a.play(); });
+      anims = null;
+      obs.disconnect();
+      clearTimeout(red);
+    };
+    var obs = new MutationObserver(function () { if (!html.classList.contains('con-cortina')) soltar(); });
+    obs.observe(html, { attributes: true, attributeFilter: ['class'] });
+    var red = setTimeout(soltar, 3000);   /* pase lo que pase, a los 3 s están en su sitio */
+  }
+
+  /* ═══ 23. escaños del hemiciclo, en orden, una vez ═══ */
+  var figuras = $$('.pleno__figura').filter(function (f) { return f.querySelector('circle'); });
+  if (figuras.length && 'IntersectionObserver' in window) {
+    figuras.forEach(function (f) { $$('circle', f).forEach(function (c, i) { c.style.setProperty('--i', i); }); });
+    /* umbral 0 y 40 px de margen: arranca justo antes de asomar (memoria
+       «IntersectionObserver en sección alta») */
+    var io = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('mov-escanos');
+        io.unobserve(e.target);
+      });
+    }, { rootMargin: '0px 0px 40px 0px', threshold: 0 });
+    figuras.forEach(function (f) { io.observe(f); });
+  }
+
+  /* ═══ 15. la foto de la noticia viaja de la portada al artículo ═══
+     En el listado y en el artículo el nombre viene en la plantilla. En la
+     portada, la línea de tiempo la repinta main.js cada minuto: el nombre se
+     pone al salir, solo a la foto de la noticia pulsada. */
+  function idNoticia(url) { var m = String(url || '').match(/noticia-([a-z0-9-]+)\.html/i); return m ? m[1] : null; }
+  function nombrarFoto(id) {
+    if (!id) return;
+    var nombre = 'noticia-' + id;
+    if ($$('.noticia__foto, .linea__foto, .articulo__foto').some(function (f) { return f.style.viewTransitionName === nombre; })) return;
+    $$('a[href$="noticia-' + id + '.html"]').some(function (a) {
+      var item = a.closest('.linea__item, .noticia, li');
+      var foto = item && item.querySelector('.linea__foto, .noticia__foto');
+      if (!foto || foto.style.viewTransitionName) return false;
+      foto.style.viewTransitionName = nombre;
+      return true;
+    });
+  }
+  window.addEventListener('pageswap', function (e) {
+    if (!e.viewTransition || !e.activation || !e.activation.entry) return;
+    nombrarFoto(idNoticia(e.activation.entry.url));
+  });
+  /* de vuelta a la portada (atrás): solo si este script llega antes del primer
+     pintado; si no, la página entra con el fundido normal */
+  window.addEventListener('pagereveal', function (e) {
+    if (!e.viewTransition || !window.navigation || !navigation.activation || !navigation.activation.from) return;
+    nombrarFoto(idNoticia(navigation.activation.from.url));
+  });
+})();

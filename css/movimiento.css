@@ -1,0 +1,245 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   movimiento.css — animaciones y microinteracciones de «Puerta abierta».
+
+   Reglas (sector público, WCAG 2.1 AA):
+   - TODO va dentro de @media (prefers-reduced-motion: no-preference). Con
+     movimiento reducido este archivo no hace nada y la web se ve completa y
+     quieta (además, base.css quita transiciones y animaciones con !important).
+   - El estado de reposo de cada regla es el FINAL: si una animación no arranca
+     o el navegador no soporta la API, todo se ve. Nada de texto con opacity en
+     revelados por scroll: se mueve con transform y se dibujan elementos
+     decorativos (la raya de oro, la línea de tiempo, los puntos).
+   - Ningún bucle infinito (el latido de «Abierto ahora» da 3 vueltas).
+   - Colores solo con tokens. Duraciones de 100 a 600 ms.
+   Mejora progresiva: View Transitions, scroll-driven animations, @starting-style
+   y ::details-content se ven en Chromium (y en Safari lo que ya soporta);
+   en Firefox la web queda igual que sin este archivo.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --curva-salida: cubic-bezier(.22, 1, .36, 1);     /* ease-out «quint»: llega y se posa */
+  --curva-va-y-viene: cubic-bezier(.65, 0, .35, 1); /* ease-in-out para lo que vuelve */
+}
+
+@media (prefers-reduced-motion: no-preference) {
+
+  /* ═══ 15. Transiciones entre páginas (View Transitions entre documentos) ═══
+     La cabecera (con el escudo) se queda quieta: tiene su propio grupo y no se
+     anima. El resto funde y sube 10 px. La foto de una noticia (listado o
+     portada) se transforma en la del artículo: cada una lleva un
+     view-transition-name único (noticia-<id>) puesto en la plantilla, o al
+     salir de la portada desde js/movimiento.js (pageswap).
+     La cortina de la portada salta la transición (lo decide el <head>). */
+  @view-transition { navigation: auto; }
+
+  /* con nombre, la cabecera es un contexto de apilamiento: z-index 90 para que
+     el panel del menú móvil (fixed, z 90 dentro) siga por encima de la página */
+  .cabecera { view-transition-name: cabecera; position: relative; z-index: 90; }
+  ::view-transition-group(cabecera) { animation: none; }
+  ::view-transition-old(cabecera) { display: none; }
+  ::view-transition-new(cabecera) { animation: none; }
+
+  ::view-transition-old(root) { animation: mov-funde-sale .16s ease-in both; }
+  ::view-transition-new(root) { animation: mov-entra-pagina .34s var(--curva-salida) .06s both; }
+
+  .noticia__foto, .articulo__foto, .linea__foto { view-transition-class: foto-noticia; }
+  ::view-transition-group(*.foto-noticia) { animation-duration: .42s; animation-timing-function: var(--curva-salida); }
+  ::view-transition-old(*.foto-noticia),
+  ::view-transition-new(*.foto-noticia) { height: 100%; object-fit: cover; }
+
+  /* ═══ 22. Filtros del tablón: las filas se recolocan (document.startViewTransition).
+     js/movimiento.js pone los nombres a las filas solo mientras dura y marca
+     <html> con .mov-tablon para no usar la entrada de página. ═══ */
+  .tablon__fila { view-transition-class: tablon-fila; }
+  html.mov-tablon::view-transition-group(*) { animation-duration: .3s; animation-timing-function: var(--curva-salida); }
+  html.mov-tablon::view-transition-old(root) { animation: mov-funde-sale .14s ease-in both; }
+  html.mov-tablon::view-transition-new(root) { animation: mov-funde-entra .2s ease-out both; }
+
+  @keyframes mov-funde-sale { to { opacity: 0; } }
+  @keyframes mov-funde-entra { from { opacity: 0; } }
+  @keyframes mov-entra-pagina { from { opacity: 0; transform: translateY(10px); } }
+
+  /* ═══ 16 y 17. Ligado al scroll (animation-timeline: view()) ═══
+     Solo transform y escala de decoraciones. Sin soporte, @supports no entra y
+     todo queda en su estado final. Los rangos se miden en alto de pantalla:
+     «entry-crossing 25vh» = cuando el borde de arriba pasa por el 75 % de la
+     pantalla, así la punta de la línea va siempre un cuarto por encima del
+     borde inferior y cada punto aparece justo cuando la punta llega a él. */
+  @supports (animation-timeline: view()) {
+
+    /* 16. el h2 sube 12 px y su raya de oro se dibuja desde la izquierda */
+    .seccion__titulo {
+      view-timeline: --titulo block;
+      animation: mov-sube linear both;
+      animation-timeline: --titulo;
+      animation-range: entry-crossing 4vh entry-crossing calc(100% + 16vh);
+      animation-timing-function: var(--curva-salida);
+    }
+    .seccion__titulo::before {
+      transform-origin: left center;
+      animation: mov-raya linear both;
+      animation-timeline: --titulo;
+      animation-range: entry-crossing 8vh entry-crossing calc(100% + 26vh);
+      animation-timing-function: var(--curva-salida);
+    }
+
+    /* 17. la línea de tiempo se traza de arriba abajo, pasa por «Hoy» y los
+       puntos saltan al llegar la punta (escalonados por su posición) */
+    .linea { view-timeline: --linea block; }
+    .linea::before {
+      transform-origin: center top;
+      animation: mov-traza linear both;
+      animation-timeline: --linea;
+      animation-range: entry-crossing 25vh entry-crossing calc(100% + 25vh);
+    }
+    .linea__item, .linea__hoy { view-timeline: --punto block; }
+    .linea__item::before, .linea__marca {
+      animation: mov-punto linear both;
+      animation-timeline: --punto;
+      animation-range: entry-crossing 23vh entry-crossing calc(23vh + 56px);
+    }
+    .linea__hoy::after {
+      transform-origin: left center;
+      animation: mov-raya linear both;
+      animation-timeline: --punto;
+      animation-range: entry-crossing 24vh entry-crossing calc(24vh + 140px);
+      animation-timing-function: var(--curva-salida);
+    }
+  }
+  @keyframes mov-sube { from { translate: 0 12px; } to { translate: none; } }
+  @keyframes mov-raya { from { scale: 0 1; } to { scale: 1 1; } }
+  @keyframes mov-traza { from { scale: 1 0; } to { scale: 1 1; } }
+  @keyframes mov-punto { 0% { scale: 0; } 70% { scale: 1.15; } 100% { scale: 1; } }
+
+  /* ═══ 18. Atajos: «la puerta que se abre». Un arco de medio punto en
+     --marca-tenue sube desde abajo DETRÁS del texto. Mide el alto de la tarjeta
+     más medio ancho (padding-top en % = ancho del padre): con el arco del todo
+     arriba, la parte recta cubre la tarjeta entera y queda igual que el hover
+     de siempre. El texto pasa AA sobre --superficie y sobre --marca-tenue
+     (parejas medidas en scripts/lib/color.mjs), así que pasa en cada fotograma. ═══ */
+  .atajo { position: relative; isolation: isolate; overflow: hidden; }
+  .atajo::before {
+    content: ""; position: absolute; left: 0; bottom: 0; z-index: -1;
+    box-sizing: content-box; width: 100%; height: 100%; padding-top: 50%;
+    border-radius: 9999px 9999px 0 0;
+    background: var(--marca-tenue);
+    translate: 0 100%;
+    transition: translate .26s var(--curva-va-y-viene);
+    pointer-events: none;
+  }
+  .atajo:hover, .atajo:focus-visible { background: var(--superficie); }
+  .atajo:hover::before, .atajo:focus-visible::before {
+    translate: none;
+    transition-duration: .5s; transition-timing-function: cubic-bezier(.33, 1, .68, 1);
+  }
+
+  /* ═══ 19. Menú móvil, buscador y desplegables ═══ */
+  /* el panel del menú baja como una persiana (clip-path, sin opacity: el texto
+     nunca está a medias) y los enlaces llegan escalonados. display se anima en
+     discreto para que al cerrar dé tiempo a recogerse. */
+  @media (max-width: 63.99em) {
+    html.con-js .menu {
+      clip-path: inset(0 0 100% 0);
+      transition: clip-path .22s var(--curva-va-y-viene), display .22s allow-discrete;
+    }
+    html.con-js .menu:not(.esta-abierto) { pointer-events: none; }
+    html.con-js .menu.esta-abierto {
+      clip-path: inset(0);
+      transition: clip-path .34s var(--curva-salida), display .34s allow-discrete;
+    }
+    html.con-js .menu.esta-abierto .menu__lista > li,
+    html.con-js .menu.esta-abierto .menu__sede {
+      transition: translate .36s var(--curva-salida);
+      transition-delay: calc(var(--mov-n, 0) * 30ms + 60ms);
+    }
+    .menu__lista > li:nth-child(2) { --mov-n: 1; }
+    .menu__lista > li:nth-child(3) { --mov-n: 2; }
+    .menu__lista > li:nth-child(4) { --mov-n: 3; }
+    .menu__lista > li:nth-child(5) { --mov-n: 4; }
+    .menu__lista > li:nth-child(6) { --mov-n: 5; }
+    .menu__lista > li:nth-child(7) { --mov-n: 6; }
+    .menu__lista > li:nth-child(n+8) { --mov-n: 7; }
+    .menu__sede { --mov-n: 8; }
+    @starting-style {
+      html.con-js .menu.esta-abierto { clip-path: inset(0 0 100% 0); }
+      html.con-js .menu.esta-abierto .menu__lista > li,
+      html.con-js .menu.esta-abierto .menu__sede { translate: 0 -.6rem; }
+    }
+  }
+
+  /* el buscador (<dialog>): de .97 a 1 con el fondo fundiendo; al cerrar, al
+     revés. overlay y display en discreto lo mantienen en la capa superior
+     mientras sale (Chromium; en Safari se cierra en seco). */
+  .buscador[open] { transition: scale .26s var(--curva-salida); }
+  .buscador[open]::backdrop { transition: opacity .26s ease-out; }
+  /* la salida solo donde el diálogo puede quedarse en la capa superior mientras
+     se va (overlay); si no, se vería un fotograma fuera de sitio */
+  @supports (overlay: auto) {
+    .buscador {
+      scale: .97; opacity: 0;
+      transition: scale .2s var(--curva-salida), opacity .16s ease-in, overlay .2s allow-discrete, display .2s allow-discrete;
+    }
+    .buscador[open] {
+      scale: 1; opacity: 1;
+      transition: scale .26s var(--curva-salida), overlay .26s allow-discrete, display .26s allow-discrete;
+    }
+    .buscador::backdrop { opacity: 0; transition: opacity .2s ease-in, overlay .2s allow-discrete, display .2s allow-discrete; }
+    .buscador[open]::backdrop { opacity: 1; transition: opacity .26s ease-out, overlay .26s allow-discrete, display .26s allow-discrete; }
+  }
+  /* @starting-style DESPUÉS: con la misma especificidad, la última regla gana
+     también al calcular el estilo de partida */
+  @starting-style {
+    .buscador[open] { scale: .97; opacity: 1; }
+    .buscador[open]::backdrop { opacity: 0; }
+  }
+
+  /* los <details> de trámites se abren animados (::details-content +
+     interpolate-size). Sin soporte, se abren en seco como siempre.
+     overflow-clip-margin: que el anillo de foco del primer enlace no se corte. */
+  @supports (interpolate-size: allow-keywords) {
+    :root { interpolate-size: allow-keywords; }
+    .tema::details-content {
+      block-size: 0; overflow: clip; overflow-clip-margin: .5rem;
+      transition: block-size .3s var(--curva-va-y-viene), content-visibility .3s allow-discrete;
+    }
+    .tema[open]::details-content { block-size: auto; }
+  }
+
+  /* ═══ 20. «Abierto ahora»: un anillo que late 3 veces y para ═══ */
+  .esta-abierto .estado__punto { position: relative; }
+  .esta-abierto .estado__punto::after {
+    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid var(--marca); opacity: 0; pointer-events: none;
+    animation: mov-latido 1.3s var(--curva-salida) .7s 3;
+  }
+  @keyframes mov-latido { 0% { scale: 1; opacity: .75; } 100% { scale: 2.8; opacity: 0; } }
+
+  /* ═══ 23. Detalles ═══ */
+  /* las flechas se adelantan 3 px; la de volver, hacia atrás; la de «sale a la sede», en diagonal */
+  .ver-todo .icono, .tablon__flecha { transition: translate .22s var(--curva-salida); }
+  .ver-todo:hover .icono, .ver-todo:focus-visible .icono,
+  .tablon__enlace:hover .tablon__flecha, .tablon__enlace:focus-visible .tablon__flecha { translate: 3px 0; }
+  .ver-todo:hover .icono--volver, .ver-todo:focus-visible .icono--volver { translate: -3px 0; }
+  .tablon__enlace:hover .tablon__flecha:has(use[href="#i-salida"]),
+  .tablon__enlace:focus-visible .tablon__flecha:has(use[href="#i-salida"]) { translate: 2px -2px; }
+
+  /* al pulsar, los botones se hunden un poco */
+  .boton, .boton-icono, .boton-menu, .filtro {
+    transition-property: background-color, border-color, color, scale;
+    transition-duration: .15s, .15s, .15s, .1s;
+    transition-timing-function: ease;
+  }
+  .boton:active, .boton-icono:active, .boton-menu:active, .filtro:active { scale: .98; }
+  .atajo { transition: border-color .15s, background-color .15s, scale .1s; }
+  .atajo:active { scale: .99; }
+
+  /* los escaños del hemiciclo aparecen en orden, una vez, al entrar en pantalla.
+     js/movimiento.js pone --i a cada escaño y la clase al llegar; antes de eso
+     (o sin JS) están todos a la vista. backwards: el «desde» solo cuenta en su espera. */
+  .pleno__figura.mov-escanos circle {
+    transform-box: fill-box; transform-origin: center;
+    animation: mov-escano .42s var(--curva-salida) backwards;
+    animation-delay: calc(var(--i, 0) * 45ms);
+  }
+  @keyframes mov-escano { from { scale: 0; } }
+}
