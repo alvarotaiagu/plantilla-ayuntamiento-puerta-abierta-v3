@@ -460,11 +460,15 @@ for (const a of C.avisos) {
   if (a.gravedad != null && !['urgente', 'programado', 'informativo'].includes(String(a.gravedad).toLowerCase().trim())) errores.push('avisos «' + a.id + '»: «gravedad» es "urgente", "programado" o "informativo"');
   if (a.caduca && Vivo.gravedad(a) !== 'informativo' && !a.titulo_corto && String(a.titulo).length > 70) avisos.push('aviso «' + a.id + '»: el título pasa de 70 caracteres; en la franja del móvil no cabe en dos líneas. Ponle «titulo_corto»');
 }
+const PALABRAS_MINUTO = 200;
+const contarPalabras = t => String(t).split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
 const noticias = C.noticias.filter(n => !n.oculto).slice().sort((a, b) => b.fecha.localeCompare(a.fecha)).map(n => {
   const f = n.imagen ? foto(n.imagen, n.imagen_alt, 'noticia: ' + n.titulo) : null;
   /* v3 · sin foto, la tarjeta lleva la fecha grande en un arco (dibujo: la fecha la lee el <time>) */
   const [fa, fm, fd] = n.fecha.split('-').map(Number);
-  return { ...n, fecha_texto: fechaTexto(n.fecha), fecha_dia: fd, fecha_mes: MESES[fm - 1].slice(0, 3), fecha_anio: fa,
+  /* v3b · M10: el tiempo de lectura del cuerpo, a 200 palabras por minuto (1 min como poco) */
+  const palabras = contarPalabras((n.cuerpo || []).join(' '));
+  return { ...n, fecha_texto: fechaTexto(n.fecha), palabras, lectura_min: Math.max(1, Math.round(palabras / PALABRAS_MINUTO)), fecha_dia: fd, fecha_mes: MESES[fm - 1].slice(0, 3), fecha_anio: fa,
     imagen: f ? n.imagen : null, imagen_ancho: f ? f.ancho : null, imagen_alto: f ? f.alto : null,
     imagen_alt: n.imagen_alt || '', resumen: n.resumen || null, ejemplo: !!n.ejemplo, fecha_aproximada: !!n.fecha_aproximada, fuente: n.fuente || null, relacionado: n.relacionado || null };
 });

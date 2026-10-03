@@ -1125,6 +1125,9 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 .noticia__resumen { color: var(--apagado); font-size: 1rem; }
 .articulo { max-width: calc(46rem + 2 * var(--margen)); margin-inline: 0; }
 .articulo__meta { color: var(--apagado); font-size: 1rem; }
+.articulo__lectura { white-space: nowrap; }
+/* v3b · M10: la barra de progreso de lectura solo existe en css/movimiento.css (con soporte y con movimiento) */
+.lectura-progreso { display: none; }
 .articulo__foto { margin: 0 0 1.5rem; aspect-ratio: 3 / 2; overflow: hidden; }
 .articulo__foto img { width: 100%; height: 100%; object-fit: cover; }
 .articulo__fuente { color: var(--apagado); font-size: 1rem; border-top: 1px solid var(--linea); padding-top: 1rem; margin-top: 1.5rem; }
