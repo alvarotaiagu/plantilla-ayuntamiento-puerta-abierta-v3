@@ -487,9 +487,18 @@ async function interaccion() {
   await ir(page, 'index.html');
   comprobar(await page.evaluate(() => { const m = document.getElementById('mando'); return m.hidden && getComputedStyle(m).display === 'none'; }), 'mando: sin ?revision no se ve (hidden y display:none)');
   await ir(page, 'index.html', '?revision');
-  const m0 = await page.evaluate(() => ({ vis: getComputedStyle(document.getElementById('mando')).display, radio: getComputedStyle(document.querySelector('.linea__foto') || document.body).borderTopLeftRadius, mas: [...document.querySelectorAll('.hoy__mas, .hoy .solo-sobria')].filter(e => e.checkVisibility()).length, color: getComputedStyle(document.querySelector('.cabecera__sede')).backgroundColor }));
+  /* radio del arco opcional: el de una foto de la línea o, si ninguna noticia reciente lleva foto,
+     el de una sonda con las mismas clases que se quita al medir */
+  await page.evaluate(() => { window.__radioArco = () => {
+    let e = document.querySelector('.linea__foto'), sonda = null;
+    if (!e) { sonda = e = document.createElement('figure'); e.className = 'linea__foto arco-opcional'; (document.querySelector('.linea') || document.body).append(e); }
+    const r = getComputedStyle(e).borderTopLeftRadius;
+    if (sonda) sonda.remove();
+    return r;
+  }; });
+  const m0 = await page.evaluate(() => ({ vis: getComputedStyle(document.getElementById('mando')).display, radio: window.__radioArco(), mas: [...document.querySelectorAll('.hoy__mas, .hoy .solo-sobria')].filter(e => e.checkVisibility()).length, color: getComputedStyle(document.querySelector('.cabecera__sede')).backgroundColor }));
   await page.click('[data-densidad="sobria"]');
-  const m1 = await page.evaluate(() => ({ clase: document.documentElement.classList.contains('densidad-sobria'), radio: getComputedStyle(document.querySelector('.linea__foto') || document.body).borderTopLeftRadius, mas: [...document.querySelectorAll('.hoy__mas, .hoy .solo-sobria')].filter(e => e.checkVisibility()).length, sobria: (document.querySelector('.hoy .solo-sobria') || {}).textContent || '', arquito: [...document.querySelectorAll('.linea__arquito')].some(e => e.checkVisibility()),
+  const m1 = await page.evaluate(() => ({ clase: document.documentElement.classList.contains('densidad-sobria'), radio: window.__radioArco(), mas: [...document.querySelectorAll('.hoy__mas, .hoy .solo-sobria')].filter(e => e.checkVisibility()).length, sobria: (document.querySelector('.hoy .solo-sobria') || {}).textContent || '', arquito: [...document.querySelectorAll('.linea__arquito')].some(e => e.checkVisibility()),
     diag: document.documentElement.className + ' | ' + [...document.querySelectorAll('.arco-opcional')].map(e => e.className + ':' + getComputedStyle(e).borderTopLeftRadius).join(', ') }));
   const tramitesSede = (fs.readFileSync(path.join(RAIZ, 'js/tramites-datos.js'), 'utf8').match(new RegExp(sedeBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
   comprobar(m0.vis === 'flex' && m0.mas === 0 && m1.clase && m1.radio !== m0.radio && m1.mas >= 2 && !m1.arquito && m1.sobria.includes(String(tramitesSede)),
