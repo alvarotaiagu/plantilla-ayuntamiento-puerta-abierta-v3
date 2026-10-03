@@ -365,6 +365,7 @@
       "telefono": "112"
     }
   ],
+  "horizonte_agenda_dias": 60,
   "listin_corto": [
     "Emergencias",
     "Policía Local",

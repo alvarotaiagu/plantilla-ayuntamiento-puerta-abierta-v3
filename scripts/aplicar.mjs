@@ -372,6 +372,8 @@ const D = {
   hoja: M.hoja && M.hoja.id ? M.hoja : null,
   tablon_json: 'contenido/tablon.json'
 };
+/* «Lo que viene» en la portada: cuántos días por delante (60 si no se dice) */
+D.horizonte_dias = Number(M.horizonte_agenda_dias) > 0 ? Number(M.horizonte_agenda_dias) : 60;
 for (const e of D.tablon.entradas) if (!enSede(e.url)) errores.push('tablon.json: enlace fuera de la sede: ' + e.url);
 const pintar = (b, op) => Vivo.pintar(b, D, ahora, op);
 const vivo = {

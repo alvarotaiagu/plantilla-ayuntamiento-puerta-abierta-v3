@@ -198,26 +198,51 @@
   }
 
   /* ── lo que viene y lo que pasó ── */
+  /* «Hoy» arriba y, debajo, dos bloques: lo que viene (lo más cercano primero, solo dentro del
+     horizonte de D.horizonte_dias, 60 por defecto) y lo que pasó (las últimas noticias) */
   function linea(D, ahora) {
-    var vienen = proximos(D, ahora, 3).reverse();      /* lo más cercano, pegado a «Hoy» */
+    var dias = D.horizonte_dias || 60, tope = sumarDias(ahora.iso, dias);
+    var todos = proximos(D, ahora);
+    var vienen = todos.filter(function (e) { return e.fecha <= tope; }).slice(0, 3);
+    var luego = todos.filter(function (e) { return e.fecha > tope; })[0];
     var pasaron = (D.noticias || []).filter(function (n) { return !n.oculto && n.fecha <= ahora.iso; })
       .sort(function (a, b) { return b.fecha.localeCompare(a.fecha); }).slice(0, 3);
-    var h = vienen.map(function (e) {
-      return '<li class="linea__item linea__item--evento"' + marcaEjemplo(e, 'evento:' + e.id) + '>' +
-        '<p class="linea__cuando"><time datetime="' + e.fecha + '">' + esc(cuando(e.fecha, ahora)) + (e.hora ? ', ' + hora(e.hora) : '') + '</time><span class="chip chip--agenda">Agenda</span>' + (e.ejemplo ? EJEMPLO : '') + '</p>' +
-        '<div class="linea__tarjeta"><div><h3 class="linea__titulo"><a href="' + esc(enlaceEvento(e, D)) + '">' + esc(e.titulo) + '</a></h3>' +
-        (e.lugar ? '<p class="linea__lugar">' + esc(e.lugar) + '</p>' : '') + '</div></div></li>';
-    }).join('');
-    h += '<li class="linea__hoy"><span class="linea__marca" aria-hidden="true"><svg class="linea__arquito" viewBox="0 0 20 24"><path d="M2 23V10a8 8 0 0 1 16 0v13"/></svg></span>' +
-      '<span class="linea__hoy-texto"><b>Hoy</b>, ' + esc(fechaLarga(ahora.iso)) + '</span></li>';
-    h += pasaron.map(function (n) {
-      return '<li class="linea__item linea__item--noticia"' + marcaEjemplo(n, 'noticia:' + n.id) + '>' +
-        '<p class="linea__cuando"><time datetime="' + n.fecha + '">' + esc(cuando(n.fecha, ahora)) + '</time><span class="chip chip--noticia">Noticia</span>' + (n.ejemplo ? EJEMPLO : '') + '</p>' +
-        '<div class="linea__tarjeta">' + (n.imagen ? '<figure class="linea__foto arco-opcional"><img src="' + esc(D.rutas.media + n.imagen + '-800.jpg') + '" alt="' + esc(n.imagen_alt || '') + '" width="400" height="300" loading="lazy" decoding="async"></figure>' : '') +
-        '<div><h3 class="linea__titulo"><a href="' + esc(enlaceNoticia(n, D)) + '">' + esc(n.titulo) + '</a></h3>' +
-        (n.resumen ? '<p class="linea__lugar">' + esc(n.resumen) + '</p>' : '') + '</div></div></li>';
-    }).join('');
-    return h;
+    var h = '<p class="linea__hoy"><span class="linea__marca" aria-hidden="true"><svg class="linea__arquito" viewBox="0 0 20 24"><path d="M2 23V10a8 8 0 0 1 16 0v13"/></svg></span>' +
+      '<span class="linea__hoy-texto"><b>Hoy</b>, ' + esc(fechaLarga(ahora.iso)) + '</span></p>';
+    h += '<div class="linea__bloques"><div class="linea__bloque linea__bloque--viene"><h3 class="linea__subtitulo">Lo que viene</h3>';
+    if (vienen.length) {
+      h += '<ol class="linea linea--viene">' + vienen.map(function (e) {
+        return '<li class="linea__item linea__item--evento"' + marcaEjemplo(e, 'evento:' + e.id) + '>' +
+          '<p class="linea__cuando"><time datetime="' + e.fecha + '">' + esc(cuando(e.fecha, ahora)) + (e.hora ? ', ' + hora(e.hora) : '') + '</time><span class="chip chip--agenda">Agenda</span>' + (e.ejemplo ? EJEMPLO : '') + '</p>' +
+          '<div class="linea__tarjeta"><div><h4 class="linea__titulo"><a href="' + esc(enlaceEvento(e, D)) + '">' + esc(e.titulo) + '</a></h4>' +
+          (e.lugar ? '<p class="linea__lugar">' + esc(e.lugar) + '</p>' : '') + '</div></div></li>';
+      }).join('') + '</ol>';
+    } else {
+      /* estado vacío: lo dice, y si hay algo más adelante, cuál es */
+      h += '<div class="linea__vacio"><p>No hay nada anunciado en los próximos ' + dias + ' días.</p>' +
+        (luego ? '<p>Lo siguiente en la agenda: <a href="' + esc(enlaceEvento(luego, D)) + '">' + esc(luego.titulo) + '</a>, ' + esc(fechaLarga(luego.fecha, ahora)) + '.</p>' : '') + '</div>';
+    }
+    h += '</div><div class="linea__bloque linea__bloque--paso"><h3 class="linea__subtitulo">Lo que pasó</h3>';
+    if (pasaron.length) {
+      h += '<ol class="linea linea--paso">' + pasaron.map(function (n) {
+        return '<li class="linea__item linea__item--noticia"' + marcaEjemplo(n, 'noticia:' + n.id) + '>' +
+          '<p class="linea__cuando"><time datetime="' + n.fecha + '">' + esc(cuando(n.fecha, ahora)) + '</time><span class="chip chip--noticia">Noticia</span>' + (n.ejemplo ? EJEMPLO : '') + '</p>' +
+          '<div class="linea__tarjeta">' + (n.imagen ? '<figure class="linea__foto arco-opcional"><img src="' + esc(D.rutas.media + n.imagen + '-800.jpg') + '" alt="' + esc(n.imagen_alt || '') + '" width="400" height="300" loading="lazy" decoding="async"></figure>' : '') +
+          '<div><h4 class="linea__titulo"><a href="' + esc(enlaceNoticia(n, D)) + '">' + esc(n.titulo) + '</a></h4>' +
+          (n.resumen ? '<p class="linea__lugar">' + esc(n.resumen) + '</p>' : '') + '</div></div></li>';
+      }).join('') + '</ol>';
+    } else if (pasados(D, ahora).length) {
+      /* sin noticias, lo último de la agenda que ya pasó */
+      h += '<ol class="linea linea--paso">' + pasados(D, ahora).slice(0, 3).map(function (e) {
+        return '<li class="linea__item linea__item--noticia"' + marcaEjemplo(e, 'evento:' + e.id) + '>' +
+          '<p class="linea__cuando"><time datetime="' + e.fecha + '">' + esc(cuando(e.fecha, ahora)) + '</time><span class="chip chip--noticia">Agenda</span>' + (e.ejemplo ? EJEMPLO : '') + '</p>' +
+          '<div class="linea__tarjeta"><div><h4 class="linea__titulo"><a href="' + esc(enlaceEvento(e, D)) + '">' + esc(e.titulo) + '</a></h4>' +
+          (e.lugar ? '<p class="linea__lugar">' + esc(e.lugar) + '</p>' : '') + '</div></div></li>';
+      }).join('') + '</ol>';
+    } else {
+      h += '<div class="linea__vacio"><p>Todavía no hay noticias publicadas.</p></div>';
+    }
+    return h + '</div></div>';
   }
 
   /* ── el año en fiestas ── */
