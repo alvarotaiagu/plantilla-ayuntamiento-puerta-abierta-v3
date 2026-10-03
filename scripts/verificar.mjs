@@ -636,6 +636,116 @@ async function estructura() {
   await e.ctx.close();
 }
 
+/* ── cabecera de las páginas interiores: la puerta no pisa el título ni las migas, cabe en la
+   pantalla, es de medio punto y, sin foto, está de pie sobre el filete. Sirve también para las copias ── */
+const medirCabecera = (page, densidad) => page.evaluate(d => {
+  const fallos = [], caja = e => e.getBoundingClientRect();
+  const cab = document.querySelector('main > .cabeza-pagina');
+  if (!cab) return ['sin .cabeza-pagina'];
+  const h1 = cab.querySelector('h1#titulo-pagina'), migas = cab.querySelector('nav.migas'), entr = cab.querySelector('.entradilla');
+  if (!h1 || !migas || !migas.querySelector('[aria-current="page"]')) fallos.push('h1 o migas');
+  const puerta = cab.querySelector('.cabeza-pagina__puerta'), linea = cab.classList.contains('cabeza-pagina--arco'), foto = cab.classList.contains('cabeza-pagina--foto');
+  if (!puerta) return fallos;
+  const arco = puerta.querySelector('.cabeza-pagina__arco'), umbral = puerta.querySelector('.cabeza-pagina__umbral');
+  const W = document.documentElement.clientWidth;
+  if (d === 'sobria' && linea) { if (puerta.checkVisibility()) fallos.push('en la sobria sale el arco de línea'); return fallos; }
+  const a = caja(arco);
+  if (!a.width || !a.height) return [...fallos, 'la puerta no se ve'];
+  const pisa = (r, s) => r.left < s.right - 0.5 && s.left < r.right - 0.5 && r.top < s.bottom - 0.5 && s.top < r.bottom - 0.5;
+  for (const [n, e] of [['el título', h1], ['las migas', migas], ['la entradilla', entr]]) if (e && pisa(a, caja(e))) fallos.push('el arco pisa ' + n);
+  for (const e of [arco, umbral]) { const r = caja(e); if (r.width && (r.left < -0.5 || r.right > W + 0.5)) fallos.push('se sale de la pantalla'); }
+  const radio = parseFloat(getComputedStyle(arco).borderTopLeftRadius);
+  if (d === 'puerta' && (a.height < a.width / 2 - 1 || radio < a.width / 2 - 1)) fallos.push(`no es de medio punto (${Math.round(a.width)}×${Math.round(a.height)}, radio ${radio})`);
+  if (d === 'sobria' && radio > 20) fallos.push('en la sobria la foto sigue en arco');
+  if (linea && Math.abs(caja(umbral).bottom - caja(cab).bottom) > 2) fallos.push(`el arco de línea no está de pie sobre el filete (${Math.round(caja(umbral).bottom)} / ${Math.round(caja(cab).bottom)})`);
+  if (foto) {
+    const img = arco.querySelector('img');
+    if (!img || !img.complete || !img.naturalWidth) fallos.push('la foto no carga');
+    const cr = puerta.querySelector('.credito');
+    if (cr && !cr.checkVisibility()) fallos.push('el crédito no se ve');
+  }
+  return fallos;
+}, densidad);
+
+/* ── páginas interiores: cabeceras, «El pueblo», patrimonio, «¿Quién se ocupa de qué?» y la cal ── */
+async function interiores() {
+  const conf = M.cabeceras || {};
+  const muestra = ['tramites.html', 'ayuntamiento.html', 'pueblo.html', 'telefonos.html', 'contacto.html', 'aviso-legal.html', PAGINAS.find(p => p.startsWith('noticia-')), '404.html'].filter(p => p && PAGINAS.includes(p));
+  const malos = [];
+  for (const [w, h, escala, densidades] of [[320, 640, 0, ['puerta']], [390, 844, 0, ['puerta', 'sobria']], [1024, 768, 0, ['puerta']], [1440, 900, 0, ['puerta', 'sobria']], [640, 400, 2, ['puerta']]]) {
+    for (const densidad of densidades) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: h }, escala, densidad });
+      for (const p of muestra) {
+        await ir(page, p, '?revision');
+        await page.evaluate(() => document.querySelectorAll('.cabeza-pagina img').forEach(i => { i.loading = 'eager'; }));
+        await page.waitForLoadState('networkidle');
+        (await medirCabecera(page, densidad)).forEach(f => malos.push(`${p} a ${escala ? w * escala + ' px con zoom' : w + ' px'} (${densidad}): ${f}`));
+      }
+      await ctx.close();
+    }
+  }
+  /* qué lleva cada cabecera: foto donde se configura, arco de línea en el resto, nada en la 404 */
+  const tipos = INTERIORES.map(p => { const h = leer(RAIZ, p); const c = (h.match(/class="cabeza-pagina( [^"]*)?"/) || [])[1] || ''; return { p, foto: /--foto/.test(c), grande: /--grande/.test(c), linea: /--arco/.test(c) }; });
+  const idDe = p => ({ 'aviso-legal.html': 'legal', 'privacidad.html': 'legal', 'cookies.html': 'legal', 'accesibilidad.html': 'legal', '404.html': 'error' })[p] || (p.startsWith('noticia-') ? 'noticia' : p.replace('.html', ''));
+  const malTipo = tipos.filter(t => { const id = idDe(t.p), c = conf[id]; const debeFoto = !!(c && fs.existsSync(path.join(RAIZ, 'media', (typeof c === 'string' ? c : c.archivo) + '.jpg')));
+    return t.foto !== debeFoto || t.grande !== (debeFoto && id === 'pueblo') || t.linea !== (!debeFoto && id !== 'error'); }).map(t => t.p);
+  comprobar(!malos.length && !malTipo.length, `cabeceras interiores: foto en arco donde municipio.json → cabeceras la pone (${Object.keys(conf).filter(k => !k.startsWith('_')).join(', ') || 'ninguna'}), arco de línea de pie sobre el filete en el resto y nada en la 404; ni pisa el título ni las migas, cabe y es de medio punto a 320, 390, 1024, 1440 px y con zoom; en la sobria, sin arco` +
+    (malTipo.length ? ' → tipo mal en ' + malTipo.join(', ') : '') + (malos.length ? ' → ' + malos.slice(0, 5).join(' | ') : ''));
+
+  const { ctx, page } = await nueva();
+  /* «El pueblo»: la foto grande con crédito, y no repetida en la primera tarjeta del carril */
+  const P = M.pueblo || {};
+  if (PAGINAS.includes('pueblo.html')) {
+    await ir(page, 'pueblo.html');
+    const r = await page.evaluate(() => {
+      document.querySelectorAll('img[loading=lazy]').forEach(i => { i.loading = 'eager'; });
+      const hero = document.querySelector('.cabeza-pagina__arco img'), primera = document.querySelector('.carril .lugar img');
+      return { hero: hero ? hero.getAttribute('src') : null, credito: (document.querySelector('.cabeza-pagina .credito') || {}).textContent || '', primera: primera ? primera.getAttribute('src') : null,
+        filas: document.querySelectorAll('.patrimonio__fila').length, grupos: [...document.querySelectorAll('.patrimonio-grupo__titulo')].map(h => h.textContent.trim()),
+        gastro: !!document.querySelector('.gastronomia--con-foto'), gastroFoto: !!document.querySelector('.gastronomia__foto img') };
+    });
+    const cp = conf.pueblo ? (typeof conf.pueblo === 'string' ? conf.pueblo : conf.pueblo.archivo) : null;
+    const cred = cp ? (JSON.parse(leer(RAIZ, 'media', 'creditos.json'))[cp] || {}).autor : null;
+    const grupos = [...new Set((P.patrimonio || []).map(x => x.grupo || null))];
+    const grEsperados = grupos.length > 1 ? grupos.map(g => g || 'Otros').sort((a, b) => (a === 'Otros') - (b === 'Otros')) : [];
+    const malP = [];
+    if (cp && (!r.hero || !r.hero.includes(cp) || !r.credito.includes(cred))) malP.push('foto grande ' + JSON.stringify({ hero: r.hero, credito: r.credito }));
+    if (cp && r.hero && r.primera && r.primera === r.hero.replace('.jpg', '-800.jpg')) malP.push('la primera tarjeta repite la foto grande');
+    if (r.filas !== (P.patrimonio || []).length) malP.push(`patrimonio: ${r.filas} de ${(P.patrimonio || []).length}`);
+    if (JSON.stringify(r.grupos) !== JSON.stringify(grEsperados)) malP.push('grupos del patrimonio ' + JSON.stringify(r.grupos));
+    if (P.gastronomia && r.gastro !== !!P.gastronomia.foto) malP.push('gastronomía: la rejilla de dos columnas no sigue a la foto');
+    comprobar(!malP.length, `«El pueblo»: ${cp ? 'foto grande en arco con su crédito visible y no repetida en la primera tarjeta; ' : ''}patrimonio completo (${r.filas}) ${grEsperados.length ? 'en ' + grEsperados.length + ' grupos' : 'en un bloque'}; gastronomía ${P.gastronomia && P.gastronomia.foto ? 'con foto' : 'sin hueco de foto'}` + (malP.length ? ' → ' + malP.join(' | ') : ''));
+  }
+  /* «¿Quién se ocupa de qué?» del Ayuntamiento: una sola sección, sin perder a nadie */
+  const miembros = (M.corporacion && M.corporacion.miembros) || [];
+  const delegados = miembros.filter(m => m.delegacion);
+  if ((M.quien || []).length || delegados.length) {
+    await ir(page, 'ayuntamiento.html');
+    const r = await page.evaluate(() => ({
+      concejalias: !!document.getElementById('t-concejalias'),
+      filas: [...document.querySelectorAll('#quien .quien__fila')].map(f => f.textContent.replace(/\s+/g, ' ')),
+      hemiciclo: document.querySelectorAll('svg.hemiciclo > circle').length,
+      retrato: (document.querySelector('.retrato__pie') || {}).textContent || '', discontinuo: document.querySelector('.retrato__hueco') ? getComputedStyle(document.querySelector('.retrato__hueco')).borderTopStyle === 'dashed' : false
+    }));
+    const malQ = [];
+    if (r.concejalias) malQ.push('sigue la sección «Concejalías»');
+    for (const q of M.quien || []) { const m = miembros.find(x => x.nombre === q.nombre); if (!r.filas.some(f => f.includes(q.tema) && f.includes(q.nombre) && (!m || !m.grupo || f.includes(m.grupo)))) malQ.push('falta ' + q.tema + ' / ' + q.nombre); }
+    for (const m of delegados) if (!r.filas.some(f => f.includes(m.nombre) && f.includes(m.delegacion) && f.includes(m.grupo))) malQ.push('falta la delegación de ' + m.nombre);
+    const esperadas = (M.quien || []).length + delegados.filter(m => !(M.quien || []).some(q => q.nombre === m.nombre)).length;
+    if (r.filas.length !== esperadas) malQ.push(`${r.filas.length} filas de ${esperadas}`);
+    if ((M.corporacion || {}).grupos && r.hemiciclo !== miembros.length) malQ.push(`hemiciclo con ${r.hemiciclo} asientos de ${miembros.length}`);
+    if (!/retrato oficial/i.test(r.retrato) || r.discontinuo) malQ.push('retrato: ' + r.retrato);
+    comprobar(!malQ.length, `Ayuntamiento: «¿Quién se ocupa de qué?» une asunto, persona, cargo, delegación y grupo (${r.filas.length} filas, sin «Concejalías» aparte), el hemiciclo sigue entero y el retrato vacío es un hueco diseñado que lo dice` + (malQ.length ? ' → ' + malQ.slice(0, 4).join(' | ') : ''));
+  }
+  /* la cal: dos capas de SVG que se desplazan con la página, sin filtros ni fixed */
+  await ir(page, 'tramites.html');
+  const cal = await page.evaluate(() => { const b = getComputedStyle(document.body); return { capas: (b.backgroundImage.match(/url\("data:/g) || []).length, turb: (b.backgroundImage.match(/feTurbulence/g) || []).length, fijo: b.backgroundAttachment, filtro: b.filter + ' ' + getComputedStyle(document.documentElement).filter, color: b.backgroundColor, papel: getComputedStyle(document.documentElement).getPropertyValue('--papel').trim() }; });
+  const hexRgb = h => 'rgb(' + [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(', ') + ')';
+  comprobar(cal.capas === 2 && cal.turb === 2 && !/fixed/.test(cal.fijo) && cal.filtro === 'none none' && cal.color === hexRgb(cal.papel),
+    `textura de cal: ${cal.capas} capas de grano sobre --papel, que se desplazan con la página (${cal.fijo}) y sin filtros por fotograma` + (cal.capas === 2 && cal.turb === 2 ? '' : ' → ' + JSON.stringify(cal).slice(0, 200)));
+  await ctx.close();
+}
+
 /* ── reskin a otro municipio y la banda de propuesta apagada ── */
 function copiar() {
   const destino = fs.mkdtempSync(path.join(os.tmpdir(), 'reskin-'));
@@ -724,6 +834,10 @@ async function opcionales() {
     m.instalaciones = O.instalaciones;
     m.tramites.todos = [...m.tramites.todos, ...O.tramites_extra];
     m.servicios = [...m.servicios, ...O.servicios_extra];
+    /* cabeceras: una página corriente con foto (la primera de media/ con crédito) y «El pueblo» sin
+       ella, para probar las dos variantes que el municipio no usa */
+    const fotoCab = Object.keys(JSON.parse(fs.readFileSync(path.join(dest, 'media', 'creditos.json'), 'utf8'))).find(k => !k.startsWith('_') && fs.existsSync(path.join(dest, 'media', k + '.jpg')));
+    m.cabeceras = fotoCab ? { ayuntamiento: { archivo: fotoCab, alt: 'Foto de prueba de la cabecera' } } : {};
     fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(m, null, 2));
     const ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
     if (ap.status !== 0) { comprobar(false, 'opcionales: aplicar.mjs falla con los datos de muestra → ' + (ap.stderr || ap.stdout).slice(-400)); return; }
@@ -747,7 +861,14 @@ async function opcionales() {
       else if (!doc.enlaces.filter(e => /\.pdf$/.test(e.h)).every(e => /PDF/.test(e.sr)) || !doc.enlaces.filter(e => !/\.pdf$/.test(e.h)).every(e => /otra web/.test(e.sr))) malos.push('documentos: el texto oculto no dice qué se abre');
       viol.push(...(await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => 'ayuntamiento.html: ' + v.id));
       if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) desb.push(w + ' ayuntamiento.html');
+      if (fotoCab) {
+        const tipo = await page.evaluate(() => document.querySelector('.cabeza-pagina').className);
+        if (!/--foto/.test(tipo) || /--grande/.test(tipo)) malos.push('cabecera con foto en una página corriente: ' + tipo);
+        (await medirCabecera(page, 'puerta')).forEach(f => malos.push(`${w} px ayuntamiento.html (cabecera con foto): ${f}`));
+      }
       await page.goto(b + 'pueblo.html', { waitUntil: 'networkidle' });
+      if (!/--arco/.test(await page.evaluate(() => document.querySelector('.cabeza-pagina').className))) malos.push('«El pueblo» sin foto no lleva el arco de línea');
+      (await medirCabecera(page, 'puerta')).forEach(f => malos.push(`${w} px pueblo.html (sin foto): ${f}`));
       const vis = await page.evaluate(() => [...document.querySelectorAll('.visita')].map(v => ({ titulo: v.querySelector('h3').textContent, datos: v.querySelectorAll('dt').length, tel: !!v.querySelector('a[href^="tel:"]') })));
       const esperadas = O.pueblo.visitas.map(v => ({ titulo: v.nombre, datos: ['direccion', 'horario', 'precio'].filter(k => v[k]).length, tel: !!v.telefono }));
       if (JSON.stringify(vis) !== JSON.stringify(esperadas)) malos.push(`${w} px: visitas ${JSON.stringify(vis)}`);
@@ -781,7 +902,7 @@ async function opcionales() {
     }
     srv.close();
     comprobar(!malos.length && !viol.length && !desb.length,
-      'opcionales con datos de muestra: «Normativa y documentos» (desplegables, cada enlace dice qué abre), «Para visitar» (dirección, horario, entrada y teléfono solo si constan), «Dónde comer y dormir» (grupos, teléfonos y fuente), el canal de avisos, impresos en Word, un servicio del listín sin teléfono e «Instalaciones municipales» (grupos de fichas, cada dato solo si consta, el enlace dice qué abre); 0 violaciones de axe y sin scroll horizontal a 320 y 1440 px' +
+      'opcionales con datos de muestra: «Normativa y documentos» (desplegables, cada enlace dice qué abre), «Para visitar» (dirección, horario, entrada y teléfono solo si constan), «Dónde comer y dormir» (grupos, teléfonos y fuente), el canal de avisos, impresos en Word, un servicio del listín sin teléfono e «Instalaciones municipales» (grupos de fichas, cada dato solo si consta, el enlace dice qué abre), una cabecera corriente con foto y «El pueblo» sin foto; 0 violaciones de axe y sin scroll horizontal a 320 y 1440 px' +
       (malos.length ? ' → ' + malos.join(' | ') : '') + (viol.length ? ' → axe: ' + [...new Set(viol)].join(', ') : '') + (desb.length ? ' → desborda ' + desb.join(', ') : ''));
   } finally { fs.rmSync(dest, { recursive: true, force: true }); }
 }
@@ -820,7 +941,7 @@ const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
 if (!SOLO || SOLO.includes('estaticas')) estaticas();
 for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['cortina', cortina], ['contenido', contenidoEjemplo], ['interaccion', interaccion],
-  ['estructura', estructura], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
+  ['estructura', estructura], ['interiores', interiores], ['teclado', teclado], ['desborde', desborde], ['axe', axe], ['opcionales', opcionales], ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();
   try { await fn(); } catch (e) { comprobar(false, nombre + ': la prueba se rompió → ' + (e.stack || e.message).split('\n').slice(0, 3).join(' | ')); }

@@ -65,7 +65,7 @@ Fuentes que funcionaron en Ribera y Segura:
 | `escudo_credito` | sí | Autor, licencia y URL de la ficha de Commons |
 | `corporacion` | no | `grupos` (sigla, nombre, color, trama `liso`/`rayas`/`puntos`/`cuadros`, gobierno) y `miembros` (nombre, grupo, cargo, delegación y `alcalde: true`). Sin `grupos` no sale el hemiciclo; con 13 concejales o menos, sale de una sola fila |
 | `alcaldia.saluda` | no | Con `saluda_ejemplo: true` mientras no lo escriban ellos |
-| `quien` | no | Tema, persona y cargo. Las de `portada: true` salen en la portada (4) |
+| `quien` | no | Tema, persona y cargo. Las de `portada: true` salen en la portada (4). En «El Ayuntamiento», cada fila se completa con la delegación oficial y el grupo del miembro de `corporacion` con el mismo nombre, y las delegaciones que no estén en `quien` se añaden al final (ya no hay sección «Concejalías» aparte): **el nombre tiene que escribirse igual en los dos sitios** |
 | `servicios` | sí | Nombre, teléfono, dirección, horario, `tramos`, `nota` y `grupo`. El grupo ordena el listín. Sin teléfono (la recogida de basura, por ejemplo) sale solo con su detalle, y entonces lleva al menos `nota` u `horario` |
 | `urgencias` | no | El 112 va el primero, en rojo |
 | `listin_corto` | no | 4 nombres de `servicios` o `urgencias` para la portada |
@@ -79,6 +79,8 @@ Fuentes que funcionaron en Ribera y Segura:
 | `instalaciones` | no | Instalaciones municipales y alojamiento municipal: `[{grupo, items: [{nombre, texto, direccion, horario, precio, telefono, nota, url, url_texto}]}]`. Sale en «Teléfonos y servicios → Instalaciones municipales», un bloque de fichas por grupo (Deporte, Parques, Alojamiento municipal…). Cada dato solo aparece si está; con `url` va `url_texto`, que dice qué abre (por ejemplo, «Reservar en su sistema actual»). Lo privado (bares, casas rurales) va en `pueblo.establecimientos` |
 | `canal_avisos` | no | Si el Ayuntamiento ya publica avisos en Bandomóvil, Telegram o WhatsApp: `{nombre, url, texto, otros: [{nombre, url}]}`. Sale arriba de «Avisos» («Reciba los avisos en el móvil») y en «Contacto». Que lo sigan usando: la web no lo sustituye |
 | `fotos.hero` | no | `archivo`, `alt` y `posicion` (CSS). Sin foto, el arco queda como hueco diseñado con el escudo apagado |
+| `cabeceras` | no | Foto de la cabecera de una página interior, por id de página (`tramites`, `ayuntamiento`, `avisos`, `noticias`, `agenda`, `telefonos`, `pueblo`, `contacto`, `legal`, `noticia`): `{archivo, alt, posicion}`, o solo el nombre del archivo si la foto es decorativa (sin `alt`). Sale recortada en arco, con su crédito debajo. **`pueblo` la pinta grande**, como un hero: es la página turística, así que conviene darle la mejor foto. Las páginas sin foto llevan el arco de línea en la marca con su umbral de oro (la 404, nada: ya tiene su arco). En la versión sobria, la foto es un rectángulo y no hay arco de línea. Si la foto de `pueblo` es la del primer lugar del carril, ese lugar pasa al final. Solo fotos de `media/` con crédito |
+| `pueblo.patrimonio[].grupo` | no | Agrupa el patrimonio en columnas con título («Iglesia y ermitas», «Casas y palacios», «Arqueología y campo»…), en el orden en que aparecen. Sin grupos, sale la lista de siempre en dos columnas; lo que no lleve grupo entre otros que sí, va a «Otros» |
 
 ## 4. La sede: dos familias
 
