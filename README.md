@@ -17,7 +17,7 @@ node scripts/verificar.mjs         # todas las comprobaciones (≈ 10 min; --rap
 
 ## El concepto: «la puerta del Ayuntamiento, abierta todo el día»
 
-La web es una puerta de medio punto encalada que da paso a lo que pasa hoy en el pueblo. El arco es el único motivo dibujado; todo lo demás es tipografía, datos y orden. Un solo arco, una puerta: nunca una arcada (eso es `restaurante-gabi-zafra-web`).
+La web es una puerta de medio punto encalada que da paso a lo que pasa hoy en el pueblo. El arco es el motivo dibujado de la página, y el perfil del pueblo a línea firma el pie; todo lo demás es tipografía, datos y orden. Un solo arco, una puerta: nunca una arcada (eso es `restaurante-gabi-zafra-web`).
 
 **Por qué esta versión:**
 - **Responde sin hacer buscar.** El panel «Hoy en Ribera» dice si el Ayuntamiento está abierto (se calcula), qué farmacia está de guardia, qué es lo próximo de la agenda y cuál es el último aviso. Debajo, «Más hoy»: el tiempo (enlace a AEMET), el próximo pleno y la recogida de enseres. Si hay canal de avisos (Bandomóvil o similar), cierra el panel con el acceso y «Cómo apuntarse».
@@ -36,6 +36,7 @@ La web es una puerta de medio punto encalada que da paso a lo que pasa hoy en el
 - Oro `#EAC102` solo en filetes, en la marca de «hoy» y en el borde del mes actual. **Nunca como texto.**
 - El gules, oscurecido (`#CF0317`), solo en la franja urgente y en el 112.
 - Esquinas de 6 px, filetes de 1 px y casi ninguna sombra.
+- **El pie (v3)** abre con el perfil del pueblo dibujado a línea en la marca, de pie sobre la franja de la sede: en Ribera, las dos torres de Nuestra Señora de Gracia con sus cúpulas y pináculos, el cimborrio, la torre del reloj, la Casa de la Cultura y la sierra del fondo, medidos sobre las fotos de `media/`. Se traza una vez al asomar (600 ms). Debajo, tres columnas: el Ayuntamiento, los enlaces útiles y «Cómo llegar» con un plano propio de las calles, sacado de OpenStreetMap al montar la web. Sin perfil propio sale uno genérico de pueblo extremeño (casas y una espadaña, nunca una arcada); sin plano, dos columnas.
 
 **El gesto grande: la cortina** (solo en la portada, una vez por sesión, 1,2 s):
 1. Se traza un arco en sinople de abajo arriba, con su umbral de oro.
@@ -75,11 +76,11 @@ El RD 1112/2018 obliga a cumplir WCAG 2.1 AA. Por eso esta plantilla **rompe a p
 |---|---|
 | `index.html` | Franja urgente (si la hay; en móvil, una línea). Hero con el arco, el buscador de trámites, los botones y el panel «Hoy en Ribera». Los trámites más pedidos (4 atajos con icono) y por temas. Tablón con filtros y la fecha en bloque (los 6 últimos), en banda blanca. «Lo que viene y lo que pasó» (Hoy arriba; lo que viene en 60 días y las últimas noticias) con el listín corto. «El año en Ribera» en banda oscura. «¿Quién se ocupa de qué?» en banda tenue. Franja de sede y pie |
 | `tramites.html` | Buscador, «Por momentos», por temas y «Todos los trámites (115)» con filtro |
-| `ayuntamiento.html` | Alcaldía (retrato como hueco diseñado y saluda de ejemplo). Quién se ocupa de qué (asunto, persona, cargo, delegación oficial y grupo, en una sola lista). El pleno en hemiciclo (color, trama y rótulo). Horario y contacto. Enlace a las grabaciones de pleno |
+| `ayuntamiento.html` | Alcaldía (retrato como hueco diseñado y saluda de ejemplo). Quién se ocupa de qué (asunto, persona, cargo, delegación oficial y grupo, en una sola lista). El pleno en hemiciclo (color, trama y rótulo): cada grupo de la leyenda es un botón que resalta sus escaños (ratón, foco o pulsado, con aria-pressed; Esc lo suelta). Horario y contacto. Enlace a las grabaciones de pleno |
 | `avisos.html` | Avisos propios y el tablón completo con filtros |
 | `noticias.html` y `noticia-*.html` | Lista y detalle de cada noticia |
 | `agenda.html` | Lo que viene (con las fiestas de fecha fija y los plenos), lo que pasó y el año en fiestas. Cada evento que viene lleva «Añadir a mi calendario (archivo .ics)»; un pleno, su convocatoria o, ya celebrado, su grabación |
-| `telefonos.html` | El listín completo, con el 112 el primero y el «abierto ahora» de la biblioteca y el centro de día |
+| `telefonos.html` | El listín completo, con el 112 el primero y el «abierto ahora» de la biblioteca y el centro de día. «Imprimir los teléfonos» (con JavaScript) da una hoja A4 para la nevera: escudo, urgencias en grande, los números en dos columnas, fechas y la web |
 | `pueblo.html` | Cabecera grande con la foto de las dos torres en arco (y su crédito), carril de lugares con fotos en arco, la placa de la casa natal de Meléndez Valdés, historia, patrimonio en tres grupos, fiestas, gastronomía con foto, personajes, rutas y créditos de las fotos |
 | `contacto.html` | Dirección, horario, mapa bajo clic, instancia general y quejas (en la sede), y datos de la entidad |
 | `aviso-legal.html`, `privacidad.html`, `cookies.html`, `accesibilidad.html`, `404.html` | Lo legal y la página de error |
@@ -97,6 +98,9 @@ js/vivo.js              lo que cambia solo; lo ejecutan aplicar.mjs (Node) y el 
 scripts/                aplicar, escudo, marca-desde-escudo, fuentes, medir-letra,
                         fotos, tablon, verificar, quitar_mandos, servir, og
 pruebas/segura-de-leon/ el reskin de prueba (otro municipio real)
+marca/perfil.*          el perfil del pueblo (perfil.json → scripts/perfil.mjs → perfil.svg)
+marca/plano.*           el plano del pie (scripts/plano.mjs, desde OpenStreetMap)
+css/imprimir.css        la web en papel y la hoja de teléfonos para la nevera
 ```
 
 La receta completa está en **[RESKIN.md](RESKIN.md)**. En resumen:

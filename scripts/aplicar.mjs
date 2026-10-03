@@ -546,6 +546,8 @@ function svgLimpio(rel, permitidos) {
 }
 const perfilRel = existe('marca/perfil.svg') ? 'marca/perfil.svg' : 'fuente/_perfil_generico.svg';
 const perfilSvg = svgLimpio(perfilRel, ['path']);
+/* el perfil y el plano son de UN pueblo: al copiar la plantilla para otro, se borran (RESKIN.md §1) */
+if (perfilSvg && perfilRel.startsWith('marca/') && perfilSvg.nombre && perfilSvg.nombre !== marcaConf.slug) errores.push(`marca/perfil.svg es de «${perfilSvg.nombre}», no de «${marcaConf.slug}»: bórralo (sale el genérico) o dibuja el de este pueblo (RESKIN.md §6 bis)`);
 /* cada trazo con pathLength="1": la animación lo dibuja de 1 a 0 (css/movimiento.css) */
 const perfil = perfilSvg ? {
   propio: perfilRel.startsWith('marca/'), nombre: perfilSvg.nombre || (perfilRel.startsWith('marca/') ? 'propio' : 'generico'),
@@ -556,6 +558,7 @@ let plano = null;
 if (existe('marca/plano.svg')) {
   const s = svgLimpio('marca/plano.svg', ['rect', 'path', 'circle', 'text', 'g']);
   const meta = leerJSON('marca/plano.json', {});
+  if (meta.nombre_osm && !normal(meta.nombre_osm).includes(normal(M.nombre))) errores.push(`marca/plano.svg es de «${meta.nombre_osm}», no de ${M.nombre}: bórralo o ejecuta node scripts/plano.mjs (RESKIN.md §6 bis)`);
   if (!meta.atribucion || !meta.atribucion_url) errores.push('marca/plano.json: falta la atribución de OpenStreetMap (atribucion y atribucion_url). Vuelve a ejecutar node scripts/plano.mjs');
   if (s) plano = {
     svg: `<svg class="pie__plano-dibujo" viewBox="${s.vb}" aria-hidden="true" focusable="false">${s.cuerpo.replace(/\s*\n\s*/g, '')}</svg>`,
