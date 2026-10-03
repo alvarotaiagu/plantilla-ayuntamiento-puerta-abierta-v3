@@ -155,6 +155,27 @@ python scripts/fotos.py --lote media/_lote.json          # recorte + gradación 
 - Las fotos de **su web** solo valen para la maqueta que se les enseña. Ponlo en la `nota`.
 - Ni banco de imágenes ni IA. Si falta una foto, se deja el hueco diseñado y se apunta en el README.
 
+### Igualar las fotos (v3b)
+
+Las fotos de un pueblo vienen de cámaras y años distintos y, juntas en «Conocer» y «Qué ver», se nota. `scripts/fotos-igualar.py` les aplica **a todas el mismo tratamiento de color** (nada de recortes, fondos ni contenido):
+
+1. balance de blancos sobre los grises de la propia foto, a medias y con tope (±7 % por canal); sin grises suficientes (un plato), no se toca;
+2. niveles: el 0,5 % más oscuro y el 99,5 % más claro a un rango común (estiramiento como mucho ×1,3) y una gamma que acerca la mediana a 0,52 (entre 0,8 y 1,1);
+3. saturación hacia una croma media común (factor entre 0,85 y 1,12: una foto casi en blanco y negro sigue casi en blanco y negro);
+4. un punto cálido muy leve y común en los medios tonos (±1,2 % de rojo y azul);
+5. nitidez suave después de reducir, en cada tamaño.
+
+```bash
+python scripts/fotos.py --lote media/_lote.json                 # 1. recorte y tamaño (como siempre)
+python scripts/fotos-igualar.py --guardar-originales --comparativa
+        # 2. la primera vez: copia media/<nombre>.jpg a media/originales/ y los iguala
+python scripts/fotos-igualar.py --comparativa                   # las siguientes: siempre desde media/originales/
+```
+
+- **Repetible e idempotente**: parte siempre de `media/originales/<nombre>.jpg` (que no se toca) y regenera `media/<nombre>.jpg` y `media/<nombre>-800.jpg` con el mismo tamaño. Correrlo dos veces da los mismos bytes (`verificar.mjs → v3bpueblo` lo comprueba).
+- **Una foto nueva**: déjala en `media/originales/` (o en `media/` y `--guardar-originales`), ponle su crédito y vuelve a correrlo.
+- **Mírala antes de darla por buena**: `media/_comparativa-igualado.jpg` es la hoja de contacto (antes arriba, después abajo). Lo medido y lo aplicado a cada foto queda en `media/_igualado.json`. Si una foto buena empeora, baja la fuerza en las constantes de arriba del script (`FUERZA_BLANCOS`, `TOPE_NIVELES`, `SAT_MIN/SAT_MAX`), no la toques a mano: todas tienen que pasar por lo mismo.
+
 ## 6 bis. El pie: el perfil del pueblo y el plano
 
 El pie abre con **el perfil del pueblo dibujado a línea** (de pie sobre la franja verde de la sede) y lleva, en su tercera columna, **un plano de las calles del Ayuntamiento**. Los dos son SVG propios que `aplicar.mjs` incrusta en cada página: ni una petición en tiempo de ejecución. Los dos son opcionales:
