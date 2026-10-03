@@ -2605,8 +2605,260 @@ async function v3Identidad() {
     await ir(mv.page, 'ayuntamiento.html');
     const tr = await mv.page.evaluate(() => { const cs = getComputedStyle(document.querySelector('svg.hemiciclo circle')); return { p: cs.transitionProperty, d: cs.transitionDuration }; });
     await mv.ctx.close();
-    if (!/opacity/.test(tr.p) || Math.max(...tr.d.split(',').map(parseFloat)) > 0.2) malos.push('transición: ' + JSON.stringify(tr));
-    comprobar(!malos.length, `v3 M4: el hemiciclo resalta los escaños de cada uno de los ${grupos.length} grupos al pasar el ratón por la leyenda o por su tarjeta (el centro dice «N de SIGLA»), con el teclado (foco, Intro deja el botón pulsado con aria-pressed, Esc lo suelta), transición de opacidad ≤ 200 ms solo con movimiento y 0 violaciones de axe` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+    /* v3b · M11: además de la opacidad (≤ 200 ms), el salto de los escaños pulsados (translate, ≤ 300 ms) */
+    const durDe = (prop, tr) => { const ps = tr.p.split(',').map(x => x.trim()), ds = tr.d.split(',').map(parseFloat); const i = ps.indexOf(prop); return i < 0 ? null : ds[i % ds.length]; };
+    if (durDe('opacity', tr) == null || durDe('opacity', tr) > 0.2 || Math.max(...tr.d.split(',').map(parseFloat)) > 0.3) malos.push('transición: ' + JSON.stringify(tr));
+    comprobar(!malos.length, `v3 M4: el hemiciclo resalta los escaños de cada uno de los ${grupos.length} grupos al pasar el ratón por la leyenda o por su tarjeta (el centro dice «N de SIGLA»), con el teclado (foco, Intro deja el botón pulsado con aria-pressed, Esc lo suelta), transición de opacidad ≤ 200 ms (y ninguna de más de 300 ms) solo con movimiento y 0 violaciones de axe` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+}
+
+/* ═════════════ v3b · interiores: incidencias, lectura fácil, progreso de lectura y hemiciclo ═════════════
+   F9. «Avisar de un problema» (incidencia.html): respaldo sin JS (form mailto text/plain), validación
+       accesible (resumen con foco, errores enlazados con aria-describedby, aria-invalid), el mailto
+       (destinatario, asunto y cuerpo con todos los campos, codificado, CRLF), axe en cada estado, el
+       enlace desde «Por momentos» y, en una copia sin incidencias.correo, que no se genera.
+   F10. Lectura fácil (facil.html): un trámite por entrada de contenido/facil.json, cada uno enlazado
+       desde su atajo de Trámites (y el de la incidencia desde su momento), frases de 20 palabras como
+       mucho, sin abreviaturas, un pictograma por paso, letra grande, la nota de validación y axe.
+   M10. Noticias: la línea de progreso existe solo con soporte y con movimiento, es aria-hidden y al
+       final llega al 100 %; el tiempo de lectura casa con las palabras del cuerpo (200 por minuto).
+   M11. Hemiciclo: los escaños del grupo pulsado saltan hacia el centro (≤ 300 ms) sin mover el texto,
+       vuelven al soltar y, con movimiento reducido, se quedan quietos (solo el atenuado). */
+async function v3bInteriores() {
+  const AXE = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+  const axeEn = async (page, nombre, viol) => (await new AxeBuilder({ page }).withTags(AXE).analyze()).violations.forEach(v => viol.push(nombre + ': ' + v.id + ' ' + v.nodes[0].target.join(' ')));
+
+  /* ── F9. incidencias ── */
+  const inc = M.incidencias && M.incidencias.correo ? M.incidencias : null;
+  if (inc) {
+    const malos = [], viol = [];
+    const h = fs.existsSync(path.join(RAIZ, 'incidencia.html')) ? leer(RAIZ, 'incidencia.html') : '';
+    if (!h) malos.push('con incidencias.correo no hay incidencia.html');
+    /* respaldo sin JavaScript: el formulario se envía solo como mailto en texto */
+    const formHtml = (h.match(/<form\b[^>]*data-incidencia[^>]*>/) || [''])[0];
+    const mailtoAction = 'mailto:' + inc.correo + '?subject=';
+    if (!formHtml.includes('action="' + mailtoAction) || !/method="post"/.test(formHtml) || !/enctype="text\/plain"/.test(formHtml) || /novalidate/.test(formHtml)) malos.push('respaldo: ' + formHtml);
+    for (const n of ['categoria', 'donde', 'descripcion']) if (!new RegExp('name="' + n + '"[^>]*required').test(h)) malos.push('sin JS, «' + n + '» no es obligatorio');
+    const tram = leer(RAIZ, 'tramites.html');
+    if ((M.tramites.momentos || []).some(m => m.incidencia) && !/class="momento__accion"><a [^>]*href="incidencia\.html"/.test(tram)) malos.push('«Por momentos» no enlaza incidencia.html');
+    const sj = await navegador.newContext({ javaScriptEnabled: false });
+    const pj = await sj.newPage();
+    await pj.goto(BASE + 'incidencia.html', { waitUntil: 'networkidle' });
+    const sinJs = await pj.evaluate(() => ({ form: document.querySelector('[data-incidencia]').checkVisibility(), enviar: document.querySelector('[data-incidencia] [type="submit"]').checkVisibility(),
+      listo: document.querySelector('[data-incidencia-listo]').checkVisibility(), ubicacion: document.querySelector('[data-ubicacion]').checkVisibility() }));
+    await sj.close();
+    if (!sinJs.form || !sinJs.enviar || sinJs.listo || sinJs.ubicacion) malos.push('sin JS: ' + JSON.stringify(sinJs));
+
+    const { ctx, page, errores } = await nueva({ viewport: { width: 390, height: 844 } });
+    await ctx.grantPermissions(['geolocation', 'clipboard-read', 'clipboard-write'], { origin: BASE.replace(/\/$/, '') });
+    await ctx.setGeolocation({ latitude: 38.5512, longitude: -6.2389 });
+    await ir(page, 'incidencia.html');
+    /* 1. vacío: resumen con el foco y un error por campo obligatorio, enlazado al campo */
+    await page.click('[data-incidencia] [type="submit"]');
+    const errs = await page.evaluate(() => {
+      const r = document.querySelector('[data-incidencia-errores]');
+      const enlaces = [...r.querySelectorAll('a')].map(a => a.getAttribute('href'));
+      const campos = ['#cat-' + (document.querySelector('input[name="categoria"]').id.replace(/^cat-/, '')), '#campo-donde', '#campo-descripcion'];
+      const enlazado = sel => {
+        const el = sel.startsWith('#cat-') ? document.getElementById('campo-categoria') : document.querySelector(sel);
+        const ids = (el.getAttribute('aria-describedby') || '').split(/\s+/);
+        const err = ids.map(i => document.getElementById(i)).find(x => x && x.classList.contains('campo__error'));
+        return el.getAttribute('aria-invalid') === 'true' && !!err && err.checkVisibility() && err.textContent.trim().length > 10;
+      };
+      return { visible: r.checkVisibility(), foco: document.activeElement === r, enlaces, campos, enlazados: campos.map(enlazado), opcional: document.getElementById('campo-correo').hasAttribute('aria-invalid') };
+    });
+    if (!errs.visible || !errs.foco || errs.enlaces.join() !== errs.campos.join() || errs.enlazados.includes(false) || errs.opcional) malos.push('validación vacía: ' + JSON.stringify(errs));
+    await axeEn(page, 'incidencia con errores', viol);
+    /* el enlace del resumen lleva el foco al campo */
+    await page.click('[data-incidencia-errores] a[href="#campo-donde"]');
+    if (!(await page.evaluate(() => document.activeElement.id === 'campo-donde'))) malos.push('el enlace del resumen no lleva el foco al campo');
+    /* 2. un correo opcional mal escrito también se avisa */
+    await page.check('input[name="categoria"] >> nth=0');
+    await page.fill('#campo-donde', 'Calle Mayor, 12');
+    await page.fill('#campo-descripcion', 'La farola está apagada desde el lunes.');
+    await page.fill('#campo-correo', 'esto-no-es-un-correo');
+    await page.click('[data-incidencia] [type="submit"]');
+    const e2 = await page.evaluate(() => ({ enlaces: [...document.querySelectorAll('[data-incidencia-errores] a')].map(a => a.getAttribute('href')), inv: document.getElementById('campo-correo').getAttribute('aria-invalid') }));
+    if (e2.enlaces.join() !== '#campo-correo' || e2.inv !== 'true') malos.push('correo mal escrito: ' + JSON.stringify(e2));
+    /* 3. todo bien: «Usar mi ubicación» y el mailto con todos los campos */
+    await page.click('[data-usar-ubicacion]');
+    await page.waitForFunction(() => /Coordenadas: 38\.55120, -6\.23890/.test(document.getElementById('campo-donde').value), null, { timeout: 5000 }).catch(() => malos.push('«Usar mi ubicación» no añade las coordenadas'));
+    const datos = { descripcion: 'La farola está apagada desde el lunes.\nDe noche no se ve nada & da miedo; ¿pueden mirarla?', nombre: 'Vecina de Prueba', telefono: '600 123 456', correo: 'vecina@ejemplo.es' };
+    await page.fill('#campo-descripcion', datos.descripcion);
+    await page.fill('#campo-nombre', datos.nombre); await page.fill('#campo-telefono', datos.telefono); await page.fill('#campo-correo', datos.correo);
+    await page.check('#campo-foto');
+    await page.click('[data-incidencia] [type="submit"]');
+    const ok = await page.evaluate(() => {
+      const l = document.querySelector('[data-incidencia-listo]');
+      const cat = document.querySelector('input[name="categoria"]:checked').value;
+      return { visible: l.checkVisibility(), foco: document.activeElement === l, formOculto: !document.querySelector('[data-incidencia]').checkVisibility(), cat,
+        donde: document.getElementById('campo-donde').value, href: document.querySelector('[data-incidencia-mailto]').getAttribute('href'),
+        foto: document.querySelector('[data-recordar-foto]').checkVisibility(), texto: document.querySelector('[data-incidencia-texto]').value };
+    });
+    const q = ok.href.indexOf('?'), dest = ok.href.slice(7, q), params = {};
+    for (const par of ok.href.slice(q + 1).split('&')) { const [k, v] = par.split('='); params[k] = decodeURIComponent(v); }
+    const cuerpo = params.body || '';
+    const esperado = [ok.cat, ok.donde, ...datos.descripcion.split('\n'), datos.nombre, datos.telefono, datos.correo, 'adjunto'];
+    if (!ok.visible || !ok.foco || !ok.formOculto || !ok.foto) malos.push('listo: ' + JSON.stringify({ ...ok, href: undefined, texto: undefined }));
+    if (dest !== inc.correo || !/^mailto:[^?]+\?subject=[^&]+&body=[^&]+$/.test(ok.href) || /[\s<>"]/.test(ok.href)) malos.push('mailto mal formado: ' + ok.href.slice(0, 120));
+    if (!params.subject || !params.subject.includes(ok.cat) || !params.subject.includes('Calle Mayor')) malos.push('asunto: ' + params.subject);
+    const faltan = esperado.filter(x => !cuerpo.includes(x));
+    if (faltan.length) malos.push('al cuerpo le falta: ' + faltan.join(' | '));
+    if (/[^\r]\n/.test(cuerpo) || !cuerpo.includes('\r\n')) malos.push('el cuerpo no usa CRLF');
+    if (!ok.texto.includes(params.subject) || !ok.texto.includes(inc.correo)) malos.push('el texto para copiar no lleva el asunto y el destinatario');
+    await axeEn(page, 'incidencia lista', viol);
+    /* 4. el texto se copia */
+    await page.click('[data-copiar-texto]');
+    await page.waitForFunction(() => document.querySelector('[data-copiar-estado]').textContent.length > 5, null, { timeout: 3000 }).catch(() => malos.push('«Copiar el texto» no dice nada'));
+    /* 5. muy largo: lo avisa (algunos programas cortan los mailto largos) */
+    await page.click('[data-incidencia-volver]');
+    await page.fill('#campo-descripcion', 'Una farola rota. '.repeat(140));
+    await page.click('[data-incidencia] [type="submit"]');
+    const largo = await page.evaluate(() => ({ aviso: document.querySelector('[data-aviso-largo]').checkVisibility(), copiar: document.querySelector('[data-copiar-texto]').checkVisibility(), n: document.querySelector('[data-incidencia-mailto]').href.length, max: window.Incidencia.LARGO_MAX }));
+    if (!(largo.n > largo.max) || !largo.aviso || !largo.copiar) malos.push('texto largo: ' + JSON.stringify(largo));
+    if (errores.length) malos.push('consola: ' + errores.slice(0, 2).join(' | '));
+    await ctx.close();
+
+    /* 6. sin incidencias.correo no se genera (en una copia) */
+    const dest2 = copiar();
+    try {
+      const m = JSON.parse(fs.readFileSync(path.join(dest2, 'municipio.json'), 'utf8'));
+      m.incidencias = { categorias: (m.incidencias || {}).categorias || [] };
+      fs.writeFileSync(path.join(dest2, 'municipio.json'), JSON.stringify(m, null, 2));
+      const ap = spawnSync('node', [path.join(dest2, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest2 });
+      const restos = fs.readdirSync(dest2).filter(f => f.endsWith('.html')).filter(f => /href="incidencia\.html/.test(fs.readFileSync(path.join(dest2, f), 'utf8')));
+      if (ap.status !== 0 || fs.existsSync(path.join(dest2, 'incidencia.html')) || restos.length) malos.push('sin correo: ' + JSON.stringify({ status: ap.status, existe: fs.existsSync(path.join(dest2, 'incidencia.html')), restos, err: (ap.stderr || '').slice(-200) }));
+    } finally { fs.rmSync(dest2, { recursive: true, force: true }); }
+    comprobar(!malos.length && !viol.length, `v3b F9: «Avisar de un problema» con respaldo sin JS (form mailto text/plain con los obligatorios), validación accesible (resumen con el foco y un enlace por error, aria-invalid y error enlazado con aria-describedby), «Usar mi ubicación» que solo rellena coordenadas, un mailto a ${inc.correo} con asunto y cuerpo codificados (todos los campos, CRLF), «Copiar el texto» y aviso si es largo, enlazada desde «Por momentos», 0 violaciones de axe con errores y lista, y sin incidencias.correo no se genera` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : '') + (viol.length ? ' → axe: ' + viol.slice(0, 3).join(' | ') : ''));
+  }
+
+  /* ── F10. lectura fácil ── */
+  const rutaFacil = path.join(RAIZ, 'contenido', 'facil.json');
+  if (fs.existsSync(rutaFacil)) {
+    const F = JSON.parse(fs.readFileSync(rutaFacil, 'utf8'));
+    const slug = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const nombresAtajos = (M.tramites.atajos || []).map(a => a.nombre);
+    const esperados = (F.tramites || []).filter(t => (t.atajo && nombresAtajos.includes(t.atajo)) || (t.pagina === 'incidencia' && inc));
+    const malos = [], viol = [];
+    const tram = leer(RAIZ, 'tramites.html');
+    for (const t of esperados) {
+      const id = 'facil-' + slug(t.atajo || t.pagina);
+      if (t.atajo) {
+        /* el enlace va en el mismo <li> que el atajo con ese nombre */
+        const li = [...tram.matchAll(/<li><a class="atajo"[\s\S]*?<\/li>/g)].map(m => m[0]).find(x => x.includes('<span class="atajo__nombre">' + t.atajo.replace(/&/g, '&amp;') + '<'));
+        if (!li || !li.includes('href="facil.html#' + id + '"')) malos.push('el atajo «' + t.atajo + '» no enlaza su «Explicado fácil»');
+      } else if (!tram.includes('href="facil.html#' + id + '"')) malos.push('«' + t.titulo + '» no está enlazado en Trámites');
+    }
+    const { ctx, page } = await nueva({ viewport: { width: 1280, height: 900 } });
+    await ir(page, 'facil.html');
+    const r = await page.evaluate(() => {
+      const sprite = new Set([...document.querySelectorAll('symbol[id^="f-"]')].map(s => s.id));
+      const secciones = [...document.querySelectorAll('.facil-tramite')].map(s => ({ id: s.id, titulo: s.querySelector('h2').textContent.trim(), pasos: s.querySelectorAll('.facil__pasos:not(.facil__pasos--sin) > li').length,
+        sinPicto: [...s.querySelectorAll('.facil__paso')].filter(p => { const u = p.querySelector('svg.facil__picto use'); return !u || !sprite.has(u.getAttribute('href').slice(1)); }).length,
+        boton: (s.querySelector('.facil__boton') || {}).href || null }));
+      const textos = [...document.querySelectorAll('main .facil__frase, main .facil-lista__enlace, main .facil__titulo, main .facil__boton')].map(e => { const c = e.cloneNode(true); c.querySelectorAll('.sr').forEach(x => x.remove()); return c.textContent.replace(/\s+/g, ' ').trim(); });
+      const frases = textos.flatMap(t => t.split(/(?<=[.!?])\s+/)).filter(Boolean);
+      const larga = frases.map(f => ({ f, n: f.split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w)).length })).sort((a, b) => b.n - a.n)[0];
+      return { secciones, larga, frases: frases.length, todo: textos.join(' '), letra: parseFloat(getComputedStyle(document.querySelector('.facil-tramite .facil__frase')).fontSize),
+        base: parseFloat(getComputedStyle(document.body).fontSize), nota: (document.querySelector('.facil__nota') || {}).textContent || '', ids: [...document.querySelectorAll('[id]')].map(e => e.id) };
+    });
+    if (r.secciones.length !== esperados.length || esperados.length < 1) malos.push(`${r.secciones.length} trámites en la página y ${esperados.length} en los datos`);
+    for (const t of esperados) {
+      const s = r.secciones.find(x => x.id === 'facil-' + slug(t.atajo || t.pagina));
+      if (!s) { malos.push('falta «' + t.titulo + '»'); continue; }
+      if (s.pasos !== t.pasos.length || s.pasos < 2 || s.sinPicto || !s.boton) malos.push('«' + t.titulo + '»: ' + JSON.stringify(s));
+    }
+    if (!r.larga || r.larga.n > 20) malos.push('frase de ' + (r.larga && r.larga.n) + ' palabras: «' + (r.larga && r.larga.f) + '»');
+    const abrev = r.todo.match(/(^|\s)(C\/|Avda?\.|Pza?\.|n\.?\s?º|etc\.|Sr\.|Sra\.|Tfno\.?|tel\.|D\.|Dña\.)(?=\s|$)/i);
+    if (abrev) malos.push('abreviatura: «' + abrev[2] + '»');
+    if (/\b(verde|azul|rojo)\b/i.test(r.todo)) malos.push('el texto nombra un color (cambia con la paleta)');
+    if (!(r.letra >= 20 && r.letra > r.base)) malos.push('letra de ' + r.letra + ' px (base ' + r.base + ')');
+    if (!/Texto adaptado a lectura fácil\. Pendiente de validar con personas usuarias\./.test(r.nota)) malos.push('falta la nota de validación');
+    await axeEn(page, 'facil.html', viol);
+    await page.setViewportSize({ width: 320, height: 640 });
+    await axeEn(page, 'facil.html a 320 px', viol);
+    if (await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)) malos.push('facil.html desborda a 320 px');
+    await ctx.close();
+    comprobar(!malos.length && !viol.length, `v3b F10: «Trámites explicados fácil» con ${r.secciones.length} trámites (${r.secciones.map(s => s.titulo).join(', ')}), cada uno enlazado desde su atajo de Trámites, ${r.frases} frases de ${r.larga ? r.larga.n : 0} palabras como mucho, sin abreviaturas ni colores, un pictograma por paso, letra de ${r.letra} px, la nota «Pendiente de validar con personas usuarias» y 0 violaciones de axe (también a 320 px)` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : '') + (viol.length ? ' → axe: ' + viol.slice(0, 3).join(' | ') : ''));
+  }
+
+  /* ── M10. noticias: tiempo de lectura y línea de progreso ── */
+  const noticiasVivas = contenido('noticias').noticias.filter(n => !n.oculto);
+  if (noticiasVivas.length) {
+    const malos = [];
+    const palabras = t => String(t).split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
+    const base = leer(RAIZ, 'css', 'base.css'), mov = leer(RAIZ, 'css', 'movimiento.css');
+    const bloqueSupports = (mov.match(/@supports \(animation-timeline: scroll\(\)\) \{[\s\S]*?\n {2}\}/) || [''])[0];
+    if (!/\.lectura-progreso \{ display: none; \}/.test(base) || !/\.lectura-progreso \{[^}]*display: block/.test(bloqueSupports) || (mov.replace(bloqueSupports, '').match(/\.lectura-progreso/g) || []).length) malos.push('la barra no está solo dentro de @supports (animation-timeline: scroll())');
+    for (const n of noticiasVivas) {
+      const h = leer(RAIZ, 'noticia-' + n.id + '.html');
+      const p = palabras((n.cuerpo || []).join(' ')), min = Math.max(1, Math.round(p / 200));
+      if (!h.includes(`data-palabras="${p}">${min} min de lectura</span>`)) malos.push(n.id + ': se esperaba «' + min + ' min de lectura» (' + p + ' palabras)');
+      if (!/<div class="lectura-progreso" aria-hidden="true"><\/div>/.test(h)) malos.push(n.id + ': la barra no es aria-hidden');
+    }
+    /* en el navegador: el cuerpo pintado tiene esas palabras; con movimiento la barra va de menos a 100 %; con reducido no sale */
+    const larga = noticiasVivas.slice().sort((a, b) => palabras((b.cuerpo || []).join(' ')) - palabras((a.cuerpo || []).join(' ')))[0];
+    const medir = page => page.evaluate(() => { const e = document.querySelector('.lectura-progreso'), cs = getComputedStyle(e), m = cs.transform.match(/matrix\(([-\d.e]+)/); return { d: cs.display, x: m ? parseFloat(m[1]) : null, soporte: CSS.supports('animation-timeline: scroll()') }; });
+    const mv = await nueva({ reducido: false, viewport: { width: 1280, height: 700 } });
+    await ir(mv.page, 'noticia-' + larga.id + '.html');
+    const dom = await mv.page.evaluate(() => [document.querySelector('.articulo__cuerpo').innerText, document.querySelector('.articulo__lectura').getAttribute('data-palabras')]);
+    if (palabras(dom[0]) !== Number(dom[1])) malos.push('el cuerpo pintado tiene ' + palabras(dom[0]) + ' palabras y el cálculo ' + dom[1]);
+    const arriba = await medir(mv.page);
+    for (let i = 0; i < 30; i++) { await mv.page.mouse.wheel(0, 500); await espera(40); }
+    await espera(300);
+    const abajo = await medir(mv.page);
+    await mv.ctx.close();
+    if (arriba.soporte && (arriba.d !== 'block' || !(arriba.x < 0.5) || abajo.x == null || Math.abs(abajo.x - 1) > 0.01)) malos.push('con movimiento: ' + JSON.stringify({ arriba, abajo }));
+    if (!arriba.soporte && arriba.d !== 'none') malos.push('sin soporte se ve la barra');
+    const rd = await nueva({ viewport: { width: 1280, height: 700 } });
+    await ir(rd.page, 'noticia-' + larga.id + '.html');
+    if ((await medir(rd.page)).d !== 'none') malos.push('con movimiento reducido se ve la barra');
+    await rd.ctx.close();
+    comprobar(!malos.length, `v3b M10: cada una de las ${noticiasVivas.length} noticias dice su tiempo de lectura (palabras del cuerpo ÷ 200, 1 min como poco) y lleva la línea de progreso aria-hidden, que solo existe con soporte de animation-timeline y con movimiento, empieza por debajo de la mitad y al final llega al 100 % (${arriba.soporte ? 'medido: ' + Math.round(arriba.x * 100) + ' % → ' + Math.round(abajo.x * 100) + ' %' : 'sin soporte en este navegador'})` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+
+  /* ── M11. el hemiciclo se ordena al pulsar un partido ── */
+  const grupos = (M.corporacion && M.corporacion.grupos) || [];
+  if (grupos.length && PAGINAS.includes('ayuntamiento.html')) {
+    const malos = [];
+    const slug = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const foto = page => page.evaluate(() => {
+      const svg = document.querySelector('svg.hemiciclo'), c0 = (svg.getAttribute('data-centro') || '150 150').split(' ').map(Number);
+      const pt = svg.createSVGPoint(); pt.x = c0[0]; pt.y = c0[1];
+      const m = svg.getScreenCTM(), cen = pt.matrixTransform(m);
+      /* el texto cambia («12 concejales» → «3 de PP»), así que su caja también: se compara dónde está
+         anclado y que nada lo traslade (ni él ni su grupo) */
+      const txt = [...svg.querySelectorAll('text')].map(t => { const cs = getComputedStyle(t), mt = t.getCTM(); return [t.getAttribute('x'), t.getAttribute('y'), cs.translate, cs.transform, mt.e.toFixed(1), mt.f.toFixed(1)].join(','); }).join(' ');
+      return { txt, escanos: [...svg.querySelectorAll('circle[data-grupo]')].map(c => { const b = c.getBoundingClientRect(); const x = b.x + b.width / 2, y = b.y + b.height / 2; return { g: c.getAttribute('data-grupo'), x, y, d: Math.hypot(x - cen.x, y - cen.y), op: parseFloat(getComputedStyle(c).opacity) }; }) };
+    });
+    for (const reducido of [false, true]) {
+      const { ctx, page } = await nueva({ reducido });
+      await ir(page, 'ayuntamiento.html');
+      await page.locator('.pleno').scrollIntoViewIfNeeded();
+      await espera(reducido ? 100 : 1400);   /* que acabe la entrada de los escaños */
+      const reposo = await foto(page);
+      for (const g of grupos) {
+        const clave = slug(g.sigla);
+        const boton = page.locator(`.pleno__leyenda li[data-grupo="${clave}"] .pleno__boton`);
+        await boton.click(); await page.mouse.move(2, 2);
+        const durs = await page.evaluate(() => [...document.querySelectorAll('svg.hemiciclo circle')].flatMap(c => c.getAnimations().map(a => a.effect.getTiming().duration)));
+        await espera(400);
+        const pulsado = await foto(page);
+        const suyos = pulsado.escanos.map((e, i) => ({ e, r: reposo.escanos[i] })).filter(x => x.e.g === clave), otros = pulsado.escanos.map((e, i) => ({ e, r: reposo.escanos[i] })).filter(x => x.e.g !== clave);
+        const movidos = suyos.filter(x => x.r.d - x.e.d > 2).length, quietosOtros = otros.every(x => Math.hypot(x.e.x - x.r.x, x.e.y - x.r.y) < 0.5);
+        const apagados = otros.every(x => x.e.op < 0.5);
+        if (reducido) {
+          if (suyos.some(x => Math.hypot(x.e.x - x.r.x, x.e.y - x.r.y) > 0.5) || !apagados || durs.length) malos.push(`reducido, ${g.sigla}: se mueve o no se atenúa`);
+        } else if (movidos !== suyos.length || !quietosOtros || !apagados || pulsado.txt !== reposo.txt || !durs.length || Math.max(...durs) > 300) {
+          malos.push(`${g.sigla}: ${JSON.stringify({ movidos, de: suyos.length, quietosOtros, apagados, texto: pulsado.txt === reposo.txt, durs: [...new Set(durs)] })}`);
+        }
+        await boton.click(); await page.mouse.move(2, 2); await espera(400);
+        const suelto = await foto(page);
+        if (suelto.escanos.some((e, i) => Math.hypot(e.x - reposo.escanos[i].x, e.y - reposo.escanos[i].y) > 0.5 || e.op < 0.9)) malos.push(`${g.sigla}${reducido ? ' (reducido)' : ''}: no vuelve a su sitio al soltar`);
+      }
+      await ctx.close();
+    }
+    comprobar(!malos.length, `v3b M11: al pulsar cada uno de los ${grupos.length} grupos, sus escaños saltan hacia el centro del hemiciclo en ≤ 300 ms (los demás se quedan y se atenúan, el texto no se mueve) y vuelven al soltarlo; con movimiento reducido no se mueve nada y solo se atenúa` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
   }
 }
 
@@ -2620,6 +2872,7 @@ for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', pa
   ['v3cuerpo', v3Cuerpo],
   ['v3interiores', v3Interiores],
   ['v3identidad', v3Identidad],
+  ['v3binteriores', v3bInteriores],
   ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();
