@@ -596,6 +596,20 @@ const conocer = conocerSel.length >= 3 ? conocerSel.map(l => ({ nombre: l.nombre
 if (cabeceras.pueblo && pueblo.lugares.length > 1 && pueblo.lugares[0].foto === cabeceras.pueblo.archivo) pueblo.lugares.push(pueblo.lugares.shift());
 const creditos = [...usadas.values()];
 
+/* ───────────────────────── v3b · «… en cifras» (portada) ─────────────────────────
+   municipio.json → cifras: [{valor, unidad, etiqueta, fuente, fuente_url, anio}]. Cada cifra lleva
+   su fuente (sale en pequeño debajo). Un número se escribe a la española (3.130; 185,6); un texto
+   (un año, «s. XIII») tal cual. Sin el campo, la banda no sale. Los opcionales, a null explícito */
+const numeroEs = n => { const [e, d] = String(Math.abs(n)).split('.'); return (n < 0 ? '−' : '') + e.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (d ? ',' + d : ''); };
+const cifras = (M.cifras || []).map((c, i) => {
+  if (c == null || c.valor == null || c.valor === '' || !c.etiqueta || !c.fuente) { errores.push('cifras[' + i + ']: cada cifra lleva «valor», «etiqueta» y «fuente» (sin fuente no se enseña)'); return null; }
+  if (typeof c.valor === 'number' && !Number.isFinite(c.valor)) errores.push('cifras[' + i + ']: «valor» no es un número');
+  if (c.fuente_url && !/^https:\/\//.test(c.fuente_url)) errores.push('cifras[' + i + ']: «fuente_url» empieza por https://');
+  return { valor: typeof c.valor === 'number' ? numeroEs(c.valor) : String(c.valor), unidad: c.unidad || null, etiqueta: c.etiqueta,
+    fuente: c.fuente, fuente_url: c.fuente_url || null, fuente_sr: c.fuente_url ? srDe(c.fuente_url) : null, anio: c.anio || null };
+}).filter(Boolean);
+if (cifras.length > 5) errores.push('cifras: 5 como mucho (hay ' + cifras.length + ')');
+
 /* ───────────────────────── identidad (v3): el perfil del pueblo y el plano del pie ─────────────────────────
    marca/perfil.svg (scripts/perfil.mjs) es el perfil del pueblo a línea; sin él, el genérico de
    fuente/_perfil_generico.svg. marca/plano.svg (scripts/plano.mjs, desde OpenStreetMap) es el plano
@@ -761,7 +775,7 @@ const comun = {
   pleno, quien_ayto: quienAyto, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },
-  pueblo, conocer, creditos, hay_creditos_fotos: creditos.length > 0, hero_foto: heroFoto, hero_varias: heroVarias,
+  pueblo, conocer, cifras, creditos, hay_creditos_fotos: creditos.length > 0, hero_foto: heroFoto, hero_varias: heroVarias,
   /* el nombre del pueblo, palabra a palabra (cada una en inline-block y sin partir: la entrada del hero) */
   nombre_palabras: M.nombre.trim().split(/\s+/).map((p, i) => ({ palabra: p, n: i })),
   mapa_embed_url: 'https://www.google.com/maps?q=' + encodeURIComponent(M.contacto.mapa_consulta || `Ayuntamiento de ${N}, ${M.contacto.direccion}, ${M.contacto.cp} ${N}`) + '&output=embed',

@@ -162,6 +162,23 @@
     </div>
   </section>{{/fiestas.length}}
 
+  <!-- v3b · «… en cifras»: 4 o 5 números grandes (habitantes, término, altitud, un dato histórico),
+       cada uno con su fuente en pequeño. Banda blanca entre «El año» (oscura) y «Conocer». Sin
+       municipio.json → cifras, no sale -->
+  {{#cifras.length}}<section class="seccion banda banda--superficie cifras" aria-labelledby="t-cifras">
+    <div class="contenedor">
+      <h2 class="seccion__titulo" id="t-cifras">{{nombre_corto}} en cifras</h2>
+      <ul class="cifras__lista">
+        {{#cifras}}<li class="cifra">
+          <p class="cifra__numero"><span class="cifra__valor">{{valor}}</span>{{#unidad}} <span class="cifra__unidad">{{unidad}}</span>{{/unidad}}</p>
+          <p class="cifra__etiqueta">{{etiqueta}}</p>
+          <p class="cifra__fuente">Fuente: {{#fuente_url}}<a href="{{fuente_url}}">{{fuente}}<span class="sr">{{fuente_sr}}</span></a>{{/fuente_url}}{{^fuente_url}}{{fuente}}{{/fuente_url}}{{#anio}} ({{anio}}){{/anio}}</p>
+        </li>
+        {{/cifras}}
+      </ul>
+    </div>
+  </section>{{/cifras.length}}
+
   <!-- «Conocer …»: de 3 a 5 lugares de «Qué ver» en arco, cada uno enlazado a su sitio en
        pueblo.html. En escritorio, en fila y el primero más grande; en móvil, un carril que se
        desliza (el siguiente asoma). con-paralaje: la foto se mueve ±20 px dentro de su marco -->
