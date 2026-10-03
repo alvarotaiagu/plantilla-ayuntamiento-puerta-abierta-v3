@@ -84,6 +84,8 @@ El RD 1112/2018 obliga a cumplir WCAG 2.1 AA. Por eso esta plantilla **rompe a p
 | `pueblo.html` | Cabecera grande con la foto de las dos torres en arco (y su crédito), carril de lugares con fotos en arco, la placa de la casa natal de Meléndez Valdés, historia, patrimonio en tres grupos, fiestas, gastronomía con foto, personajes, rutas y créditos de las fotos |
 | `contacto.html` | Dirección, horario, mapa bajo clic, instancia general y quejas (en la sede), y datos de la entidad |
 | `aviso-legal.html`, `privacidad.html`, `cookies.html`, `accesibilidad.html`, `404.html` | Lo legal y la página de error |
+| `propuesta.html` | **Solo en la maqueta, para el alcalde** (se manda por correo; ni en el menú ni en el pie). Qué falla en su web actual (comprobable, de `propuesta_web`), comparador antes/después con deslizador, qué cambia, «publicar es rellenar un formulario» y el siguiente paso. El precio, `[PRECIO: lo pone Álvaro]`, solo con `?revision` |
+| `suscribirse.html` | «Avisos y agenda en su móvil»: la agenda con `webcal://` (`agenda.ics`), los avisos en un lector (`feed.xml`) y el listín sin cobertura |
 
 ## Cómo está hecho (y cómo se reskinea)
 
@@ -134,6 +136,9 @@ Cada paso funciona igual que en la veterinaria:
 | **Farmacia de guardia** | `municipio.json → farmacias`: rotación (semanal, por ejemplo) y/o fechas sueltas, también desde la pestaña `Farmacias` de la hoja. Cambia sola a la hora del relevo (`cambio`, 09:30) | El Ayuntamiento, una vez al año con el calendario del Colegio |
 | **Próximo pleno y recogida** | `municipio.json → plenos` (o la agenda con `tipo` «pleno») y `recogida` (días de la semana o fechas) | El Ayuntamiento |
 | **Calendarios (.ics)** | `aplicar.mjs` escribe `ics/<id>.ics` para cada evento; los de la hoja se generan en el navegador al pulsar | Nadie |
+| **Suscribirse sin redes** | `aplicar.mjs` escribe `feed.xml` (avisos y noticias, Atom) y `agenda.ics` (toda la agenda); `suscribirse.html` lo explica al vecino | Nadie |
+| **Teléfonos sin cobertura** | `sw.js` guarda `telefonos.html` y lo que necesita; se renueva con cada build | Nadie |
+| **Publicar desde el móvil** | Formulario de Google → hoja → web: **[PUBLICAR.md](PUBLICAR.md)**, con `scripts/comprobar-hoja.mjs` para revisar una exportación | La secretaría |
 
 **La hoja de cálculo** (memoria «hoja de cálculo como CMS»):
 1. Crea una hoja de Google con tres pestañas: `Avisos`, `Agenda` y `Noticias`.

@@ -92,6 +92,7 @@ Fuentes que funcionaron en Ribera y Segura:
 | `fotos.hero` | no | `archivo`, `alt` y `posicion` (CSS). Sin foto, el arco queda como hueco diseñado con el escudo apagado |
 | `fotos.hero_fotos` | no | Varias fotos para el arco de la portada, `[{archivo, alt, posicion}]`: en cada visita sale una al azar. Se elige en el `<head>` antes del primer pintado (con su precarga, su `srcset`, su `alt` y su encuadre), sin saltos de página. **La primera** es la que sale sin JavaScript y la de la imagen para compartir. Con `hero_fotos`, `hero` no hace falta; sin él, sale `hero` como siempre. Elige fotos que aguanten el arco en vertical (4:5 en escritorio) y en apaisado (5:3 en el móvil): el `posicion` horizontal decide qué queda dentro. Todas con crédito en `media/creditos.json` |
 | `cabeceras` | no | Foto de la cabecera de una página interior, por id de página (`tramites`, `ayuntamiento`, `avisos`, `noticias`, `agenda`, `telefonos`, `pueblo`, `contacto`, `legal`, `noticia`): `{archivo, alt, posicion}`, o solo el nombre del archivo si la foto es decorativa (sin `alt`). Sale recortada en arco, con su crédito debajo. **`pueblo` la pinta grande**, como un hero: es la página turística, así que conviene darle la mejor foto. Las páginas sin foto llevan el arco de línea en la marca con su umbral de oro y, dentro, el **pictograma** de la página (calendario, teléfono, documento con sello, megáfono, periódico, edificio, sobre, balanza, candado, galleta, accesibilidad, pueblo), que se traza al llegar (la 404, nada: ya tiene su arco). El pictograma lo elige la plantilla (`PICTO_DE` en `aplicar.mjs`, dibujos en `fuente/_pictogramas.html`), no los datos: no hay que tocar nada. En la versión sobria, la foto es un rectángulo y no hay arco de línea. Si la foto de `pueblo` es la del primer lugar del carril, ese lugar pasa al final. Solo fotos de `media/` con crédito |
+| `propuesta_web` | no | Solo para `propuesta.html`, la página que se manda al alcalde (no sale en el menú ni en el pie, y con `"propuesta": false` no se escribe). `problemas`: lo que se puede **comprobar** en su web actual, `[{texto, fuente}]` (sin esto, la sección habla en general: nada inventado); `revisada` (AAAA-MM-DD); `captura_antes: {archivo, alt}` con una captura de su portada actual (sin ella, el «antes» del comparador es un hueco marcado «PENDIENTE: captura de la web actual»); `contacto: {nombre, correo, telefono}` de quien presenta (sin él, «responda al correo con el que le ha llegado»). El precio no va en los datos: es un bloque `[PRECIO: lo pone Álvaro]` que solo se ve con `?revision` y se va con el mando. El «después» lo captura `scripts/captura-portada.mjs` al aplicar (`assets/propuesta-portada.jpg`) |
 | `pueblo.patrimonio[].grupo` | no | Agrupa el patrimonio en columnas con título («Iglesia y ermitas», «Casas y palacios», «Arqueología y campo»…), en el orden en que aparecen. Sin grupos, sale la lista de siempre en dos columnas; lo que no lleve grupo entre otros que sí, va a «Otros» |
 
 ## 4. La sede: dos familias
@@ -226,6 +227,20 @@ node scripts/plano.mjs --radio 170           # metros del Ayuntamiento al borde 
     - Para la maqueta, `--desde` admite una carpeta con las copias: HTML de la vista antigua o el JSON de la nueva (`POST /sede/tablonElectronico.do`).
     - Guarda **todo desde 2018**. La web enseña los `tablon_max` más recientes (40 por defecto, en `municipio.json`) y cuenta las exclusiones de ese periodo.
     - La categoría es la subsección. En «Empleo Público» caen las listas y las actas de selección, y las actas de Junta de Gobierno o de Pleno que no digan «disociado» se quedan fuera.
+
+## 7 bis. Lo que la web da sin que nadie haga nada (v3b · servicio)
+
+`aplicar.mjs` escribe además, sin datos nuevos (todo sale de lo que ya hay):
+
+| Archivo | Qué es |
+|---|---|
+| `feed.xml` | Avisos y noticias en Atom, para un lector de noticias. Lo de `ejemplo` lleva «EJEMPLO:» delante |
+| `agenda.ics` | **Toda** la agenda (también fiestas y plenos) en un solo calendario, con el mismo generador que los `ics/<id>.ics` (mismos UID). Con `url`, la página `suscribirse.html` («Avisos y agenda en su móvil») da el enlace `webcal://` para suscribirse |
+| `sw.js` | El listín sin cobertura: precarga `telefonos.html` con su CSS, JS, letras y escudo y lo sirve red primero, con lo guardado de respaldo, solo en esas rutas. La caché lleva la huella del build. Se registra desde todas las páginas; si el navegador no tiene service worker, nada cambia |
+| JSON-LD | En el `<head>`: `GovernmentOrganization` (portada, El Ayuntamiento, contacto, agenda y noticias; el horario solo si no es de ejemplo), un `Event` por acto, `NewsArticle` en cada noticia y `BreadcrumbList` en las interiores. Lo marcado `ejemplo` no entra |
+| `assets/propuesta-portada.jpg` | La portada nueva para el comparador de `propuesta.html` (no se escribe con `--sin-og`) |
+
+Para publicar desde el móvil con un Formulario de Google, ver **[PUBLICAR.md](PUBLICAR.md)** y `node scripts/comprobar-hoja.mjs <exportación.csv>`.
 
 ## 8. Aplicar y verificar
 
