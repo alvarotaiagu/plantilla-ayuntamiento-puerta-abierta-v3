@@ -25,6 +25,8 @@
 .publicar-boton__nota { margin-top: .35rem; color: var(--apagado); font-size: .9375rem; line-height: 1.35; }
 .publicar-pasos { margin: 0 0 1rem; padding-left: 1.4rem; }
 .publicar-pasos li + li { margin-top: .35rem; }
+/* v3c · F18 bis: quién puede publicar */
+.publicar-quien { padding: .7rem 1rem; background: var(--superficie); border-left: 4px solid var(--marca); border-radius: var(--radio); }
 
 /* ── el simulador ── */
 .simulador { display: grid; gap: 1.75rem; margin-top: 1.25rem; align-items: start; }

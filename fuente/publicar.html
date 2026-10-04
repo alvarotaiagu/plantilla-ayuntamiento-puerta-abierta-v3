@@ -17,10 +17,11 @@
       {{/publicar.formularios}}
     </ul>
     <ol class="publicar-pasos">
-      <li><b>Pulse</b> lo que quiere publicar: se abre un formulario de Google.</li>
+      <li><b>Pulse</b> lo que quiere publicar: se abre un formulario de Google. Entre con su cuenta de Google autorizada.</li>
       <li><b>Rellene</b> la fecha, un título claro y, si hace falta, unas líneas.</li>
       <li><b>Envíe.</b> En unos minutos sale en la web, sin hacer nada más.</li>
     </ol>
+    <p class="publicar-quien"><b>Para publicar hay que entrar con una cuenta de Google autorizada por el Ayuntamiento.</b> Para añadir a alguien, se escribe su correo de Google en la pestaña «Personas autorizadas» de la hoja «Web del Ayuntamiento»; para quitarlo, se borra su fila. Lo que mande otra cuenta no sale en la web.</p>
     <p class="publicar-solo-pantalla nota-fuente">Para tenerla a un toque, guarde esta página en la pantalla de inicio del móvil (en el menú del navegador, «Añadir a pantalla de inicio»).</p>
     <p class="publicar-solo-papel">Los formularios están en {{#web_texto}}<b>{{web_texto}}/publicar.html</b>{{/web_texto}}{{^web_texto}}la página «Publicar en la web»{{/web_texto}}, abajo del todo de la web: «Personal del Ayuntamiento: publicar». Ábrala en el móvil y guárdela en la pantalla de inicio.</p>
   </div>
@@ -155,9 +156,9 @@
     <ul class="publicar-lista">
       <li><b>Nada más enviarlo:</b> el formulario ofrece «Editar su respuesta». Corrija y vuelva a enviar.</li>
       <li><b>Más tarde:</b> abra la hoja «Web del Ayuntamiento» en Google Drive (con la cuenta del Ayuntamiento), pestaña «Respuestas avisos» (o «Respuestas agenda», «Respuestas noticias»), y cambie la celda. Las pestañas «Avisos», «Agenda» y «Noticias» se rellenan solas: no las toque.</li>
-      <li><b>Para retirarlo:</b> en su fila, en la columna «Estado», escriba <b>oculto</b>. Deja de verse en unos minutos. Para que vuelva, borre la palabra.</li>
+      <li><b>Para retirarlo:</b> en su fila, en la columna «Estado», escriba <b>oculto</b>. Deja de verse en unos minutos. Para que vuelva, borre la palabra. «Borrador» tampoco sale en la web, pero <b>no es privado</b>: se puede leer en la hoja publicada.</li>
       <li>Si cambia el título de algo ya publicado, la web lo toma como nuevo y quita el anterior: es lo normal.</li>
-      <li><b>Si no sale:</b> espere cinco minutos y recargue la página. Un aviso urgente o programado sin «Caduca», o con «Caduca» ya pasada, no sale en la franja (sí en el tablón). Si sigue sin salir, avise a quien mantiene la web.</li>
+      <li><b>Si no sale:</b> espere cinco minutos y recargue la página. Un aviso urgente o programado sin «Caduca», o con «Caduca» ya pasada, no sale en la franja (sí en el tablón). Si se entró con una cuenta que no está en «Personas autorizadas», no sale. Si sigue sin salir, avise a quien mantiene la web.</li>
     </ul>
   </div>
 </section>
@@ -180,7 +181,7 @@
     <h2 class="seccion__titulo" id="t-no">Lo que no se publica aquí</h2>
     <ul class="publicar-lista">
       <li><b>Lo oficial, lo que tiene efectos</b> (edictos, bandos, convocatorias, licitaciones, listas de admitidos): va al tablón de la sede electrónica, que es el que vale. {{#publicar.tablon_solo}}La web lo copia sola cada día.{{/publicar.tablon_solo}}{{^publicar.tablon_solo}}La web enseña el tablón de la sede; para que lo copie sola cada día, el Ayuntamiento tiene que autorizarlo.{{/publicar.tablon_solo}} Aquí, si quiere, un aviso que lo cuente con palabras sencillas y diga que el documento está en la sede.</li>
-      <li><b>Datos personales</b> (RGPD): ni nombres de vecinos, ni DNI, ni teléfonos o direcciones particulares, ni listas de personas, ni multas o deudas. Lo que se manda por estos formularios lo puede leer cualquiera.</li>
+      <li><b>Datos personales</b> (RGPD): ni nombres de vecinos, ni DNI, ni teléfonos o direcciones particulares, ni listas de personas, ni multas o deudas. Lo que se publica lo puede leer cualquiera.</li>
       <li><b>Fotos:</b> los formularios no llevan fotos. Si una noticia necesita una, mándela a quien mantiene la web, y solo con permiso de quien sale en ella (si son menores, de sus padres o tutores).</li>
       <li><b>En periodo electoral:</b> nada que presente logros del gobierno municipal, desde la convocatoria hasta el día de la votación (Ley Orgánica del Régimen Electoral General, artículo 50).</li>
     </ul>

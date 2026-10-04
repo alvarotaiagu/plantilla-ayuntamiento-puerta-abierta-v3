@@ -100,7 +100,7 @@ img { max-width: 100% !important; }
 .pagina-publicar .cabeza-pagina__titulo { font-size: 17pt; margin: 0; }
 .pagina-publicar .cabeza-pagina .entradilla { display: none; }
 .pagina-publicar .con-indice__cuerpo { columns: 2; column-gap: 8mm; }
-.pagina-publicar main { font-size: 8.4pt; line-height: 1.28; }
+.pagina-publicar main { font-size: 8.4pt; line-height: 1.25; }
 .pagina-publicar .seccion { padding: 0 0 2.5mm !important; }
 .pagina-publicar .seccion__titulo { font-size: 11pt; margin: 0 0 1mm; }
 .pagina-publicar .publicar-sub { font-size: 9.5pt; margin: 1.5mm 0 .8mm; }
@@ -115,4 +115,7 @@ img { max-width: 100% !important; }
 .pagina-publicar .publicar-titulos li { padding: 0 0 0 2mm; border: 0; border-left: 1pt solid var(--tinta); }
 .pagina-publicar .publicar-solo-papel { border: 1pt solid var(--tinta); padding: 1.5mm 2mm; }
 .pagina-publicar .publicar-papel-pie { border: 0; padding: 0; font-size: 8.5pt; }
+.pagina-publicar .publicar-quien { padding: 0 0 0 2mm; border-left: 2pt solid var(--tinta); }
+/* en papel, de los títulos de ejemplo solo los buenos */
+.pagina-publicar .publicar-titulos__mal { display: none; }
 .pagina-publicar .pie__cuerpo { border-top: .5pt solid var(--tinta); padding-top: 1.5mm !important; }

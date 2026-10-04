@@ -3548,6 +3548,8 @@ async function v3cGuia() {
   const html = fs.existsSync(path.join(RAIZ, 'publicar.html')) ? leer(RAIZ, 'publicar.html') : '';
   if (!html) malos.push('no existe publicar.html');
   if (!/<meta name="robots" content="noindex, nofollow">/.test(html)) malos.push('publicar.html sin noindex');
+  /* v3c · F18 bis: dice que hace falta una cuenta autorizada y nada de que cualquiera con el enlace publica */
+  if (!html.includes('Para publicar hay que entrar con una cuenta de Google autorizada por el Ayuntamiento.') || /cualquiera con el enlace|quien tenga el enlace/i.test(html)) malos.push('publicar.html no explica las cuentas autorizadas');
   for (const p of PAGINAS) {
     const h = leer(RAIZ, p);
     const menu = (h.match(/<ul class="menu__lista">[\s\S]*?<\/ul>/) || [''])[0], pie = (h.match(/<footer[\s\S]*<\/footer>/) || [''])[0];

@@ -10,7 +10,7 @@ Antes de mandarlo, mire las dos casillas del final.
 
 > Publicar es rellenar un formulario desde el móvil. Tienen tres: uno para avisos, otro para los actos de la agenda y otro para noticias.
 >
-> Se pone la fecha, un título claro y, si hace falta, unas líneas, se pulsa «Enviar» y en unos minutos sale en la web. No hay que entrar en ningún programa ni recordar contraseñas.
+> Se pone la fecha, un título claro y, si hace falta, unas líneas, se pulsa «Enviar» y en unos minutos sale en la web. No hay que entrar en ningún programa: basta con la cuenta de Google del móvil. Solo publican las personas que el Ayuntamiento autorice.
 >
 > Si el aviso es urgente (una avería, una alerta), se marca así y sale en una franja roja arriba de todas las páginas hasta el día que ustedes digan.
 >
@@ -62,21 +62,21 @@ Lo que no está en los formularios lo cambio yo. Mándenmelo por WhatsApp o por 
 ### Lo que no va por aquí
 
 - **Lo oficial, lo que tiene efectos** (edictos, bandos, convocatorias, licitaciones, listas de admitidos): al tablón de la sede electrónica, que es el que vale. En la web se puede contar con palabras sencillas en un aviso.
-- **Datos personales**: ni nombres de vecinos, ni DNI, ni teléfonos particulares, ni listas de personas. Lo que se envía por los formularios lo puede leer cualquiera.
+- **Datos personales**: ni nombres de vecinos, ni DNI, ni teléfonos particulares, ni listas de personas. Lo que se publica lo puede leer cualquiera.
 - **En periodo electoral**, nada que presente logros del gobierno municipal (Ley Orgánica del Régimen Electoral General, artículo 50).
 
 ### Quién puede publicar
 
-Quien tenga el enlace de un formulario puede publicar, como quien tiene una llave. La página «Publicar en la web» no sale en Google ni en el menú, pero tampoco es secreta. Por eso:
-- cada envío manda un correo a la cuenta del Ayuntamiento, para enterarse al momento de lo que se publica;
-- si un enlace llega a quien no debe, se cambia el formulario y el viejo deja de funcionar;
-- si el Ayuntamiento tiene su correo en Google (Google Workspace), se puede exigir que quien publique entre con una cuenta del Ayuntamiento.
+Solo publican las personas que el Ayuntamiento autorice. Para publicar hay que entrar en el formulario con una cuenta de Google que esté en la lista «Personas autorizadas» de su hoja; lo que mande cualquier otra persona, aunque tenga el enlace, se queda guardado en la hoja y no sale en la web. Vale con cuentas de Gmail normales.
+- Para añadir a alguien, se escribe su correo de Google en esa lista; para quitarlo, se borra su línea. Lo pueden hacer ustedes mismos o pedírmelo.
+- Además, cada envío manda un correo a la cuenta del Ayuntamiento con lo que se ha mandado y quién lo mandó.
 
 ---
 
 ## Antes de mandarlo, compruebe
 
 - [ ] **La actualización de dos veces al día está encendida** en la web de ese pueblo (la tarea de GitHub de la rama `automatico`). Si no lo está, quite de «Cuánto tarda» la frase de la actualización y diga que eso lo hace usted al volver a montar la web.
+- [ ] Si la hoja ya está montada: **los tres formularios piden entrar con Google** (correo «Verificado», PUBLICAR.md, paso 2.A). Sin eso, la frase «solo publican las personas que el Ayuntamiento autorice» no es verdad.
 - [ ] **El simulador abre** en `<la web>/publicar.html`. Sin la hoja montada, los tres botones dicen «Se activa al montar la hoja»: es lo esperado en la demo.
 
 Lo que no conviene prometer (no está hecho): que lo publicado vaya solo a Facebook, a Instagram o a una aplicación de avisos como Bandomóvil; fotos desde el formulario; que el tablón de la sede se copie solo sin su autorización por escrito.
