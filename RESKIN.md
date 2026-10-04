@@ -11,6 +11,39 @@ Tiempo orientativo: 1–2 horas con los datos a mano. Lo que más tarda es **reu
 
 Prueba real: `pruebas/segura-de-leon/` es Segura de León completo (otro escudo, otra sede, 3 servicios). `scripts/verificar.mjs` lo aplica sobre una copia y falla si queda cualquier resto del municipio original.
 
+## 0. El camino corto: alta desde datos abiertos (v3c)
+
+```bash
+node scripts/nuevo-municipio.mjs 06124 --salida ../alta-segura      # 1. el borrador (código INE de 5 cifras o "Nombre")
+#                                                                   2. completar ALTA-<slug>.md en el municipio.json del borrador
+node scripts/aplicar.mjs                                            # 3. en la copia de la plantilla (§1), con ese municipio.json y su marca/
+node scripts/verificar.mjs                                          # 4.
+```
+
+1. **`nuevo-municipio.mjs`** escribe en `--salida` (nunca en la raíz de la plantilla ni encima de un `municipio.json` que no sea un borrador suyo):
+   - `municipio.json`, un **borrador** (`"_borrador": true`) con lo que se saca de fuentes abiertas, y en `_fuentes` la fuente, la url y la fecha de cada dato. Lo que no se encuentra va `null`.
+   - `ALTA-<slug>.md`: **lo que falta, por orden de importancia** (con pistas cuando las hay), las **contradicciones entre fuentes** (no elige: si el INE y Wikidata dan habitantes distintos del mismo año, no pone ninguno) y lo que está puesto pero hay que mirar con ojos.
+   - `marca/escudo.svg` y sus PNG (el escudo de Commons, con `escudo.mjs`) y `marca/termino.*` (el mapa del término, con `termino.mjs --raiz`).
+   - `_respuestas/`: todo lo traído, para repetirlo sin red con `--desde <carpeta>`. `--sin-red` usa las de `pruebas/alta/<ine>/` (lo usa `verificar.mjs`); `--sin-mapa`, sin Overpass.
+2. **Completa** el borrador con `ALTA-<slug>.md` delante, apuntando cada dato nuevo con su fuente en `DATOS.md` (§2), y quita `"_borrador"`.
+3. **`aplicar.mjs`**: con el borrador a medias **se niega y lista lo que falta** (los obligatorios de §3, el listín y el catálogo de trámites), sin romperse; mientras quede `"_borrador"`, lo avisa.
+4. **`verificar.mjs`**, como siempre.
+
+Qué da y de dónde (comprobado con Segura de León, Usagre y Fuentes de León el 4-10-2026):
+
+| Dato | Fuente | Nota |
+|---|---|---|
+| Nombre, código INE, provincia, habitantes | INE (API JSON de INEbase: la tabla del padrón de la provincia) | El código se comprueba en el INE: **Segura de León es 06124** (06125 es Siruela) y Usagre 06136 |
+| Superficie, altitud, gentilicio, código postal, web, escudo, comarca | Wikidata, por SPARQL en el espejo QLever (el robots.txt de wikidata.org no deja usar `/sparql` a los robots) | Cada dato enlaza a su elemento. Superficie y altitud van a `cifras` sin año: contrástalas con el IGN |
+| Autor y licencia del escudo, y el archivo | Wikimedia Commons (la ficha y upload.wikimedia.org) | Si tiene varias licencias, la CC |
+| Dirección, CP, teléfono, fax y correo | El pie de su web (las de la Diputación lo llevan) y la sede de Gestiona («¿Tienes algún problema?», en `/info.0`, lo único que deja su robots.txt) | Si no casan, a contradicciones |
+| Sede | El enlace de su web o `<nombre>.sedelectronica.es` (que diga «Sede Electrónica de <nombre>») | En Gestiona, la instancia general y las quejas son los uuid comunes, **por comprobar** en el navegador |
+| Trámites | En Gestiona, el catálogo común de la plantilla (solo los que van por uuid) | **Por comprobar**: cada ayuntamiento activa los suyos |
+| DIR3 y titular | Calculados: `L01` + INE + dígito de control; «Ayuntamiento de …» | El NIF no se calcula: sale como pista (`P` + INE + `00` + letra suele valer, pero hay que copiarlo de la sede) |
+| El término | OpenStreetMap, con `termino.mjs` (la relación, de Wikidata) | |
+
+**Lo que queda a mano** (no hay fuente abierta fiable): el horario, el NIF, la corporación (BOP), el listín de teléfonos, las fotos, «El pueblo» (historia, lugares, fiestas…), los colores del escudo (`marca-desde-escudo.py`), el plano y el perfil del pie, el contenido (avisos, agenda, noticias) y repasar lo marcado «por comprobar». El alcalde que da Wikidata va solo como pista: en Segura estaba desfasado. Es lo que más tarda, igual que antes, pero ya no hay que buscar ni teclear lo de arriba.
+
 ---
 
 ## 1. Duplicar la carpeta
