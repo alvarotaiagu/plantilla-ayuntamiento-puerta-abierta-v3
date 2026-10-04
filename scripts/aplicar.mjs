@@ -12,6 +12,8 @@
 
      node scripts/aplicar.mjs                  todo
      node scripts/aplicar.mjs --sin-og         sin la imagen para compartir
+     node scripts/aplicar.mjs --sin-hoja       sin pedir la hoja de Google: solo contenido/hoja.json
+     node scripts/aplicar.mjs --hoja-url <base>   otra dirección en vez de docs.google.com (pruebas)
      node scripts/aplicar.mjs --fecha 2026-10-06T10:00:00+02:00   «hoy» fijo (pruebas)
      node scripts/aplicar.mjs --fijar-paleta b   la paleta B del mando pasa a ser la real
      node scripts/aplicar.mjs --forzar         escribe aunque falle algo (no lo uses)
@@ -28,6 +30,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { renderizar } from './lib/plantilla.mjs';
 import { derivarTokens, paletaGirada, contraste, nombreMatiz, oscurecerHasta, hexARgb } from './lib/color.mjs';
 import { feedAtom, agendaIcs, organizacion, eventoLd, noticiaLd, migasLd, jsonLd, swCodigo, recursosDe } from './lib/servicio.mjs';   /* v3b · servicio */
+import { leerHojaAlMontar } from './lib/hoja.mjs';   /* v3c · automatico */
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -173,6 +176,23 @@ vm.runInNewContext(leer('js/vivo.js'), ctx);
 const Vivo = ctx.window.Vivo;
 const fechaBuild = arg('--fecha') ? new Date(arg('--fecha')) : new Date();
 const ahora = Vivo.ahoraEn('Europe/Madrid', fechaBuild);
+
+/* ───────────────────────── v3c · automatico: la hoja de Google, también al montar (F15) ─────────────────────────
+   Con municipio.json → hoja.id, lo publicado en la hoja se fusiona aquí con contenido/*.json (la hoja
+   manda por id; lo oculto oculta) ANTES de pintar: así entra en feed.xml, agenda.ics, ics/<id>.ics, la
+   lista de avisos.html, y cada noticia de la hoja tiene su noticia-<id>.html. Se lee y se sanea con el
+   mismo código que en el navegador (js/vivo.js). Si la hoja no contesta, lo último bueno
+   (contenido/hoja.json). Sin hoja.id, nada cambia. Lo raro de la hoja se avisa; nunca para el montaje */
+const hojaLeida = await leerHojaAlMontar({ hoja: M.hoja, Vivo, raiz: RAIZ, base: arg('--hoja-url'), sinRed: args.includes('--sin-hoja') });
+if (hojaLeida) {
+  const fusion = (lista, filas, agenda) => JSON.parse(JSON.stringify(Vivo.fusionarHoja(lista, filas, agenda)));
+  C.avisos = fusion(C.avisos, hojaLeida.avisos);
+  C.agenda = fusion(C.agenda, hojaLeida.agenda, true);
+  C.noticias = fusion(C.noticias, hojaLeida.noticias);
+  avisos.push(...hojaLeida.avisos_montaje);
+  log('✓ hoja: ' + Object.entries(hojaLeida.origen).filter(([, o]) => o).map(([t, o]) => `${t} ${hojaLeida[t].filter(f => !f.oculto).length} (${o === 'hoja' ? 'leída ahora' : 'copia'})`).join(', ') +
+    (hojaLeida.escrita ? ' · contenido/hoja.json al día' : ''));
+}
 
 /* ───────────────────────── utilidades ───────────────────────── */
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];

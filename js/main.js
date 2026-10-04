@@ -138,33 +138,14 @@
 
   /* ═══ hoja de cálculo publicada (memoria «hoja de cálculo como CMS»):
      primero se ve el respaldo, luego se fusiona lo de la hoja. ═══ */
+  /* v3c · automatico: leer, sanear y fusionar es el mismo código que usa aplicar.mjs al montar la web
+     (js/vivo.js → filasHoja, sanearHoja y fusionarHoja; en Node, scripts/lib/hoja.mjs) */
   function leerHoja(pestana, valida) {
     var u = 'https://docs.google.com/spreadsheets/d/' + encodeURIComponent(D.hoja.id) + '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent(pestana);
     return conTiempo(u, { credentials: 'omit' }).then(function (r) { return r.text(); }).then(function (txt) {
-      var j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1));
-      var cols = j.table.cols.map(function (c) { return normal(c.label || c.id).replace(/\s+/g, '_'); });
-      return j.table.rows.map(function (fila) {
-        var o = {};
-        (fila.c || []).forEach(function (c, i) {
-          var v = c ? c.v : null;
-          var m = typeof v === 'string' && v.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+))?/);
-          /* una celda de solo hora llega como Date(1899,11,30,20,30,0): es «20:30» */
-          if (m && m[1] === '1899' && m[4] != null) v = String(m[4]).padStart(2, '0') + ':' + String(m[5]).padStart(2, '0');
-          else if (m) v = m[1] + '-' + String(Number(m[2]) + 1).padStart(2, '0') + '-' + String(m[3]).padStart(2, '0');
-          if (v === 'TRUE' || v === 'sí' || v === 'si') v = true;
-          if (v === 'FALSE' || v === 'no') v = false;
-          o[cols[i]] = v;
-        });
-        if (o.estado && /oculto|borrador/i.test(o.estado)) o.oculto = true;
-        if (!o.id && o.titulo && o.fecha) o.id = normal(o.fecha + '-' + o.titulo).replace(/[^a-z0-9]+/g, '-').slice(0, 60);
-        return o;
-      }).filter(valida || function (o) { return o.titulo && o.fecha; });
+      var filas = window.Vivo.filasHoja(txt);
+      return valida ? filas.filter(valida) : filas;
     });
-  }
-  function fusionar(lista, nuevas) {
-    var porId = {};
-    lista.forEach(function (x, i) { porId[x.id] = i; });
-    nuevas.forEach(function (n) { if (n.id in porId) lista[porId[n.id]] = Object.assign({}, lista[porId[n.id]], n); else lista.push(n); });
   }
   function cargarHoja() {
     if (!D.hoja || !D.hoja.id) return;
@@ -172,9 +153,10 @@
     var pares = [['avisos', p.avisos], ['agenda', p.agenda], ['noticias', p.noticias]].filter(function (x) { return x[1]; });
     pares.forEach(function (par) {
       leerHoja(par[1]).then(function (filas) {
-        /* un evento de la hoja no tiene .ics escrito (o el que había ya no vale): se genera al pulsar */
-        if (par[0] === 'agenda') filas.forEach(function (f) { f.ics = null; if (f.tipo) f.tipo = normal(f.tipo); });
-        fusionar(D[par[0]], filas); pintarVivo(); irAlAncla();
+        /* un evento nuevo o cambiado de la hoja no tiene .ics escrito: se genera al pulsar (fusionarHoja) */
+        var s = window.Vivo.sanearHoja(par[0], filas);
+        if (s.avisos.length && window.console) console.warn('Hoja «' + par[1] + '»:\n  ' + s.avisos.join('\n  '));
+        D[par[0]] = window.Vivo.fusionarHoja(D[par[0]], s.filas, par[0] === 'agenda'); pintarVivo(); irAlAncla();
       }).catch(function (e) { if (window.console) console.warn('Hoja «' + par[1] + '»: se queda el respaldo', e && e.message); });
     });
     /* pestaña de guardias de farmacia (desde, hasta, farmacia): manda sobre la rotación */
