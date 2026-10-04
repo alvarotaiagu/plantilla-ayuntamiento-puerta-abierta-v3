@@ -5,7 +5,9 @@
 {{/base_404}}<title>{{pagina.titulo_doc}}</title>
 <meta name="description" content="{{pagina.descripcion}}">
 <meta property="og:type" content="website">
-<meta property="og:locale" content="es_ES">
+{{#pagina.og_locale}}<meta property="og:locale" content="{{pagina.og_locale}}">
+{{/pagina.og_locale}}{{#pagina.alternativas}}<link rel="alternate" hreflang="{{lang}}" href="{{href}}">
+{{/pagina.alternativas}}
 <meta property="og:title" content="{{og.titulo}}">
 <meta property="og:description" content="{{og.descripcion}}">
 <meta property="og:image" content="{{og.imagen}}">

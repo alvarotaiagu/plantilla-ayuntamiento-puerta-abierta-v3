@@ -351,6 +351,18 @@
     to { stroke-dasharray: 1 1; stroke-dashoffset: 0; }
   }
 
+  /* ═══ v3b · M9. El plano del pie se dibuja una vez al asomar, del Ayuntamiento hacia fuera ═══
+     Cada tramo de calle es su propio <path pathLength="1"> con --plano-d (0 en el Ayuntamiento,
+     1 el más lejano; aplicar.mjs). Cada uno se traza en 300 ms con un retraso de hasta 300 ms:
+     600 ms en total. Mismo truco que el perfil: el dasharray solo existe mientras corre
+     (fill: backwards); en reposo, sin clase o sin soporte, el plano está entero. El SVG del
+     plano escala uniforme (width 100 %, height auto), así que el dasharray no se rompe. */
+  .pie__plano.mov-plano .plano-calle { animation: mov-plano .3s var(--curva-salida) calc(var(--plano-d, 0) * .3s) backwards; }
+  @keyframes mov-plano {
+    from { stroke-dasharray: 1 1; stroke-dashoffset: 1; }
+    to { stroke-dasharray: 1 1; stroke-dashoffset: 0; }
+  }
+
   /* ═══ v3. Hemiciclo: los escaños de los demás grupos se atenúan en 180 ms ═══
      (con movimiento reducido el resaltado sigue, sin transición: es información) */
   .hemiciclo circle { transition: opacity .18s ease-out; }

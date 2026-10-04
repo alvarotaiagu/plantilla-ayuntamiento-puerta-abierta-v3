@@ -15,6 +15,7 @@
      · el borde de oro del mes en curso se dibuja al entrar en pantalla (v3)
 
      · v3: el perfil del pueblo del pie se traza al asomar
+     · v3b: el plano del pie se dibuja al asomar, del Ayuntamiento hacia fuera
      · la foto de la noticia que se abre desde la portada se transforma en la
        del artículo (pageswap / pagereveal de las View Transitions) */
 (function () {
@@ -124,6 +125,20 @@
       });
     }, { rootMargin: '0px', threshold: 0 });
     perfiles.forEach(function (p) { ioPerfil.observe(p); });
+  }
+
+  /* ═══ v3b · M9. el plano del pie se dibuja una vez al asomar, desde el Ayuntamiento ═══
+     Umbral 0 y 40 px de margen por abajo: arranca cuando el plano ya asoma de verdad */
+  var planos = $$('.pie__plano').filter(function (p) { return p.querySelector('path[pathLength]'); });
+  if (planos.length && 'IntersectionObserver' in window) {
+    var ioPlano = new IntersectionObserver(function (entradas) {
+      entradas.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('mov-plano');
+        ioPlano.unobserve(e.target);
+      });
+    }, { rootMargin: '0px 0px -40px 0px', threshold: 0 });
+    planos.forEach(function (p) { ioPlano.observe(p); });
   }
 
   /* ═══ 15. la foto de la noticia viaja de la portada al artículo ═══

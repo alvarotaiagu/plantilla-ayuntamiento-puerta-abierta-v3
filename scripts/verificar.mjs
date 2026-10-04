@@ -952,12 +952,12 @@ async function estructura() {
         letra: cs.fontSize, interlineado: parseFloat(cs.lineHeight) / parseFloat(cs.fontSize), toques, maxCar: Math.max(0, ...parrafos)
       };
     });
-    if (r.h1 !== 1 || r.primero !== 1 || r.salto || r.lang !== 'es' || !r.marcas || !r.saltar || r.letra !== '18px' || r.interlineado < 1.5)
+    if (r.h1 !== 1 || r.primero !== 1 || r.salto || r.lang !== ((/^pueblo-([a-z]{2})\.html$/.exec(p) || [])[1] || 'es') || !r.marcas || !r.saltar || r.letra !== '18px' || r.interlineado < 1.5)
       malos.push(`${p}: h1=${r.h1}, salto=${r.salto}, lang=${r.lang}, landmarks=${r.marcas}, saltar=${r.saltar}, letra=${r.letra}, interlineado=${r.interlineado.toFixed(2)}`);
     r.toques.forEach(t => pequenos.push(`${p}: ${Math.round(t.w)}×${Math.round(t.h)} ${t.e}`));
     if (r.maxCar > 75) medida.push(`${p}: ${Math.round(r.maxCar)}`);
   }
-  comprobar(!malos.length, 'estructura: lang="es", saltar al contenido, header/nav/main/footer, un solo h1 y títulos sin saltos; texto de 18 px con interlineado ≥ 1,5' + (malos.length ? ' → ' + malos.slice(0, 3).join(' | ') : ''));
+  comprobar(!malos.length, 'estructura: lang="es" (en «El pueblo» traducido, el de su idioma), saltar al contenido, header/nav/main/footer, un solo h1 y títulos sin saltos; texto de 18 px con interlineado ≥ 1,5' + (malos.length ? ' → ' + malos.slice(0, 3).join(' | ') : ''));
   comprobar(!pequenos.length, 'zonas táctiles de al menos 44 × 44 px a 390 px (los enlaces dentro de una frase se rigen por la frase)' + (pequenos.length ? ' → ' + pequenos.slice(0, 5).join(' | ') : ''));
   await ctx.close();
   const e = await nueva();
@@ -1037,7 +1037,7 @@ async function interiores() {
   }
   /* qué lleva cada cabecera: foto donde se configura, arco de línea en el resto, nada en la 404 */
   const tipos = INTERIORES.map(p => { const h = leer(RAIZ, p); const c = (h.match(/class="cabeza-pagina( [^"]*)?"/) || [])[1] || ''; return { p, foto: /--foto/.test(c), grande: /--grande/.test(c), linea: /--arco/.test(c) }; });
-  const idDe = p => ({ 'aviso-legal.html': 'legal', 'privacidad.html': 'legal', 'cookies.html': 'legal', 'accesibilidad.html': 'legal', '404.html': 'error' })[p] || (p.startsWith('noticia-') ? 'noticia' : p.replace('.html', ''));
+  const idDe = p => ({ 'aviso-legal.html': 'legal', 'privacidad.html': 'legal', 'cookies.html': 'legal', 'accesibilidad.html': 'legal', '404.html': 'error' })[p] || (p.startsWith('noticia-') ? 'noticia' : /^pueblo-[a-z]{2}\.html$/.test(p) ? 'pueblo' : p.replace('.html', ''));   /* v3b: «El pueblo» traducido es «El pueblo» */
   const malTipo = tipos.filter(t => { const id = idDe(t.p), c = conf[id]; const debeFoto = !!(c && fs.existsSync(path.join(RAIZ, 'media', (typeof c === 'string' ? c : c.archivo) + '.jpg')));
     return t.foto !== debeFoto || t.grande !== (debeFoto && id === 'pueblo') || t.linea !== (!debeFoto && id !== 'error'); }).map(t => t.p);
   comprobar(!malos.length && !malTipo.length, `cabeceras interiores: foto en arco donde municipio.json → cabeceras la pone (${Object.keys(conf).filter(k => !k.startsWith('_')).join(', ') || 'ninguna'}), arco de línea de pie sobre el filete en el resto y nada en la 404; ni pisa el título ni las migas, cabe y es de medio punto a 320, 390, 1024, 1440 px y con zoom; en la sobria, sin arco` +
@@ -1977,7 +1977,7 @@ async function v3Interiores() {
   /* ── 1. cada cabecera interior: pictograma dentro del arco, o la foto de `cabeceras`; nunca vacía ── */
   {
     const conf = M.cabeceras || {}, malos = [];
-    const idDe = p => ({ 'aviso-legal.html': 'legal', 'privacidad.html': 'legal', 'cookies.html': 'legal', 'accesibilidad.html': 'legal' })[p] || (p.startsWith('noticia-') ? 'noticia' : p.replace('.html', ''));
+    const idDe = p => ({ 'aviso-legal.html': 'legal', 'privacidad.html': 'legal', 'cookies.html': 'legal', 'accesibilidad.html': 'legal' })[p] || (p.startsWith('noticia-') ? 'noticia' : /^pueblo-[a-z]{2}\.html$/.test(p) ? 'pueblo' : p.replace('.html', ''));   /* v3b: «El pueblo» traducido es «El pueblo» */
     const pictos = new Set();
     for (const [w, h] of [[1440, 900], [390, 844]]) {
       const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
@@ -3084,6 +3084,196 @@ async function v3bServicio() {
   comprobar(!malH.length, 'comprobar-hoja.mjs: acepta las plantillas de avisos y agenda y rechaza una exportación rota diciendo la fila y el porqué (fecha imposible, sin título, gravedad mal escrita, caduca antes de empezar, fila repetida)' + (malH.length ? ' → ' + malH.join(' | ') : ''));
 }
 
+/* ═════════════ v3b · pueblo: fotos igualadas, mapa del término, «El pueblo» en otros idiomas y el plano que se dibuja ═════════════
+   - V15. Las fotos de media/ salen de media/originales/ con scripts/fotos-igualar.py: existen las dos medidas, mantienen
+     el tamaño del original (1600 px como mucho), tienen crédito y «alt», y el igualado es idempotente (repetirlo da los
+     mismos bytes que lo que hay en media/).
+   - V16. Sin marca/termino.*, la sección del mapa no sale. En una copia con la muestra SINTÉTICA de
+     pruebas/termino/: atribución de OSM, cada punto y cada fila de la leyenda enlazan a una ficha que existe, ni una
+     petición fuera, sin desborde a 320 px y 0 violaciones de axe (también en inglés).
+   - F12. Con contenido/pueblo.<lang>.json, pueblo-<lang>.html con su lang, hreflang recíprocos (y x-default), el selector
+     solo en «El pueblo», lo común marcado lang="es", 0 violaciones de axe y sin desborde a 320 px. Sin traducción (o
+     con una incompleta), esa página no se genera.
+   - M9. El plano del pie se dibuja al asomar, del Ayuntamiento hacia fuera, en 600 ms como mucho, y acaba entero; con
+     movimiento reducido, quieto y entero. */
+async function v3bPueblo() {
+  const axeDe = async (page, nombre, viol) => (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.forEach(v => viol.push(nombre + ': ' + v.id + ' ' + v.nodes[0].target.join(' ')));
+  const medidas = rel => { const b = fs.readFileSync(path.join(RAIZ, rel)); for (let i = 2; i < b.length;) { const m = b[i + 1], l = b.readUInt16BE(i + 2); if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) return [b.readUInt16BE(i + 7), b.readUInt16BE(i + 5)]; i += 2 + l; } return null; };
+
+  /* 1. V15. fotos igualadas */
+  {
+    const malos = [];
+    const orig = fs.existsSync(path.join(RAIZ, 'media/originales')) ? fs.readdirSync(path.join(RAIZ, 'media/originales')).filter(f => f.endsWith('.jpg')).map(f => f.slice(0, -4)) : [];
+    const creditos = JSON.parse(leer(RAIZ, 'media', 'creditos.json'));
+    for (const n of orig) {
+      const [w, h] = medidas('media/originales/' + n + '.jpg'), esc = Math.min(1, 1600 / Math.max(w, h)), esc8 = Math.min(1, 800 / Math.max(w, h));
+      for (const [rel, e] of [['media/' + n + '.jpg', esc], ['media/' + n + '-800.jpg', esc8]]) {
+        if (!fs.existsSync(path.join(RAIZ, rel))) { malos.push('falta ' + rel); continue; }
+        const [a, b] = medidas(rel);
+        if (Math.abs(a - Math.round(w * e)) > 1 || Math.abs(b - Math.round(h * e)) > 1) malos.push(`${rel}: ${a}×${b} (el original es ${w}×${h})`);
+      }
+      if (!creditos[n] || !creditos[n].autor) malos.push(n + ': sin crédito');
+    }
+    /* el «alt» de las fotos de lugares, en castellano y en las traducciones */
+    for (const p of PAGINAS.filter(f => /^pueblo(-[a-z]{2})?\.html$/.test(f)))
+      for (const [, src, alt] of leer(RAIZ, p).matchAll(/<img src="media\/([\w-]+)-800\.jpg"[^>]*\balt="([^"]*)"/g)) if (!alt.trim()) malos.push(p + ': ' + src + ' sin alt');
+    /* idempotente: otra pasada en una carpeta aparte da los mismos bytes */
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'igualar-'));
+    const r = spawnSync('python', [path.join(RAIZ, 'scripts/fotos-igualar.py'), '--salida', tmp], { encoding: 'utf8' });
+    if (r.status !== 0) malos.push('fotos-igualar.py falla → ' + (r.stderr || r.stdout).slice(-200));
+    else for (const f of fs.readdirSync(tmp)) if (!fs.readFileSync(path.join(tmp, f)).equals(fs.readFileSync(path.join(RAIZ, 'media', f)))) malos.push('media/' + f + ' no es lo que da el igualado (vuelve a ejecutar scripts/fotos-igualar.py)');
+    fs.rmSync(tmp, { recursive: true, force: true });
+    comprobar(orig.length >= 3 && !malos.length, `v3b V15: ${orig.length} fotos igualadas desde media/originales/, en sus dos medidas con el tamaño del original, con crédito y alt; repetir el igualado da los mismos bytes` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+
+  /* 2. V16 y F12 en una copia: el mapa con la muestra sintética y las traducciones */
+  const conTermino = fs.existsSync(path.join(RAIZ, 'marca/termino.svg'));
+  if (!conTermino) comprobar(!/id="t-termino"/.test(leer(RAIZ, 'pueblo.html')), 'v3b V16: sin marca/termino.svg (Overpass no se ha ejecutado aquí), «El pueblo» no lleva la sección del mapa');
+  const trads = fs.readdirSync(path.join(RAIZ, 'contenido')).map(f => (/^pueblo\.([a-z]{2})\.json$/.exec(f) || [])[1]).filter(Boolean);
+  {
+    const dest = copiar();
+    let srv = null;
+    try {
+      for (const f of ['marca/termino.svg', 'marca/termino.json']) fs.rmSync(path.join(dest, f), { force: true });
+      const tm = spawnSync('node', [path.join(dest, 'scripts/termino.mjs'), '--desde', path.join(dest, 'pruebas/termino/muestra-overpass.json')], { encoding: 'utf8', cwd: dest });
+      const ap = tm.status === 0 ? spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest }) : tm;
+      if (ap.status !== 0) { comprobar(false, 'v3b V16: termino.mjs o aplicar.mjs fallan con la muestra → ' + (ap.stderr || ap.stdout).slice(-300)); return; }
+      srv = crearServidor(dest, null);
+      await new Promise(r => srv.listen(0, '127.0.0.1', r));
+      const b = 'http://127.0.0.1:' + srv.address().port + '/';
+      const meta = JSON.parse(fs.readFileSync(path.join(dest, 'marca/termino.json'), 'utf8'));
+      const malos = [], viol = [], fuera = [];
+      for (const [pag, w, h] of [['pueblo.html', 1440, 900], ['pueblo.html', 320, 640], ...trads.map(l => ['pueblo-' + l + '.html', 320, 640])]) {
+        const ctx = await navegador.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
+        await ctx.addInitScript(s => { try { localStorage.setItem(s + '-cookies', 'ok'); sessionStorage.setItem(s + '-cortina', '1'); } catch (e) {} }, SLUG);
+        const page = await ctx.newPage();
+        page.on('request', q => { if (!q.url().startsWith(b) && !/^(data|blob):/.test(q.url())) fuera.push(pag + ': ' + q.url()); });
+        await page.goto(b + pag, { waitUntil: 'networkidle' });
+        await page.locator('#t-termino').scrollIntoViewIfNeeded();
+        const r = await page.evaluate(() => {
+          const sec = document.getElementById('t-termino'), fig = document.querySelector('.termino__figura'), svg = document.querySelector('.termino__mapa');
+          if (!sec || !svg) return null;
+          const puntos = [...svg.querySelectorAll('a.termino-punto')].map(a => a.getAttribute('href'));
+          const ley = [...document.querySelectorAll('.termino__lugares a')].map(a => a.getAttribute('href'));
+          const pie = document.querySelector('.termino__pie'), atr = pie && [...pie.querySelectorAll('a')].find(a => /openstreetmap\.org\/copyright/.test(a.href));
+          const rb = svg.getBoundingClientRect();
+          return { puntos, ley, sinFicha: [...puntos, ...ley].filter(h => !document.getElementById(h.slice(1))),
+            atr: atr ? atr.textContent : null, oculto: svg.getAttribute('aria-hidden'), tabulables: [...svg.querySelectorAll('a')].filter(a => a.tabIndex >= 0).length,
+            claves: document.querySelectorAll('.termino__claves li').length, escala: !!svg.querySelector('.termino-escala'), ejemplo: !!pie.querySelector('.ejemplo'),
+            ancho: document.documentElement.scrollWidth, vw: innerWidth, svgDer: rb.right, svgAncho: rb.width };
+        });
+        if (!r) { malos.push(pag + ' ' + w + ': no sale el mapa'); await ctx.close(); continue; }
+        if (r.puntos.length !== meta.lugares.length || r.ley.join() !== r.puntos.join() || r.sinFicha.length) malos.push(`${pag} ${w}: puntos ${JSON.stringify(r.puntos)} / leyenda ${r.ley.length} / sin ficha ${r.sinFicha.join(',')}`);
+        if (!/© colaboradores de OpenStreetMap/.test(r.atr || '') || r.oculto !== 'true' || r.tabulables || r.claves < 4 || !r.escala || !r.ejemplo) malos.push(`${pag} ${w}: ${JSON.stringify(r)}`);
+        if (r.ancho > r.vw || r.svgDer > r.vw + 0.5 || r.svgAncho < Math.min(260, w - 40)) malos.push(`${pag} ${w}: desborda o encoge (${r.ancho} / ${r.svgDer} / ${r.svgAncho})`);
+        /* un punto lleva a su ficha */
+        if (w === 1440) {
+          const primero = r.puntos[0];
+          await page.locator(`a.termino-punto[href="${primero}"]`).click();
+          const llega = await page.evaluate(h => location.hash === h && !!document.querySelector(h + ':target'), primero);
+          if (!llega) malos.push('pulsar el punto 1 no lleva a ' + primero);
+        }
+        await axeDe(page, pag + ' ' + w, viol);
+        await ctx.close();
+      }
+      comprobar(!malos.length && !viol.length && !fuera.length, `v3b V16: con la muestra sintética, el mapa del término sale en «El pueblo»${trads.length ? ' y en ' + trads.join(', ') : ''}: ${meta.lugares.length} puntos numerados que enlazan (ratón) a su ficha, la misma lista en texto (teclado), leyenda, escala y «© colaboradores de OpenStreetMap»; sin peticiones fuera, sin desborde a 320 px y 0 violaciones de axe` +
+        (malos.length ? ' → ' + malos.slice(0, 3).join(' | ') : '') + (viol.length ? ' → axe: ' + viol.slice(0, 4).join(', ') : '') + (fuera.length ? ' → fuera: ' + fuera.slice(0, 3).join(', ') : ''));
+
+      /* sin traducción completa, esa página no se genera; sin ninguna, tampoco el selector */
+      if (trads.length) {
+        const f0 = path.join(dest, 'contenido', 'pueblo.' + trads[0] + '.json'), tr = JSON.parse(fs.readFileSync(f0, 'utf8'));
+        delete tr.pueblo.historia;
+        fs.writeFileSync(f0, JSON.stringify(tr));
+        const a1 = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og'], { encoding: 'utf8', cwd: dest });
+        const incompleta = a1.status === 0 && !fs.existsSync(path.join(dest, 'pueblo-' + trads[0] + '.html')) && /no se genera/.test(a1.stdout + a1.stderr);
+        for (const l of trads) fs.rmSync(path.join(dest, 'contenido', 'pueblo.' + l + '.json'));
+        const a2 = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
+        const sin = a2.status === 0 && !fs.readdirSync(dest).some(f => /^pueblo-[a-z]{2}\.html$/.test(f)) && !/class="contenedor idiomas"|hreflang=/.test(fs.readFileSync(path.join(dest, 'pueblo.html'), 'utf8'));
+        comprobar(incompleta && sin, 'v3b F12: con una traducción incompleta, esa página no se genera (y aplicar.mjs lo dice); sin traducciones, ni páginas en otros idiomas, ni selector, ni hreflang' + (incompleta && sin ? '' : ' → ' + JSON.stringify({ incompleta, sin })));
+      }
+    } finally {
+      if (srv) srv.close();
+      fs.rmSync(dest, { recursive: true, force: true });
+    }
+  }
+
+  /* 3. F12 en la web: lang, hreflang recíprocos, el selector solo en «El pueblo», lo común en castellano y axe */
+  if (trads.length) {
+    const malos = [], viol = [];
+    const paginas = ['pueblo.html', ...trads.map(l => 'pueblo-' + l + '.html')];
+    for (const p of paginas) {
+      if (!fs.existsSync(path.join(RAIZ, p))) { malos.push('falta ' + p); continue; }
+      const h = leer(RAIZ, p), lang = p === 'pueblo.html' ? 'es' : p.slice(7, 9);
+      if (!new RegExp(`<html lang="${lang}"`).test(h)) malos.push(p + ': lang');
+      const alt = [...h.matchAll(/<link rel="alternate" hreflang="([a-z-]+)" href="([^"]+)">/g)].map(m => m[1] + '=' + m[2].split('/').pop());
+      const esperado = [...paginas.map(x => (x === 'pueblo.html' ? 'es' : x.slice(7, 9)) + '=' + x), 'x-default=pueblo.html'];
+      if (alt.sort().join() !== esperado.sort().join()) malos.push(p + ': hreflang ' + alt.join(','));
+      if (lang !== 'es' && !['<a class="saltar" lang="es"', '<header class="cabecera" lang="es"', '<footer class="pie" lang="es"'].every(x => h.includes(x))) malos.push(p + ': lo común sin lang="es"');
+    }
+    for (const p of PAGINAS.filter(x => !paginas.includes(x))) if (/class="contenedor idiomas"|hreflang="(en|pt|x-default)"/.test(leer(RAIZ, p))) malos.push(p + ': lleva selector o hreflang');
+    for (const p of paginas) for (const [w, hh] of [[1440, 900], [320, 640]]) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: hh } });
+      await ir(page, p);
+      const r = await page.evaluate(() => {
+        const n = document.querySelector('.idiomas'), act = n && n.querySelector('[aria-current="page"]'), rb = n && n.getBoundingClientRect();
+        return { visible: !!n && rb.width > 0 && rb.height > 0, enlaces: n ? [...n.querySelectorAll('a')].map(a => a.getAttribute('hreflang') + ':' + a.getAttribute('lang')) : [], actual: act ? act.getAttribute('href') : null,
+          ancho: document.documentElement.scrollWidth, vw: innerWidth };
+      });
+      if (!r.visible || r.enlaces.length !== paginas.length || r.actual !== p || r.enlaces.some(e => e.split(':')[0] !== e.split(':')[1])) malos.push(`${p} ${w}: selector ${JSON.stringify(r)}`);
+      if (r.ancho > r.vw) malos.push(`${p} ${w}: desborda (${r.ancho})`);
+      if (p !== 'pueblo.html') await axeDe(page, p + ' ' + w, viol);
+      await ctx.close();
+    }
+    comprobar(!malos.length && !viol.length, `v3b F12: «El pueblo» en ${trads.join(' y ')} con su lang, hreflang recíprocos entre las ${paginas.length} (y x-default), el selector visible solo ahí (con aria-current), la cabecera y el pie marcados lang="es", sin desborde a 320 px y 0 violaciones de axe` +
+      (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : '') + (viol.length ? ' → axe: ' + viol.slice(0, 4).join(', ') : ''));
+  } else notas.push('NOTA  · v3b F12: no hay contenido/pueblo.<lang>.json; «El pueblo» solo en castellano');
+
+  /* 4. M9. el plano del pie se dibuja al asomar, desde el Ayuntamiento, y acaba entero; quieto con movimiento reducido */
+  if (fs.existsSync(path.join(RAIZ, 'marca/plano.svg'))) {
+    const { ctx, page } = await nueva({ reducido: false });
+    await ir(page, 'telefonos.html');
+    const antes = await page.evaluate(() => {
+      const ps = [...document.querySelectorAll('.pie__plano .plano-calle')];
+      const [x0, y0, w, h] = document.querySelector('.pie__plano-dibujo').getAttribute('viewBox').split(/\s+/).map(Number), cx = x0 + w / 2, cy = y0 + h / 2;
+      /* cada tramo empieza por su punta más cercana al Ayuntamiento (el centro) y --plano-d crece con la distancia */
+      const desde = ps.filter(p => { const a = p.getPointAtLength(0), z = p.getPointAtLength(p.getTotalLength()); return Math.hypot(a.x - cx, a.y - cy) > Math.hypot(z.x - cx, z.y - cy) + 0.5; }).length;
+      return { n: ps.length, conLongitud: ps.filter(p => p.getAttribute('pathLength') === '1').length, desde, clase: document.querySelector('.pie__plano').classList.contains('mov-plano'),
+        dash: ps.filter(p => getComputedStyle(p).strokeDasharray !== 'none').length };
+    });
+    await page.mouse.wheel(0, 40000);
+    /* en cuanto asoma (la clase), a los 60 ms: a medias */
+    const durante = await page.evaluate(async () => {
+      const pl = document.querySelector('.pie__plano'), t0 = performance.now();
+      while (!pl.classList.contains('mov-plano') && performance.now() - t0 < 3000) await new Promise(r => requestAnimationFrame(r));
+      await new Promise(r => setTimeout(r, 60));
+      const ps = [...document.querySelectorAll('.pie__plano .plano-calle')];
+      const an = ps.map(p => ({ d: parseFloat(p.style.getPropertyValue('--plano-d')), a: p.getAnimations().find(x => x.animationName === 'mov-plano') })).filter(x => x.a);
+      const t = an.map(x => ({ d: x.d, ini: x.a.effect.getComputedTiming().delay, fin: x.a.effect.getComputedTiming().endTime }));
+      const orden = t.slice().sort((a, b) => a.d - b.d).every((x, i, arr) => !i || x.ini >= arr[i - 1].ini - 0.5);
+      return { n: an.length, total: Math.max(0, ...t.map(x => x.fin)), primero: Math.min(...t.map(x => x.ini)), orden };
+    });
+    await espera(800);
+    const despues = await page.evaluate(() => {
+      const ps = [...document.querySelectorAll('.pie__plano .plano-calle')];
+      return { vivas: ps.flatMap(p => p.getAnimations()).filter(a => a.playState === 'running').length, sinDibujar: ps.filter(p => { const cs = getComputedStyle(p); return cs.strokeDasharray !== 'none' || parseFloat(cs.strokeDashoffset) !== 0; }).length };
+    });
+    await ctx.close();
+    const q = await nueva();
+    await ir(q.page, 'telefonos.html');
+    await q.page.mouse.wheel(0, 40000);
+    await espera(400);
+    const quieto = await q.page.evaluate(() => {
+      const ps = [...document.querySelectorAll('.pie__plano .plano-calle')];
+      return { clase: document.querySelector('.pie__plano').classList.contains('mov-plano'), an: ps.flatMap(p => p.getAnimations()).length, dash: ps.filter(p => getComputedStyle(p).strokeDasharray !== 'none').length };
+    });
+    await q.ctx.close();
+    const ok = antes.n > 5 && antes.conLongitud === antes.n && !antes.desde && !antes.clase && !antes.dash && durante.n === antes.n && durante.primero === 0 && durante.total > 0 && durante.total <= 600 && durante.orden &&
+      !despues.vivas && !despues.sinDibujar && !quieto.clase && !quieto.an && !quieto.dash;
+    comprobar(ok, `v3b M9: el plano del pie está entero en reposo; al asomar, sus ${antes.n} tramos (pathLength=1, cada uno desde su punta más cercana al Ayuntamiento) se trazan de dentro afuera en ${Math.round(durante.total)} ms y acaba dibujado; con movimiento reducido no se anima` +
+      (ok ? '' : ' → ' + JSON.stringify({ antes, durante, despues, quieto })));
+  }
+}
+
 /* ═════════════ orden ═════════════ */
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
@@ -3096,6 +3286,7 @@ for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', pa
   ['v3identidad', v3Identidad],
   ['v3btablon', v3bTablon],
   ['v3bservicio', v3bServicio],
+  ['v3bpueblo', v3bPueblo],
   ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();

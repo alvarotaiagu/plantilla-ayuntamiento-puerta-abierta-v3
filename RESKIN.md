@@ -19,7 +19,8 @@ Prueba real: `pruebas/segura-de-leon/` es Segura de León completo (otro escudo,
 cp -r plantilla-ayuntamiento-puerta-abierta-web <municipio>-ayuntamiento-web
 cd <municipio>-ayuntamiento-web
 rm -rf .git screenshots _scratch && git init
-rm -f marca/perfil.* marca/plano.*    # el perfil y el plano son del pueblo de origen (ver §6 bis)
+rm -f marca/perfil.* marca/plano.* marca/termino.*    # perfil, plano y mapa del término son del pueblo de origen (§6 bis y §6 ter)
+rm -f contenido/pueblo.*.json media/originales/*      # las traducciones de «El pueblo» y los originales de las fotos, también (§6 quater y §6)
 npm install                      # Playwright y axe-core, solo para los scripts
 ```
 
@@ -157,6 +158,27 @@ python scripts/fotos.py --lote media/_lote.json          # recorte + gradación 
 - Las fotos de **su web** solo valen para la maqueta que se les enseña. Ponlo en la `nota`.
 - Ni banco de imágenes ni IA. Si falta una foto, se deja el hueco diseñado y se apunta en el README.
 
+### Igualar las fotos (v3b)
+
+Las fotos de un pueblo vienen de cámaras y años distintos y, juntas en «Conocer» y «Qué ver», se nota. `scripts/fotos-igualar.py` les aplica **a todas el mismo tratamiento de color** (nada de recortes, fondos ni contenido):
+
+1. balance de blancos sobre los grises de la propia foto, a medias y con tope (±7 % por canal); sin grises suficientes (un plato), no se toca;
+2. niveles: el 0,5 % más oscuro y el 99,5 % más claro a un rango común (estiramiento como mucho ×1,3) y una gamma que acerca la mediana a 0,52 (entre 0,8 y 1,1);
+3. saturación hacia una croma media común (factor entre 0,85 y 1,12: una foto casi en blanco y negro sigue casi en blanco y negro);
+4. un punto cálido muy leve y común en los medios tonos (±1,2 % de rojo y azul);
+5. nitidez suave después de reducir, en cada tamaño.
+
+```bash
+python scripts/fotos.py --lote media/_lote.json                 # 1. recorte y tamaño (como siempre)
+python scripts/fotos-igualar.py --guardar-originales --comparativa
+        # 2. la primera vez: copia media/<nombre>.jpg a media/originales/ y los iguala
+python scripts/fotos-igualar.py --comparativa                   # las siguientes: siempre desde media/originales/
+```
+
+- **Repetible e idempotente**: parte siempre de `media/originales/<nombre>.jpg` (que no se toca) y regenera `media/<nombre>.jpg` y `media/<nombre>-800.jpg` con el mismo tamaño. Correrlo dos veces da los mismos bytes (`verificar.mjs → v3bpueblo` lo comprueba).
+- **Una foto nueva**: déjala en `media/originales/` (o en `media/` y `--guardar-originales`), ponle su crédito y vuelve a correrlo.
+- **Mírala antes de darla por buena**: `media/_comparativa-igualado.jpg` es la hoja de contacto (antes arriba, después abajo). Lo medido y lo aplicado a cada foto queda en `media/_igualado.json`. Si una foto buena empeora, baja la fuerza en las constantes de arriba del script (`FUERZA_BLANCOS`, `TOPE_NIVELES`, `SAT_MIN/SAT_MAX`), no la toques a mano: todas tienen que pasar por lo mismo.
+
 ## 6 bis. El pie: el perfil del pueblo y el plano
 
 El pie abre con **el perfil del pueblo dibujado a línea** (de pie sobre la franja verde de la sede) y lleva, en su tercera columna, **un plano de las calles del Ayuntamiento**. Los dos son SVG propios que `aplicar.mjs` incrusta en cada página: ni una petición en tiempo de ejecución. Los dos son opcionales:
@@ -206,6 +228,52 @@ node scripts/plano.mjs --radio 170           # metros del Ayuntamiento al borde 
 - **ODbL**: el pie dice siempre «Datos del plano: © colaboradores de OpenStreetMap» con enlace a su página de derechos. `aplicar.mjs` se niega si `plano.json` no trae la atribución.
 - El User-Agent es el del proyecto, sin datos de nadie. Si Overpass está ocupado, prueba otros dos servidores. Con `--guardar copia.json` y `--desde copia.json` se redibuja sin red.
 - Se ejecuta una vez al montar la web (o si cambian las calles). El plano enlaza a «Contacto», donde está el mapa de Google, que solo se carga si se pide.
+
+### El plano se dibuja (v3b)
+
+Al asomar, el plano del pie se traza una vez **desde el Ayuntamiento hacia fuera** (600 ms en total). No hay que hacer nada: `aplicar.mjs` parte cada tramo de calle de `marca/plano.svg` en su propio trazo con `pathLength="1"`, empezando por su punta más cercana al centro del lienzo (que `plano.mjs` pone en el Ayuntamiento), y le da su distancia en `--plano-d` (0 el más cercano, 1 el más lejano). Con movimiento reducido, sin JavaScript o sin soporte, el plano está entero desde el principio. Un `plano.svg` dibujado a mano vale si el Ayuntamiento está en el centro del `viewBox`.
+
+## 6 ter. El mapa del término en «El pueblo» (v3b)
+
+Un mapa propio del término municipal, con los lugares de «Qué ver» y del patrimonio que estén en OpenStreetMap. Como el plano, se baja **al montar la web**: la página no pide nada a nadie.
+
+```bash
+node scripts/termino.mjs                                    # busca el término (admin_level=8) por el nombre de municipio.json
+node scripts/termino.mjs --relacion 344567                  # si hay dos con el mismo nombre, el id de la relación
+node scripts/termino.mjs --lugar "Ermita del Cristo Viejo=node/123"   # fija un lugar a mano (repetible)
+node scripts/termino.mjs --guardar copia.json               # guarda lo que devuelve Overpass
+node scripts/termino.mjs --desde copia.json                 # sin red: redibuja desde la copia
+node scripts/aplicar.mjs
+```
+
+- Escribe `marca/termino.svg` (el contorno, el casco, las carreteras con su matrícula, las rutas que haya como relaciones `route=hiking/foot/bicycle` y una escala; sin colores, como el plano) y `marca/termino.json` (la fuente, la fecha, los ids de OSM de todo lo usado y, por cada lugar encontrado, su elemento y su posición).
+- **Los lugares se buscan por nombre** entre los de `pueblo.lugares` y `pueblo.patrimonio`, y **solo dentro del término** (así son los de este pueblo, no los de otro con el mismo nombre). Vale si todas las palabras de nuestro nombre están en el de OSM (sin contar «de», «la», «san»…), o al revés si el de OSM no es solo genérico («Ermita», «Pozo»). Si un elemento encaja con dos lugares («Ermita del Cristo» en OSM, con dos ermitas del Cristo en el pueblo) o un lugar con dos elementos, **no se pone** y el script lo dice: búscalo en openstreetmap.org y fíjalo con `--lugar`. Los fijados quedan en `termino.json` (`"fijado": true`) y se respetan la próxima vez.
+- En la página: un punto numerado por lugar que enlaza a su ficha (`#lugar-<nombre>`: la del carril «Qué ver» o la fila del patrimonio, que ahora llevan ancla), la misma lista en texto debajo (para el teclado y el lector de pantalla: el dibujo es `aria-hidden`), la leyenda en palabras (límite discontinuo, casco sombreado, carreteras gruesas, rutas de puntos; no solo color), la escala y «© colaboradores de OpenStreetMap» con su enlace. **ODbL**: `aplicar.mjs` se niega si `termino.json` no trae la atribución, y si el mapa es de otro municipio.
+- **Sin los dos archivos, la sección no sale.** Un lugar que ya no está en `municipio.json` pierde su punto (con aviso).
+- `pruebas/termino/muestra-overpass.json` es una muestra **sintética** (contorno, carreteras «XX-1» y posiciones inventados, ids falsos) solo para `verificar.mjs`, que la aplica en una copia. Nunca la pases a `marca/` del pueblo de verdad: sale con la etiqueta «Ejemplo».
+- User-Agent del proyecto, sin datos de nadie; si Overpass está ocupado, prueba otros dos servidores. Si en tu red no se llega a Overpass, ejecuta el script en otra máquina y sube `marca/termino.*`.
+
+## 6 quater. «El pueblo» en otros idiomas (v3b)
+
+Solo la página turística. Por cada `contenido/pueblo.<lang>.json` completo sale `pueblo-<lang>.html` (Ribera: `en` y `pt`), con su `lang`, los `hreflang` entre todas (y `x-default` a la de castellano) y un selector de idioma visible **solo en esas páginas**. La cabecera, el menú y el pie siguen en castellano (marcados `lang="es"`), con el aviso corto del idioma («The rest of the site is in Spanish.»).
+
+Copia `contenido/pueblo.en.json` de Ribera y cambia los textos. Lo que lleva:
+
+| Clave | Qué |
+|---|---|
+| `nombre_idioma`, `og_locale` | «English», «en_GB» |
+| `pagina` | `titulo`, `titulo_doc`, `entradilla` (si hay) y `descripcion` |
+| `cabecera_alt` | el `alt` de la foto grande, si la tiene |
+| `ui` | las etiquetas de la página (los títulos de sección, la leyenda del mapa, «Inicio», «En esta página»…). La lista completa, con su texto en castellano, está en `T_ES` de `aplicar.mjs`; `idiomas` y `aviso_idioma` son obligatorias |
+| `pueblo.historia`, `platos`, `dulces`, `bebidas` | listas **con el mismo número de elementos** que en `municipio.json` |
+| `pueblo.lugares`, `patrimonio`, `fiestas`, `personajes`, `rutas` | objetos **por el nombre en castellano** de `municipio.json`: `{ "texto"/"detalle"/"cuando"/"resumen": …, "nombre": … (solo si cambia), "alt": … (los lugares con foto) }` |
+| `pueblo.grupos`, `placa`, `gastronomia_alt` | los títulos de los grupos del patrimonio, la placa (`titulo`, `pie`, `texto`; las líneas de la placa se quedan en castellano, con `lang="es"`) y el `alt` de la foto de la gastronomía |
+| `creditos` | por foto: `titulo` y, si hace falta, `autor` y `nota` traducidos |
+
+- **No se traducen** los nombres propios ni los topónimos (Oppidum de Hornachuelos, Calle Larga, Cañada Real Leonesa); un plato o una fiesta con nombre propio se deja y se explica entre paréntesis.
+- **Si falta una traducción** de algo que sale en la página, esa página no se genera y `aplicar.mjs` dice qué falta. Un lugar nuevo en castellano deja la traducción fuera hasta que se traduzca: no rompe la web.
+- «Para visitar» y «Dónde comer y dormir» (horarios, precios y negocios) no salen en otros idiomas.
+- Sin ningún `contenido/pueblo.<lang>.json`, ni páginas traducidas, ni selector, ni `hreflang`.
 
 ### La hoja de teléfonos
 
@@ -284,5 +352,5 @@ Mira las capturas, sobre todo estas:
 Avisa antes, porque son horas y no minutos:
 - Quieren otra estructura: sede propia, cita previa con agenda, área de usuario o blog.
 - El municipio tiene **pedanías** con servicios propios.
-- Necesitan otro idioma, aparte del castellano.
+- Necesitan otro idioma, aparte del castellano, en algo más que «El pueblo» (§6 quater).
 - El escudo solo existe en una foto mala: hay que redibujarlo (o pedirles el vectorial) antes de sacar colores.

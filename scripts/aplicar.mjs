@@ -552,7 +552,9 @@ const pueblo = {
       const t = it.grupo || null;
       let g = gs.find(x => x.clave === t);
       if (!g) gs.push(g = { clave: t, titulo: t, items: [] });
-      g.items.push({ nombre: it.nombre, detalle: it.detalle || null });
+      /* v3b: cada fila tiene su ancla (el mapa del término enlaza ahí), salvo si ya es un lugar de «Qué ver» */
+      const ancla = 'lugar-' + slugDe(it.nombre);
+      g.items.push({ nombre: it.nombre, detalle: it.detalle || null, ancla: (P.lugares || []).some(l => slugDe(l.nombre) === slugDe(it.nombre)) || gs.some(x => x.items.some(y => y.ancla === ancla)) ? null : ancla });
     }
     if (gs.length > 1) gs.forEach(g => { if (!g.titulo) g.titulo = 'Otros'; });
     gs.sort((a, b) => (a.clave === null) - (b.clave === null));
@@ -644,6 +646,32 @@ const perfil = perfilSvg ? {
   svg: `<svg class="pie__perfil-dibujo" viewBox="${perfilSvg.vb}" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">` +
     perfilSvg.cuerpo.replace(/<path\b/g, '<path pathLength="1"').replace(/\s*\n\s*/g, '') + '</svg>'
 } : null;
+/* v3b · M9: el plano del pie se dibuja una vez al asomar, desde el Ayuntamiento hacia fuera.
+   plano.mjs centra el lienzo en el Ayuntamiento: cada tramo de calle (cada «M…» de los <path>
+   de calles) pasa a ser su propio <path pathLength="1">, empezando por su punta más cercana al
+   centro, con --plano-d = su distancia al centro (0 el más cercano, 1 el más lejano). css/movimiento.css lo traza con un
+   retraso proporcional (600 ms en total). En reposo, sin JS o con movimiento reducido, entero */
+function callesEnOrden(cuerpo, vb) {
+  const [x0, y0, w, h] = vb.trim().split(/\s+/).map(Number), cx = x0 + w / 2, cy = y0 + h / 2;
+  const tramos = [];
+  const sinCalles = cuerpo.replace(/<path class="(plano-calle[^"]*)" d="([^"]*)"\s*\/>/g, (m, clase, d) => {
+    for (const sub of d.split(/(?=M)/).filter(x => x.trim())) {
+      let pts = sub.replace(/^M/, '').split('L').map(p => p.trim().split(/[\s,]+/).map(Number)).filter(p => p.length === 2 && p.every(Number.isFinite));
+      if (pts.length < 2) continue;
+      const dist = p => Math.hypot(p[0] - cx, p[1] - cy);
+      if (dist(pts[pts.length - 1]) < dist(pts[0])) pts = pts.reverse();
+      tramos.push({ clase, pts, cerca: Math.min(...pts.map(dist)) });
+    }
+    return '<!--calles-->';
+  });
+  if (!tramos.length) return cuerpo;
+  const cerca = Math.min(...tramos.map(t => t.cerca)), lejos = (Math.max(...tramos.map(t => t.cerca)) - cerca) || 1;   /* el primero, en 0; el último, en 1 */
+  /* las principales encima (como en plano.svg); dentro de cada capa, de dentro afuera */
+  tramos.sort((a, b) => (a.clase.length - b.clase.length) || (a.cerca - b.cerca));
+  const paths = tramos.map(t => `<path class="${t.clase}" pathLength="1" style="--plano-d: ${((t.cerca - cerca) / lejos).toFixed(3)}" d="M${t.pts.map(p => p.join(' ')).join('L')}"/>`).join('');
+  let puesto = false;
+  return sinCalles.replace(/<!--calles-->/g, () => (puesto ? '' : (puesto = true, paths)));
+}
 let plano = null;
 if (existe('marca/plano.svg')) {
   const s = svgLimpio('marca/plano.svg', ['rect', 'path', 'circle', 'text', 'g']);
@@ -651,12 +679,110 @@ if (existe('marca/plano.svg')) {
   if (meta.nombre_osm && !normal(meta.nombre_osm).includes(normal(M.nombre))) errores.push(`marca/plano.svg es de «${meta.nombre_osm}», no de ${M.nombre}: bórralo o ejecuta node scripts/plano.mjs (RESKIN.md §6 bis)`);
   if (!meta.atribucion || !meta.atribucion_url) errores.push('marca/plano.json: falta la atribución de OpenStreetMap (atribucion y atribucion_url). Vuelve a ejecutar node scripts/plano.mjs');
   if (s) plano = {
-    svg: `<svg class="pie__plano-dibujo" viewBox="${s.vb}" aria-hidden="true" focusable="false">${s.cuerpo.replace(/\s*\n\s*/g, '')}</svg>`,
+    svg: `<svg class="pie__plano-dibujo" viewBox="${s.vb}" aria-hidden="true" focusable="false">${callesEnOrden(s.cuerpo, s.vb).replace(/\s*\n\s*/g, '')}</svg>`,
     atribucion: meta.atribucion || '© colaboradores de OpenStreetMap', atribucion_url: meta.atribucion_url || 'https://www.openstreetmap.org/copyright',
     fecha_texto: meta.fecha && ISO.test(meta.fecha) ? fechaTexto(meta.fecha) : null,
     calles: (meta.calles_rotuladas || []).length ? meta.calles_rotuladas.join(', ').replace(/, ([^,]*)$/, ' y $1') : null
   };
 }
+/* v3b · V16. El mapa del término en «El pueblo»: marca/termino.svg (la geometría) y marca/termino.json
+   (los lugares encontrados en OSM, la escala, la fecha y la atribución), de scripts/termino.mjs. Los
+   puntos numerados enlazan a la ficha del lugar (#lugar-<slug>, en «Qué ver» o en «Patrimonio»): un
+   punto cuyo lugar ya no está en municipio.json no sale. Sin los dos archivos, la sección no sale */
+let termino = null;
+if (existe('marca/termino.svg') && existe('marca/termino.json')) {
+  const s = svgLimpio('marca/termino.svg', ['rect', 'path', 'text', 'g']);
+  const meta = leerJSON('marca/termino.json', {});
+  const deQuien = (/<svg\b[^>]*\bdata-termino="([^"]*)"/.exec(leer('marca/termino.svg')) || [])[1];
+  if (deQuien !== slugDe(M.nombre))
+    errores.push(`marca/termino.svg no es de ${M.nombre}: bórralo o ejecuta node scripts/termino.mjs (RESKIN.md §6 ter)`);
+  if (meta.nombre_osm && normal(meta.nombre_osm) !== normal(M.nombre)) errores.push(`marca/termino.json es de «${meta.nombre_osm}», no de ${M.nombre}: bórralo o ejecuta node scripts/termino.mjs`);
+  if (!meta.atribucion || !meta.atribucion_url) errores.push('marca/termino.json: falta la atribución de OpenStreetMap (atribucion y atribucion_url). Vuelve a ejecutar node scripts/termino.mjs');
+  const anclas = new Set([...pueblo.lugares.map(l => l.ancla), ...pueblo.patrimonio_grupos.flatMap(g => g.items.map(i => i.ancla)).filter(Boolean)]);
+  const puntos = (meta.lugares || []).filter(l => anclas.has('lugar-' + slugDe(l.nombre)))
+    .map((l, i) => ({ n: i + 1, nombre: l.nombre, ancla: 'lugar-' + slugDe(l.nombre), x: l.x, y: l.y, osm: l.osm, ty: (l.y + 0.5).toFixed(1) }));
+  for (const l of meta.lugares || []) if (!anclas.has('lugar-' + slugDe(l.nombre))) avisos.push(`marca/termino.json: «${l.nombre}» ya no está en pueblo.lugares ni en pueblo.patrimonio; su punto no sale`);
+  if (s) termino = {
+    svg_cuerpo: s.cuerpo.replace(/\s*\n\s*/g, ''), viewbox: s.vb, puntos, radio: Math.round(Number(s.vb.split(/\s+/)[2]) / 40), letra: Math.round(Number(s.vb.split(/\s+/)[2]) / 40), hay_puntos: puntos.length > 0,
+    rutas_texto: (meta.rutas || []).length ? meta.rutas.map(r => r.nombre).join(', ').replace(/, ([^,]*)$/, ' y $1') : null, carreteras: (meta.carreteras || []).length ? (meta.carreteras || []).join(', ').replace(/, ([^,]*)$/, ' y $1') : null,
+    atribucion: meta.atribucion || '© colaboradores de OpenStreetMap', atribucion_url: meta.atribucion_url || 'https://www.openstreetmap.org/copyright',
+    fecha_texto: meta.fecha && ISO.test(meta.fecha) ? fechaTexto(meta.fecha) : null, fecha_iso: meta.fecha && ISO.test(meta.fecha) ? meta.fecha : null, muestra: meta.muestra || null,
+    escala_texto: meta.escala_m ? (meta.escala_m >= 1000 ? String(meta.escala_m / 1000).replace('.', ',') + ' km' : meta.escala_m + ' m') : null
+  };
+}
+/* v3b · F12. «El pueblo» en otros idiomas. Las etiquetas de la página (los títulos de sección,
+   la leyenda del mapa) salen de T_ES; cada idioma las cambia con contenido/pueblo.<lang>.json → ui, y
+   trae traducidos los textos de municipio.json → pueblo, emparejados por el nombre en castellano.
+   Si falta una traducción de algo que sale en la página, esa página no se genera (y se avisa). Solo se
+   traduce «El pueblo»: la cabecera, el menú y el pie siguen en castellano (marcados lang="es") */
+const T_ES = {
+  lang: 'es', idiomas: 'Idiomas de esta página', aviso_idioma: null, que_ver: 'Qué ver', para_visitar: 'Para visitar', historia: 'Historia',
+  patrimonio: 'Patrimonio', fiestas: 'Fiestas', gastronomia: 'Gastronomía', platos: 'Platos', dulces: 'Dulces', para_beber: 'Para beber',
+  personajes: 'Personajes', rutas: 'Rutas', ver_la_ruta: 'Ver la ruta', comer_dormir: 'Dónde comer y dormir', llamar_a: 'Llamar a',
+  otra_web: ', se abre otra web', negocios_privados: 'Son negocios privados: el Ayuntamiento no responde de sus datos.',
+  creditos: 'Créditos de las fotos', ficha_foto: 'ficha de la foto', foto: 'Foto:', lang_placa: null,
+  termino_titulo: 'El término en un mapa', termino_pie: 'Mapa del término municipal de {nombre}, dibujado con datos de OpenStreetMap{fecha}.', termino_fecha: ' a {fecha}',
+  termino_lugares: 'Lugares del mapa', termino_leer: 'Cómo leerlo', clave_limite: 'Límite del término municipal (línea discontinua)',
+  clave_casco: 'El pueblo (área sombreada)', clave_carreteras: 'Carreteras (línea gruesa)', clave_rutas: 'Rutas (línea de puntos)',
+  clave_puntos: 'Círculo con número: un lugar de la lista', clave_escala: 'Escala: la barra de abajo mide',
+  fiesta_mayor: 'Fiesta mayor', sin_fiestas: 'Sin fiestas señaladas',
+  /* lo de fuera de «El pueblo» que hay que traducir en su cabecera */
+  migas: 'Usted está aquí', inicio: 'Inicio', en_esta_pagina: 'En esta página'
+};
+const NOMBRE_IDIOMA = { es: 'Español', en: 'English', pt: 'Português', fr: 'Français', de: 'Deutsch', it: 'Italiano', ca: 'Català', eu: 'Euskara', gl: 'Galego' };
+const conT = (t, nombre, fecha) => ({ ...t, termino_pie: t.termino_pie.replace('{nombre}', nombre).replace('{fecha}', fecha ? t.termino_fecha.replace('{fecha}', fecha) : '') });
+const traducciones = [];
+for (const f of (existe('contenido') ? fs.readdirSync(r('contenido')) : []).sort()) {
+  const m = /^pueblo\.([a-z]{2})\.json$/.exec(f);
+  if (!m || m[1] === 'es') continue;
+  const tr = leerJSON('contenido/' + f);
+  const lang = m[1], tp = tr.pueblo || {}, faltan = [];
+  const de = (grupo, clave, campo) => { const x = (tp[grupo] || {})[clave]; if (!x || (campo && !x[campo])) faltan.push(grupo + ' «' + clave + '»' + (campo ? ' → ' + campo : '')); return x || {}; };
+  const lista = (clave, base) => { if (!base || !base.length) return []; const x = tp[clave]; if (!Array.isArray(x) || x.length !== base.length) { faltan.push(clave + ' (' + base.length + ' elementos)'); return base; } return x; };
+  const t = { ...T_ES, ...(tr.ui || {}), lang, lang_placa: 'es' };
+  /* el pie de cada foto («Foto: autor · licencia»), con el autor traducido si lo trae (la web del Ayuntamiento) */
+  const creditoT = archivo => { const c = creditosMedia[archivo]; if (!c) return null; const y = (tr.creditos || {})[archivo] || {}; return t.foto + ' ' + (y.autor || c.autor) + (c.licencia ? ' · ' + c.licencia : ''); };
+  const lugares = pueblo.lugares.map(l => { const x = de('lugares', l.nombre, 'texto'); if (l.foto && !x.alt) faltan.push('lugares «' + l.nombre + '» → alt'); return { ...l, nombre: x.nombre || l.nombre, texto: x.texto, alt: x.alt || l.alt, credito: l.credito ? creditoT(l.foto) : null }; });
+  const g = pueblo.gastronomia;
+  const pt = {
+    ...pueblo, lugares,
+    historia: lista('historia', pueblo.historia),
+    placa: pueblo.placa ? (() => { const x = tp.placa || {}; if (!x.titulo || !x.pie) faltan.push('placa (titulo, pie y texto)'); return { ...pueblo.placa, titulo: x.titulo, pie: x.pie, texto: x.texto || null }; })() : null,
+    patrimonio_grupos: pueblo.patrimonio_grupos.map(gr => ({ ...gr, titulo: gr.titulo ? ((tp.grupos || {})[gr.titulo] || (faltan.push('grupos «' + gr.titulo + '»'), gr.titulo)) : null,
+      items: gr.items.map(i => { const x = de('patrimonio', i.nombre, i.detalle ? 'detalle' : null); return { ...i, nombre: x.nombre || i.nombre, detalle: i.detalle ? x.detalle : null }; }) })),
+    gastronomia: g ? { ...g, platos: lista('platos', g.platos), dulces: lista('dulces', g.dulces), bebidas: lista('bebidas', g.bebidas),
+      foto_datos: g.foto_datos ? { ...g.foto_datos, alt: tp.gastronomia_alt || (faltan.push('gastronomia_alt'), ''), credito: g.foto_datos.credito ? creditoT(g.foto_datos.archivo) : null } : null } : null,
+    personajes: pueblo.personajes.map(x => { const y = de('personajes', x.nombre, 'texto'); return { ...x, texto: y.texto, fechas: y.fechas || x.fechas }; }),
+    rutas: pueblo.rutas.map(x => { const y = de('rutas', x.nombre, 'resumen'); return { ...x, nombre: y.nombre || x.nombre, resumen: y.resumen }; }),
+    /* lo que se visita y dónde comer: horarios, precios y negocios, sin traducir; no sale en otros idiomas */
+    visitas: [], establecimientos: []
+  };
+  const fiestasT = fiestas.map(x => { const y = de('fiestas', x.nombre, 'cuando'); return { ...x, nombre: y.nombre || x.nombre, cuando: y.cuando }; });
+  const mesesT = Array.from({ length: 12 }, (_, i) => new Intl.DateTimeFormat(lang, { month: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, i, 15))));
+  const escH = x => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  /* el año en fiestas, pintado aquí (vivo.js lo repinta en castellano: en otro idioma no lleva data-vivo) */
+  const anioT = mesesT.map((nm, i) => {
+    const fs_ = fiestasT.filter(x => x.mes === i + 1), nombreMes = nm.charAt(0).toUpperCase() + nm.slice(1);
+    return `<li class="mes${fs_.length ? ' con-fiesta' : ' es-vacio'}"><p class="mes__nombre"><span class="mes__largo">${escH(nombreMes)}</span><span class="mes__corto" aria-hidden="true">${escH(nombreMes.slice(0, 3))}</span></p>` +
+      (fs_.length ? '<ul class="mes__fiestas">' + fs_.map(x => `<li><b>${escH(x.nombre)}</b>${x.mayor ? ` <span class="chip chip--mayor">${escH(t.fiesta_mayor)}</span>` : ''}<span>${escH(x.cuando)}</span></li>`).join('') + '</ul>'
+        : `<p class="mes__vacio"><span class="mes__raya" aria-hidden="true"></span><span class="mes__vacio-texto">${escH(t.sin_fiestas)}</span></p>`) + '</li>';
+  }).join('');
+  const creditosT = [...usadas.entries()].map(([archivo, c]) => { const y = (tr.creditos || {})[archivo] || {}; if (!y.titulo) faltan.push('creditos «' + archivo + '» → titulo'); return { ...c, titulo: y.titulo || c.titulo, autor: y.autor || c.autor, nota: c.nota ? (y.nota || (faltan.push('creditos «' + archivo + '» → nota'), c.nota)) : null }; });
+  const pag = tr.pagina || {};
+  if (!pag.titulo || !pag.descripcion) faltan.push('pagina (titulo y descripcion)');
+  if (P.entradilla && !pag.entradilla) faltan.push('pagina → entradilla');
+  if (cabeceras.pueblo && cabeceras.pueblo.alt && !tr.cabecera_alt) faltan.push('cabecera_alt');
+  for (const k of ['aviso_idioma', 'idiomas']) if (!(tr.ui || {})[k]) faltan.push('ui → ' + k);
+  if (faltan.length) { avisos.push(`contenido/${f}: «El pueblo» en ${lang} no se genera; faltan ${faltan.length} traducciones: ${faltan.slice(0, 6).join(', ')}${faltan.length > 6 ? '…' : ''}`); continue; }
+  traducciones.push({ lang, nombre: tr.nombre_idioma || NOMBRE_IDIOMA[lang] || lang, og_locale: tr.og_locale || null, archivo: `pueblo-${lang}.html`, t, pagina: pag, pueblo: pt, anio: anioT, creditos: creditosT,
+    cabecera: cabeceras.pueblo ? { ...cabeceras.pueblo, alt: tr.cabecera_alt || cabeceras.pueblo.alt, credito: cabeceras.pueblo.credito ? creditoT(cabeceras.pueblo.archivo) : null } : null,
+    termino: termino ? { ...termino, puntos: termino.puntos.map(x => ({ ...x, nombre: (pt.lugares.find(l => l.ancla === x.ancla) || pt.patrimonio_grupos.flatMap(gr => gr.items).find(i => i.ancla === x.ancla) || x).nombre })) } : null,
+    fecha_termino: termino && termino.fecha_iso ? new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(termino.fecha_iso + 'T12:00:00Z')) : null });
+}
+/* las de un idioma que ya no se genera, fuera */
+for (const f of fs.readdirSync(RAIZ)) if (/^pueblo-[a-z]{2}\.html$/.test(f) && !traducciones.some(x => x.archivo === f)) fs.rmSync(r(f));
+const IDIOMAS_PUEBLO = traducciones.length ? [{ lang: 'es', nombre: NOMBRE_IDIOMA.es, archivo: 'pueblo.html' }, ...traducciones.map(x => ({ lang: x.lang, nombre: x.nombre, archivo: x.archivo }))] : [];
+
 /* enlaces útiles del pie: los de la sede solo si existen (como la franja de la sede) */
 const pieEnlaces = [['Sede electrónica', sede.inicio], ['Tablón de anuncios', sede.tablon], ['Transparencia', sede.transparencia], ['Perfil del contratante', sede.perfil],
   ['Trámites', 'tramites.html'], ['Teléfonos', 'telefonos.html'], ['Agenda', 'agenda.html'], ['Accesibilidad', 'accesibilidad.html']]
@@ -719,13 +845,16 @@ const PAGINAS = [
     migas: [{ href: 'noticias.html', texto: 'Noticias' }], descripcion: n.resumen || n.titulo, noticia: n }))
 ];
 for (const n of noticias) if (!/^[a-z0-9-]+$/.test(n.id)) errores.push('noticias.json: id «' + n.id + '» solo con a-z, 0-9 y guiones');
+/* v3b · F12: «El pueblo» en cada idioma con traducción completa (contenido/pueblo.<lang>.json) */
+for (const x of traducciones) PAGINAS.push({ archivo: x.archivo, fuente: 'pueblo.html', id: 'pueblo', nav: 'pueblo', titulo: x.pagina.titulo, titulo_doc: x.pagina.titulo_doc || null,
+  entradilla: x.pagina.entradilla || null, descripcion: x.pagina.descripcion, traduccion: x });
 /* v3 · el pictograma de cada cabecera sin foto: lo elige la plantilla por página, no los datos.
    Una página interior nueva sin pictograma es un error (sería otra vez el arco vacío) */
 const PICTO_DE = { 'tramites.html': 'tramites', 'ayuntamiento.html': 'ayuntamiento', 'avisos.html': 'megafono', 'noticias.html': 'periodico',
   'agenda.html': 'calendario', 'telefonos.html': 'telefono', 'pueblo.html': 'pueblo', 'contacto.html': 'sobre',
   'aviso-legal.html': 'balanza', 'privacidad.html': 'candado', 'cookies.html': 'galleta', 'accesibilidad.html': 'accesibilidad',
   'propuesta.html': 'ayuntamiento', 'suscribirse.html': 'megafono' };   /* v3b · servicio */
-const pictoDe = p => PICTO_DE[p.archivo] || (p.id === 'noticia' ? 'periodico' : null);
+const pictoDe = p => PICTO_DE[p.archivo] || (p.id === 'noticia' ? 'periodico' : null) || (p.traduccion ? PICTO_DE[p.fuente] : null);
 for (const p of PAGINAS) {
   if (p.id === 'inicio' || p.id === 'error') continue;
   if (!pictoDe(p)) errores.push(p.archivo + ': sin pictograma para la cabecera (PICTO_DE en aplicar.mjs)');
@@ -844,7 +973,8 @@ const comun = {
   web_actual: webActual, web_actual_texto: webActual ? webActual.replace(/^https?:\/\//, '').replace(/\/$/, '') : null,
   accesibilidad, privacidad,
   servicio,   /* v3b */
-  perfil, plano, pie_enlaces: pieEnlaces, fecha_datos_texto: fechaTexto(M.fecha_datos || ahora.iso), web_texto: url ? url.replace(/^https?:\/\//, '').replace(/\/$/, '') : null
+  t: conT(T_ES, N, termino ? termino.fecha_texto : null), anio_traducido: null,
+  perfil, plano, termino, pie_enlaces: pieEnlaces, fecha_datos_texto: fechaTexto(M.fecha_datos || ahora.iso), web_texto: url ? url.replace(/^https?:\/\//, '').replace(/\/$/, '') : null
 };
 
 const conParciales = (src, n = 0) => {
@@ -878,10 +1008,27 @@ function h2sDelCuerpo(html) {
     .filter(([, attrs]) => !/class="[^"]*\bsr\b/.test(attrs))
     .map(([, attrs, txt]) => ({ id: (attrs.match(/\bid="([^"]+)"/) || [])[1], texto: textoPlano(txt) })).filter(x => x.id && x.texto);
 }
+/* v3b · F12: en una página traducida, lo común de la web sigue en castellano y se marca con lang="es"
+   (WCAG 3.1.2): el salto, la cabecera, el buscador, el pie, las cookies y el mando. Lo de la cabecera
+   de la página (migas e índice) se traduce con las etiquetas del idioma */
+function enOtroIdioma(html, t) {
+  for (const re of [/<a class="saltar"/, /<header class="cabecera"/, /<dialog class="buscador"/, /<footer class="pie"/, /<div class="cookies"/, /<div class="mando"/])
+    html = html.replace(re, m => m + ' lang="es"');
+  const i = html.indexOf('<div class="cabeza-pagina'), f = html.indexOf('<section', i);
+  if (i < 0) return html;
+  const fin = f < 0 ? html.length : f;
+  const cab = html.slice(i, fin).replace('aria-label="Usted está aquí"', `aria-label="${t.migas}"`).replace(/(<li><a href="[^"]*index\.html")>Inicio</, `$1 hreflang="es">${t.inicio}<`)
+    .replace(/En esta página/g, t.en_esta_pagina);
+  return html.slice(0, i) + cab + html.slice(fin);
+}
 function pintarPagina(p) {
   const pagina = { ...p, titulo_doc: p.titulo_doc || `${p.titulo} · Ayuntamiento de ${N}`, entradilla: p.entradilla || null, migas: p.migas || [], cortina: !!p.cortina, es_inicio: !!p.es_inicio,
     /* la 404 ya lleva su propio arco en el cuerpo: una puerta por página */
-    cabecera: cabeceras[p.id] || null, cabeza_grande: p.id === 'pueblo' && !!cabeceras[p.id], cabeza_arco: p.id !== 'error' && !cabeceras[p.id] };
+    cabecera: (p.traduccion ? p.traduccion.cabecera : cabeceras[p.id]) || null, cabeza_grande: p.id === 'pueblo' && !!cabeceras[p.id], cabeza_arco: p.id !== 'error' && !cabeceras[p.id],
+    /* v3b · F12: idioma de la página y, en «El pueblo» con traducciones, el selector y los hreflang */
+    lang: p.traduccion ? p.traduccion.lang : 'es', og_locale: p.traduccion ? (p.traduccion.og_locale || null) : 'es_ES',
+    idiomas: p.id === 'pueblo' && IDIOMAS_PUEBLO.length ? IDIOMAS_PUEBLO.map(x => ({ ...x, href: x.archivo, actual: x.archivo === p.archivo })) : [],
+    alternativas: p.id === 'pueblo' && IDIOMAS_PUEBLO.length ? [...IDIOMAS_PUEBLO.map(x => ({ lang: x.lang, href: url + x.archivo })), { lang: 'x-default', href: url + 'pueblo.html' }] : [] };
   /* v3 · dentro del arco de línea, el pictograma de la página (con foto, manda la foto) */
   pagina.picto = pagina.cabeza_arco && pictoDe(p) ? pictoDe(p) : null;
   pagina.pictograma = pagina.picto ? PICTOS[pagina.picto] : null;
@@ -892,6 +1039,8 @@ function pintarPagina(p) {
   const datos = {
     ...comun, pagina, noticia: p.noticia || null,
     nav: NAV.map(([id, texto]) => ({ id, texto, href: id + '.html', actual: id === p.id })),
+    ...(p.traduccion ? { t: conT(p.traduccion.t, N, p.traduccion.fecha_termino), pueblo: p.traduccion.pueblo, creditos: p.traduccion.creditos, anio_traducido: p.traduccion.anio,
+      termino: p.traduccion.termino } : {}),
     base_404: p.archivo === '404.html' && M.url ? new URL(M.url).pathname.replace(/\/?$/, '/') : null
   };
   pagina.indice = null;
@@ -905,6 +1054,7 @@ function pintarPagina(p) {
     if (h2s.length >= 4) { pagina.indice = h2s; html = conIdsEnH2(renderizar(plantilla, datos)); }
   }
   html = html.replace(/\n{3,}/g, '\n\n').replace(/[ \t]+\n/g, '\n');
+  if (p.traduccion) html = enOtroIdioma(html, p.traduccion.t);
   escribir(p.archivo, html);
 }
 for (const p of PAGINAS) pintarPagina(p);
