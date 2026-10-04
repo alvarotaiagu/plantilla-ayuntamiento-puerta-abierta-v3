@@ -42,6 +42,8 @@
   "clave_rutas": "Routes (dotted line)",
   "clave_puntos": "Numbered circle: a place in the list",
   "clave_escala": "Scale: the bar at the bottom is",
+  "clave_recuadro": "Inset: the town enlarged; its bar is",
+  "clave_guia": "Thin line with a dot: the exact spot, when the number has been moved aside to keep it readable",
   "fiesta_mayor": "Main festival",
   "sin_fiestas": "No festivals this month",
   "migas": "You are here",

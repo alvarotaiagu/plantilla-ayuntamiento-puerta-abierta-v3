@@ -7,6 +7,7 @@
                                                        fija el elemento de OSM de un lugar (repetible)
      node scripts/termino.mjs --guardar copia.json     guarda lo que ha devuelto Overpass
      node scripts/termino.mjs --desde copia.json       sin red: dibuja desde una copia guardada
+     node scripts/termino.mjs --raiz carpeta           el municipio.json y la marca/ de otra carpeta (v3c · alta)
 
    Lo que dibuja (todo de OSM, nada a mano):
      · el contorno del término: la relación boundary=administrative, admin_level=8, con el nombre
@@ -14,6 +15,8 @@
      · el casco urbano: las áreas landuse=residential a menos de 2 km del nodo place=town/village
        del pueblo;
      · las carreteras (trunk, primary, secondary, tertiary) con su matrícula (ref);
+     · v3c: las calles (residential, unclassified, living_street, pedestrian) a menos de 2 km, que
+       solo salen en el recuadro del pueblo ampliado (ver 4 bis: cuando los puntos se pisan);
      · las rutas que existan en OSM como relaciones route=hiking/foot/bicycle dentro del término;
      · los lugares de municipio.json → pueblo.lugares y pueblo.patrimonio que estén en OSM DENTRO
        del término (así son los de este pueblo y no los de otro con el mismo nombre). Se buscan por
@@ -38,8 +41,10 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const arg = n => (args.includes(n) ? args[args.indexOf(n) + 1] : null);
 const todos = n => args.flatMap((a, i) => (a === n ? [args[i + 1]] : []));
-const M = JSON.parse(fs.readFileSync(path.join(RAIZ, 'municipio.json'), 'utf8'));
-const rutaMeta = path.join(RAIZ, 'marca/termino.json');
+/* v3c · alta: --raiz <carpeta> lee el municipio.json de esa carpeta y escribe en su marca/ (lo usa nuevo-municipio.mjs) */
+const BASE = arg('--raiz') ? path.resolve(arg('--raiz')) : RAIZ;
+const M = JSON.parse(fs.readFileSync(path.join(BASE, 'municipio.json'), 'utf8'));
+const rutaMeta = path.join(BASE, 'marca/termino.json');
 const previa = fs.existsSync(rutaMeta) ? JSON.parse(fs.readFileSync(rutaMeta, 'utf8')) : {};
 const slugDe = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -80,11 +85,14 @@ else {
     (nombresRe ? `nwr(area.a)["name"~"${nombresRe}",i];` : '') +
     `);out geom;`);
   const pueblo = r2.elements.find(e => e.type === 'node' && e.tags && e.tags.place);
-  let casco = [];
+  let casco = [], calles = [];
   if (pueblo) {
     await new Promise(r => setTimeout(r, 1000));
-    const r3 = await overpass(`[out:json][timeout:120];way(around:2000,${pueblo.lat},${pueblo.lon})["landuse"="residential"];out geom;`);
-    casco = r3.elements;
+    /* v3c · F25: y las calles, que solo salen en el recuadro del pueblo ampliado */
+    const r3 = await overpass(`[out:json][timeout:120];(way(around:2000,${pueblo.lat},${pueblo.lon})["landuse"="residential"];` +
+      `way(around:2000,${pueblo.lat},${pueblo.lon})["highway"~"^(residential|unclassified|living_street|pedestrian)$"];);out geom;`);
+    casco = r3.elements.filter(e => e.tags && e.tags.landuse);
+    calles = r3.elements.filter(e => e.tags && e.tags.highway);
   }
   for (const [nombreL, osm] of fijados) {
     if (r2.elements.some(e => e.type + '/' + e.id === osm)) continue;
@@ -94,7 +102,7 @@ else {
     if (!rx.elements.length) console.log(`! --lugar «${nombreL}»: OSM no tiene ${osm}`);
     r2.elements.push(...rx.elements);
   }
-  datos = { limite, pueblo: pueblo || null, casco, elementos: r2.elements, fecha: new Date().toISOString().slice(0, 10) };
+  datos = { limite, pueblo: pueblo || null, casco, calles, elementos: r2.elements, fecha: new Date().toISOString().slice(0, 10) };
 }
 if (arg('--guardar')) fs.writeFileSync(arg('--guardar'), JSON.stringify(datos));
 
@@ -121,13 +129,13 @@ function dentro({ lat, lon }) {
   }
   return c;
 }
-/* recorte de una línea al lienzo (Liang-Barsky por segmento) */
-function recortar(pts) {
+/* recorte de una línea al lienzo, o a una caja [x0, y0, x1, y1] (Liang-Barsky por segmento) */
+function recortar(pts, [cx0, cy0, cx1, cy1] = [0, 0, VW, VH]) {
   const out = []; let actual = null;
   for (let i = 0; i + 1 < pts.length; i++) {
     let [ax, ay] = pts[i], [bx, by] = pts[i + 1], t0 = 0, t1 = 1, fuera = false;
     const dx = bx - ax, dy = by - ay;
-    for (const [p, q] of [[-dx, ax], [dx, VW - ax], [-dy, ay], [dy, VH - ay]]) {
+    for (const [p, q] of [[-dx, ax - cx0], [dx, cx1 - ax], [-dy, ay - cy0], [dy, cy1 - ay]]) {
       if (p === 0) { if (q < 0) fuera = true; continue; }
       const r = q / p;
       if (p < 0) { if (r > t1) fuera = true; else if (r > t0) t0 = r; } else { if (r < t0) fuera = true; else if (r < t1) t1 = r; }
@@ -200,11 +208,106 @@ for (const nombre of buscados) {
   lugares.push({ nombre, osm: id, nombre_osm: (el.tags || {}).name || null, lat: Number(c.lat.toFixed(6)), lon: Number(c.lon.toFixed(6)), x: red(x), y: red(y), ...(fijado ? { fijado: true } : {}) });
 }
 
+/* ── 4 bis. v3c · F25. Lugares que se pisan. Con datos reales casi todo está en el pueblo (en
+   Ribera, seis de siete puntos en medio kilómetro): a la escala del término, sus círculos caen
+   uno encima de otro. Entonces:
+     · el grupo más grande de puntos que se pisan va a un RECUADRO: el pueblo ampliado, en el
+       hueco del lienzo que menos término tapa, con su propia barra de escala; en el mapa grande,
+       un rectángulo marca la zona ampliada y una raya la une al recuadro;
+     · dentro del recuadro (o en el mapa, si sueltos aún se pisan), el círculo se aparta lo justo,
+       hacia fuera del grupo, y una raya fina lo une a un punto pequeño en su sitio exacto.
+   Se reparte con los círculos ya agrandados como en pantallas estrechas (css/base.css los escala
+   ×AMPL cuando la figura es estrecha), para que tampoco allí se pisen. aplicar.mjs pinta cada
+   círculo en lugares[].x/y (donde quedó) y no sabe nada de esto; el sitio exacto va en «sitio». */
+const R = Math.round(VW / 40), AMPL = 1.6, RR = R * AMPL;
+const xyM = ({ lat, lon }) => [lon * kx, -lat * ky];                      /* metros, para el recuadro */
+const pisan = (a, b) => Math.hypot(a.x - b.x, a.y - b.y) < 2 * RR + 2;
+const contornoXY = contorno.map(a => a.map(proy));
+const dentroXY = (x, y) => { let c = false; for (const a of contornoXY) for (let i = 0, j = a.length - 1; i < a.length; j = i++) if ((a[i][1] > y) !== (a[j][1] > y) && x < (a[j][0] - a[i][0]) * (y - a[i][1]) / (a[j][1] - a[i][1]) + a[i][0]) c = !c; return c; };
+const cortan = (a, b) => !(a.x1 < b.x0 || a.x0 > b.x1 || a.y1 < b.y0 || a.y0 > b.y1);
+/* el grupo: componentes de «se pisan»; el más grande, si tiene dos o más */
+const grupos = [];
+for (const l of lugares) {
+  const suyos = grupos.filter(g => g.some(o => pisan(o, l)));
+  const nuevo = [l, ...suyos.flat()];
+  for (const g of suyos) grupos.splice(grupos.indexOf(g), 1);
+  grupos.push(nuevo);
+}
+const grupo = grupos.filter(g => g.length > 1).sort((a, b) => b.length - a.length)[0] || [];
+let recuadro = null;
+if (grupo.length) {
+  const ms = grupo.map(l => xyM(l));
+  const [gx0, gx1, gy0, gy1] = [Math.min(...ms.map(m => m[0])), Math.max(...ms.map(m => m[0])), Math.min(...ms.map(m => m[1])), Math.max(...ms.map(m => m[1]))];
+  const medio = Math.max(gx1 - gx0, gy1 - gy0) / 2 * 1.35 + 150;          /* metros del centro al borde */
+  const [cxm, cym] = [(gx0 + gx1) / 2, (gy0 + gy1) / 2];
+  const S = Math.round(VW * 0.35), es2 = S / (2 * medio);
+  if (es2 / escala >= 2) {                                                 /* si amplía menos del doble, no vale la pena */
+    const zona = { x0: MARGEN + (cxm - medio - x0) * escala, y0: MARGEN + (cym - medio - y0) * escala };
+    zona.x1 = zona.x0 + 2 * medio * escala; zona.y1 = zona.y0 + 2 * medio * escala;
+    const zc = [(zona.x0 + zona.x1) / 2, (zona.y0 + zona.y1) / 2];
+    const fuera = lugares.filter(l => !grupo.includes(l));
+    let mejor = null;
+    for (let ix = 6; ix <= VW - S - 6; ix += 12) for (let iy = 6; iy <= VH - S - 32; iy += 12) {
+      const c = { x0: ix, y0: iy, x1: ix + S, y1: iy + S };
+      if (cortan(c, { x0: zona.x0 - 12, y0: zona.y0 - 12, x1: zona.x1 + 12, y1: zona.y1 + 12 })) continue;
+      if (fuera.some(l => cortan(c, { x0: l.x - RR - 4, x1: l.x + RR + 4, y0: l.y - RR - 4, y1: l.y + RR + 4 }))) continue;
+      let tapa = 0;
+      for (let i = 0; i <= 14; i++) for (let j = 0; j <= 14; j++) if (dentroXY(ix + S * i / 14, iy + S * j / 14)) tapa++;
+      const nota = tapa / 225 + Math.hypot(ix + S / 2 - zc[0], iy + S / 2 - zc[1]) / VW * 0.15;
+      if (!mejor || nota < mejor.nota) mejor = { ...c, nota, tapa: tapa / 225 };
+    }
+    if (mejor) {
+      const p2 = ({ lat, lon }) => [mejor.x0 + (lon * kx - (cxm - medio)) * es2, mejor.y0 + (-lat * ky - (cym - medio)) * es2];
+      const caja = [mejor.x0, mejor.y0, mejor.x1, mejor.y1];
+      const objetivo2 = (S / 3) / es2;
+      const metros2 = [50, 100, 200, 250, 500, 1000, 2000].reduce((m, v) => Math.abs(v - objetivo2) < Math.abs(m - objetivo2) ? v : m);
+      recuadro = { ...mejor, S, es2, p2, caja, zona, metros: metros2 };
+      for (const l of grupo) { const [x, y] = p2(l); Object.assign(l, { x: red(x), y: red(y), recuadro: true }); }
+    }
+  }
+}
+/* repartir: cada círculo en su sitio si no pisa a nadie; si no, el primer hueco en anillos
+   alrededor, empezando por la dirección que se aleja del grupo, y siempre sin tapar el sitio
+   exacto de los demás */
+function repartir(pts, [bx0, by0, bx1, by1], ocupadas) {
+  const puestos = [];
+  for (const l of pts) {
+    const otros = pts.filter(o => o !== l);
+    const solo = !otros.some(o => pisan(o, l));
+    const cg = otros.length ? [otros.reduce((s, o) => s + o.x, 0) / otros.length, otros.reduce((s, o) => s + o.y, 0) / otros.length] : [l.x, l.y - 1];
+    const hacia = Math.atan2(l.y - cg[1], l.x - cg[0]) || -Math.PI / 2;
+    let sitio = null;
+    for (let k = solo ? 0 : 1; k <= 8 && !sitio; k++) {
+      const d = k === 0 ? 0 : RR + 6 + (k - 1) * RR * 0.8, n = k === 0 ? 1 : 12 + 4 * k;
+      const angs = Array.from({ length: n }, (_, i) => hacia + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 2 * Math.PI / n);
+      for (const a of angs) {
+        const q = { x: l.x + d * Math.cos(a), y: l.y + d * Math.sin(a) };
+        if (q.x - RR < bx0 + 2 || q.x + RR > bx1 - 2 || q.y - RR < by0 + 2 || q.y + RR > by1 - 2) continue;
+        if (puestos.some(o => Math.hypot(o.x - q.x, o.y - q.y) < 2 * RR + 2)) continue;
+        if (k > 0 && pts.some(o => Math.hypot(o.x - q.x, o.y - q.y) < RR + 4)) continue;
+        if (ocupadas.some(c => cortan(c, { x0: q.x - RR, x1: q.x + RR, y0: q.y - RR, y1: q.y + RR }))) continue;
+        sitio = q; break;
+      }
+    }
+    if (!sitio) { avisos.push(`«${l.nombre}»: no hay hueco para su círculo sin pisar otro; sale en su sitio`); sitio = { x: l.x, y: l.y }; }
+    puestos.push(sitio);
+  }
+  pts.forEach((l, i) => {
+    const q = puestos[i];
+    if (Math.hypot(q.x - l.x, q.y - l.y) > 0.5) Object.assign(l, { sitio: [l.x, l.y], x: red(q.x), y: red(q.y) });
+  });
+}
+const barra = { x0: 0, y0: VH - 30, x1: VW * 0.5, y1: VH };               /* la escala, abajo a la izquierda */
+const enRecuadro = lugares.filter(l => l.recuadro), enMapa = lugares.filter(l => !l.recuadro);
+if (recuadro) repartir(enRecuadro, recuadro.caja, [{ x0: recuadro.x0, y0: recuadro.y1 - 30, x1: recuadro.x0 + recuadro.S * 0.72, y1: recuadro.y1 }]);
+repartir(enMapa, [0, 0, VW, VH], [barra, ...(recuadro ? [{ x0: recuadro.x0 - 4, y0: recuadro.y0 - 4, x1: recuadro.x1 + 4, y1: recuadro.y1 + 4 }] : [])]);
+
 /* rótulos de las carreteras: en el punto medio de su tramo más largo, sin chocar entre ellos */
 const rotulos = [], cajas = [];
-/* que no tapen los puntos de los lugares ni el pueblo */
-for (const l of lugares) cajas.push({ x0: l.x - 18, x1: l.x + 18, y0: l.y - 18, y1: l.y + 18 });
+/* que no tapen los puntos de los lugares (ya agrandados como en pantalla estrecha), el pueblo ni el recuadro */
+for (const l of lugares) cajas.push({ x0: l.x - RR - 3, x1: l.x + RR + 3, y0: l.y - RR - 3, y1: l.y + RR + 3 });
 if (datos.pueblo) { const [px, py] = proy(datos.pueblo); cajas.push({ x0: px - 22, x1: px + 22, y0: py - 22, y1: py + 22 }); }
+if (recuadro) cajas.push({ x0: recuadro.x0 - 6, x1: recuadro.x1 + 6, y0: recuadro.y0 - 6, y1: recuadro.y1 + 6 }, recuadro.zona);
 for (const [ref, { l, largo }] of [...refs.entries()].sort((a, b) => b[1].largo - a[1].largo)) {
   if (largo < 60) continue;
   const total = largo; let acc = 0, punto = l[0];
@@ -214,7 +317,8 @@ for (const [ref, { l, largo }] of [...refs.entries()].sort((a, b) => b[1].largo 
     acc += s;
   }
   const w = ref.length * 6.6 + 8, h = 15;
-  const c = { x0: punto[0] - w / 2, x1: punto[0] + w / 2, y0: punto[1] - h / 2, y1: punto[1] + h / 2 };
+  /* la caja, ya agrandada como en pantalla estrecha (×AMPL alrededor de su centro) */
+  const c = { x0: punto[0] - w * AMPL / 2, x1: punto[0] + w * AMPL / 2, y0: punto[1] - h * AMPL / 2, y1: punto[1] + h * AMPL / 2 };
   if (c.x0 < 2 || c.x1 > VW - 2 || c.y0 < 2 || c.y1 > VH - 30) continue;
   if (cajas.some(o => !(c.x1 < o.x0 || c.x0 > o.x1 || c.y1 < o.y0 || c.y0 > o.y1))) continue;
   cajas.push(c); rotulos.push({ ref, x: punto[0], y: punto[1], w, h });
@@ -225,6 +329,60 @@ const objetivo = (VW / 4) / escala;
 const metros = [500, 1000, 2000, 2500, 5000, 10000, 20000].reduce((m, v) => Math.abs(v - objetivo) < Math.abs(m - objetivo) ? v : m);
 const largoEscala = metros * escala;
 
+/* ── 5 bis. v3c · F25. El recuadro: lo mismo que el mapa (término, casco, carreteras), recortado a
+   su caja; su barra de escala; la zona ampliada en el mapa grande y la raya que las une. Y las
+   rayas de los círculos apartados, con un punto pequeño en el sitio exacto ── */
+/* recorte de un polígono a una caja (Sutherland-Hodgman) */
+function recortarPoligono(pts, [cx0, cy0, cx1, cy1]) {
+  let out = pts;
+  for (const [dentroDe, corte] of [
+    [p => p[0] >= cx0, (a, b) => [cx0, a[1] + (b[1] - a[1]) * (cx0 - a[0]) / (b[0] - a[0])]],
+    [p => p[0] <= cx1, (a, b) => [cx1, a[1] + (b[1] - a[1]) * (cx1 - a[0]) / (b[0] - a[0])]],
+    [p => p[1] >= cy0, (a, b) => [a[0] + (b[0] - a[0]) * (cy0 - a[1]) / (b[1] - a[1]), cy0]],
+    [p => p[1] <= cy1, (a, b) => [a[0] + (b[0] - a[0]) * (cy1 - a[1]) / (b[1] - a[1]), cy1]]]) {
+    const ent = out; out = [];
+    for (let i = 0; i < ent.length; i++) {
+      const p = ent[i], q = ent[(i + 1) % ent.length];
+      if (dentroDe(p)) { out.push(p); if (!dentroDe(q)) out.push(corte(p, q)); }
+      else if (dentroDe(q)) out.push(corte(p, q));
+    }
+    if (!out.length) break;
+  }
+  return out;
+}
+const punto = ([x, y], r = 2.6) => `M${red(x - r)} ${red(y)}a${r} ${r} 0 1 0 ${red(2 * r)} 0a${r} ${r} 0 1 0 ${red(-2 * r)} 0Z`;
+const guias = l => l.sitio ? `<path class="termino-guia" d="M${l.sitio[0]} ${l.sitio[1]}L${l.x} ${l.y}"/><path class="termino-sitio" d="${punto(l.sitio)}"/>` : '';
+let recuadroSvg = '';
+if (recuadro) {
+  const { caja, p2, x0: rx, y0: ry, x1: rx1, y1: ry1, zona, metros: m2, es2, S } = recuadro;
+  const dentroCaja = [rx + 1, ry + 1, rx1 - 1, ry1 - 1];
+  const pol = anillosLL => dDe(anillosLL.map(a => recortarPoligono(a.map(p2), dentroCaja)).filter(a => a.length > 2).map(a => simplificar([...a, a[0]], 0.4)), true);
+  const area2 = pol(contorno), casco2 = pol((datos.casco || []).filter(w => w.geometry && w.geometry.length > 3).map(w => w.geometry.filter(Boolean)));
+  const lim2 = dDe(contorno.flatMap(a => recortar(a.map(p2), dentroCaja)).map(l => simplificar(l, 0.4)));
+  const calles2 = dDe((datos.calles || []).filter(e => e.geometry).flatMap(e => recortar(e.geometry.filter(Boolean).map(p2), dentroCaja)).map(l => simplificar(l, 0.4)));
+  const carr2 = dDe(datos.elementos.filter(e => e.type === 'way' && e.tags && CARRETERA.test(e.tags.highway || '') && e.geometry)
+    .flatMap(e => recortar(e.geometry.filter(Boolean).map(p2), dentroCaja)).map(l => simplificar(l, 0.4)));
+  const lb = m2 * es2, bx = rx + 8, by = ry1 - 12;
+  /* la raya entre la zona y el recuadro: de la esquina de la zona más cercana al recuadro a la del recuadro más cercana a la zona */
+  const esq = c => [[c.x0, c.y0], [c.x1, c.y0], [c.x0, c.y1], [c.x1, c.y1]];
+  const cerca = (cs, [tx, ty]) => cs.reduce((m, p) => Math.hypot(p[0] - tx, p[1] - ty) < Math.hypot(m[0] - tx, m[1] - ty) ? p : m);
+  const a1 = cerca(esq(zona), [(rx + rx1) / 2, (ry + ry1) / 2]), a2 = cerca(esq(recuadro), a1);
+  recuadroSvg = `<path class="termino-zona" d="M${red(zona.x0)} ${red(zona.y0)}H${red(zona.x1)}V${red(zona.y1)}H${red(zona.x0)}Z"/>
+<path class="termino-guia" d="M${red(a1[0])} ${red(a1[1])}L${red(a2[0])} ${red(a2[1])}"/>
+<g class="termino-recuadro">
+<rect class="termino-fondo" x="${red(rx)}" y="${red(ry)}" width="${S}" height="${S}"/>
+${area2 ? `<path class="termino-area" d="${area2}"/>` : ''}
+${casco2 ? `<path class="termino-casco" d="${casco2}"/>` : ''}
+${calles2 ? `<path class="termino-calle" d="${calles2}"/>` : ''}
+${carr2 ? `<path class="termino-carretera" d="${carr2}"/>` : ''}
+${lim2 ? `<path class="termino-limite" d="${lim2}"/>` : ''}
+${lugares.filter(l => l.recuadro).map(guias).join('')}
+<path class="termino-escala" d="M${red(bx)} ${red(by)}h${red(lb)}M${red(bx)} ${red(by - 4)}v8M${red(bx + lb)} ${red(by - 4)}v8"/>
+<text class="termino-escala-texto" x="${red(bx + lb + 6)}" y="${red(by)}" dy=".35em">${m2 >= 1000 ? String(m2 / 1000).replace('.', ',') + ' km' : m2 + ' m'}</text>
+<rect class="termino-marco" x="${red(rx)}" y="${red(ry)}" width="${S}" height="${S}"/>
+</g>`;
+}
+
 /* ── 6. el SVG (solo geometría y rótulos; sin colores) ── */
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" data-termino="${esc(slugDe(M.nombre))}">
 <rect class="termino-fondo" width="${VW}" height="${VH}"/>
@@ -233,12 +391,15 @@ ${cascoD ? `<path class="termino-casco" d="${cascoD}"/>` : ''}
 ${rutasD.map(x => `<path class="termino-ruta" d="${x.d}"/>`).join('\n')}
 ${carreteras.length ? `<path class="termino-carretera" d="${dDe(carreteras)}"/>` : ''}
 <path class="termino-limite" d="${limiteD}"/>
+${lugares.filter(l => !l.recuadro).map(guias).join('')}
+${recuadroSvg}
 ${rotulos.map(r => `<g class="termino-ref"><rect x="${red(r.x - r.w / 2)}" y="${red(r.y - r.h / 2)}" width="${red(r.w)}" height="${r.h}" rx="3"/><text x="${red(r.x)}" y="${red(r.y)}" text-anchor="middle" dy=".35em">${esc(r.ref)}</text></g>`).join('\n')}
 <path class="termino-escala" d="M${MARGEN} ${VH - 12}h${red(largoEscala)}M${MARGEN} ${VH - 16}v8M${red(MARGEN + largoEscala)} ${VH - 16}v8"/>
 <text class="termino-escala-texto" x="${red(MARGEN + largoEscala + 6)}" y="${VH - 12}" dy=".35em">${metros >= 1000 ? String(metros / 1000).replace('.', ',') + ' km' : metros + ' m'}</text>
 </svg>
 `.replace(/\n{2,}/g, '\n');
-fs.writeFileSync(path.join(RAIZ, 'marca/termino.svg'), svg);
+fs.mkdirSync(path.join(BASE, 'marca'), { recursive: true });
+fs.writeFileSync(path.join(BASE, 'marca/termino.svg'), svg);
 
 const meta = {
   _leeme: 'Lo genera scripts/termino.mjs (no editar a mano salvo «fijado» en lugares, que el script respeta). aplicar.mjs pinta con esto el mapa del término en «El pueblo»: sin este archivo o sin marca/termino.svg, la sección no sale.',
@@ -249,7 +410,10 @@ const meta = {
   casco_osm: (datos.casco || []).map(w => 'way/' + w.id),
   carreteras: [...refs.keys()].sort(), carreteras_osm: datos.elementos.filter(e => e.type === 'way' && e.tags && CARRETERA.test(e.tags.highway || '')).map(e => 'way/' + e.id),
   rutas: rutasD.map(x => ({ nombre: x.r.tags.name || x.r.tags.ref || 'Ruta sin nombre', osm: 'relation/' + x.r.id })),
-  viewBox: `0 0 ${VW} ${VH}`, metros_por_unidad: Number((1 / escala).toFixed(3)), escala_m: metros,
+  viewBox: `0 0 ${VW} ${VH}`, metros_por_unidad: Number((1 / escala).toFixed(3)), escala_m: metros, radio_punto: R,
+  /* v3c · F25: el pueblo ampliado, si hacía falta (caja en el lienzo, zona que amplía y su escala) */
+  recuadro: recuadro ? { caja: recuadro.caja.map(red), zona: [recuadro.zona.x0, recuadro.zona.y0, recuadro.zona.x1, recuadro.zona.y1].map(red),
+    metros_por_unidad: Number((1 / recuadro.es2).toFixed(3)), escala_m: recuadro.metros, tapa_termino: Number(recuadro.tapa.toFixed(2)) } : null,
   fecha: datos.fecha, lugares
 };
 fs.writeFileSync(rutaMeta, JSON.stringify(meta, null, 2) + '\n');

@@ -774,7 +774,10 @@ if (existe('marca/termino.svg') && existe('marca/termino.json')) {
     .map((l, i) => ({ n: i + 1, nombre: l.nombre, ancla: 'lugar-' + slugDe(l.nombre), x: l.x, y: l.y, osm: l.osm, ty: (l.y + 0.5).toFixed(1) }));
   for (const l of meta.lugares || []) if (!anclas.has('lugar-' + slugDe(l.nombre))) avisos.push(`marca/termino.json: «${l.nombre}» ya no está en pueblo.lugares ni en pueblo.patrimonio; su punto no sale`);
   if (s) termino = {
-    svg_cuerpo: s.cuerpo.replace(/\s*\n\s*/g, ''), viewbox: s.vb, puntos, radio: Math.round(Number(s.vb.split(/\s+/)[2]) / 40), letra: Math.round(Number(s.vb.split(/\s+/)[2]) / 40), hay_puntos: puntos.length > 0,
+    svg_cuerpo: s.cuerpo.replace(/\s*\n\s*/g, ''), viewbox: s.vb, puntos, radio: meta.radio_punto || Math.round(Number(s.vb.split(/\s+/)[2]) / 40), letra: meta.radio_punto || Math.round(Number(s.vb.split(/\s+/)[2]) / 40), hay_puntos: puntos.length > 0,
+    /* v3c · F25: el pueblo ampliado y las rayas de los círculos apartados (termino.mjs), en la leyenda */
+    recuadro_texto: meta.recuadro && meta.recuadro.escala_m ? (meta.recuadro.escala_m >= 1000 ? String(meta.recuadro.escala_m / 1000).replace('.', ',') + ' km' : meta.recuadro.escala_m + ' m') : null,
+    hay_guias: (meta.lugares || []).some(l => l.sitio),
     rutas_texto: (meta.rutas || []).length ? meta.rutas.map(r => r.nombre).join(', ').replace(/, ([^,]*)$/, ' y $1') : null, carreteras: (meta.carreteras || []).length ? (meta.carreteras || []).join(', ').replace(/, ([^,]*)$/, ' y $1') : null,
     atribucion: meta.atribucion || '© colaboradores de OpenStreetMap', atribucion_url: meta.atribucion_url || 'https://www.openstreetmap.org/copyright',
     fecha_texto: meta.fecha && ISO.test(meta.fecha) ? fechaTexto(meta.fecha) : null, fecha_iso: meta.fecha && ISO.test(meta.fecha) ? meta.fecha : null, muestra: meta.muestra || null,
@@ -796,6 +799,7 @@ const T_ES = {
   termino_lugares: 'Lugares del mapa', termino_leer: 'Cómo leerlo', clave_limite: 'Límite del término municipal (línea discontinua)',
   clave_casco: 'El pueblo (área sombreada)', clave_carreteras: 'Carreteras (línea gruesa)', clave_rutas: 'Rutas (línea de puntos)',
   clave_puntos: 'Círculo con número: un lugar de la lista', clave_escala: 'Escala: la barra de abajo mide',
+  clave_recuadro: 'Recuadro: el pueblo ampliado; su barra mide', clave_guia: 'Raya fina con un punto: el sitio exacto, cuando el número se ha apartado para que se lea',
   fiesta_mayor: 'Fiesta mayor', sin_fiestas: 'Sin fiestas señaladas',
   /* lo de fuera de «El pueblo» que hay que traducir en su cabecera */
   migas: 'Usted está aquí', inicio: 'Inicio', en_esta_pagina: 'En esta página'

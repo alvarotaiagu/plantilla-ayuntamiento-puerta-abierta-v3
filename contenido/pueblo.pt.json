@@ -42,6 +42,8 @@
   "clave_rutas": "Percursos (linha de pontos)",
   "clave_puntos": "Círculo com número: um lugar da lista",
   "clave_escala": "Escala: a barra de baixo mede",
+  "clave_recuadro": "Detalhe: a vila ampliada; a sua barra mede",
+  "clave_guia": "Linha fina com um ponto: o sítio exato, quando o número foi afastado para se poder ler",
   "fiesta_mayor": "Festa principal",
   "sin_fiestas": "Sem festas neste mês",
   "migas": "Está aqui",
