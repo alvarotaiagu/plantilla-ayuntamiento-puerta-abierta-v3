@@ -3700,15 +3700,23 @@ async function v3cGuia() {
       if (t.join() !== csv(k).join()) mG.push(`${k}: preguntas ${t.join(',')} ≠ plantillas-hoja/${k}.csv ${csv(k).join(',')}`);
       if (t.some(c => !LEE[k].includes(c)) || ['fecha', 'titulo'].some(c => !t.includes(c))) mG.push(`${k}: preguntas que la web no lee o faltan fecha/título: ${t.join(',')}`);
       if (f.items.filter(i => i.requerida).map(i => clave(i.titulo)).join() !== 'fecha,titulo') mG.push(k + ': obligatorias ≠ fecha y título');
-      if (f.correo !== false || !f.destino) mG.push(k + ': recoge correos o no manda a la hoja');
+      if (f.correo !== true || !f.destino) mG.push(k + ': no recoge el correo de quien responde o no manda a la hoja');
       const resp = apps.hojas.find(h => h.formulario === f), pub = apps.hojas.find(h => h.nombre === pest[k]);
       if (!resp || !pub || !pub.formula) { mG.push(k + ': falta la pestaña de respuestas o la publicable «' + pest[k] + '»'); continue; }
       /* la QUERY: de la pestaña de respuestas, las columnas de las preguntas y «Estado», sin la A (marca temporal) */
-      const mq = /^=QUERY\('([^']+)'!A:([A-Z]+), "select ([A-Z, ]+) where ([A-Z]+) is not null", 1\)$/.exec(pub.formula);
+      /* v3c · F18 bis: solo las filas con «Autorizada» = sí, y ni el correo ni «Autorizada» en lo publicado */
+      const mq = /^=QUERY\('([^']+)'!A:([A-Z]+), "select ([A-Z, ]+) where ([A-Z]+) is not null and ([A-Z]+) = 'sí'", 1\)$/.exec(pub.formula);
       const num = l => [...l].reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0);
       const elegidas = mq ? mq[3].split(', ').map(l => resp.cabecera[num(l) - 1]) : [];
-      if (!mq || mq[1] !== resp.nombre || elegidas.join('|') !== [...f.items.map(i => i.titulo), 'Estado'].join('|') || resp.cabecera[num(mq[4]) - 1] !== 'Título' || mq[3].split(', ').includes('A'))
+      const iCorreo = resp.cabecera.findIndex(t => /correo/i.test(t)), iAut = resp.cabecera.indexOf('Autorizada');
+      if (!mq || mq[1] !== resp.nombre || elegidas.join('|') !== [...f.items.map(i => i.titulo), 'Estado'].join('|') || resp.cabecera[num(mq[4]) - 1] !== 'Título' || mq[3].split(', ').includes('A') ||
+        num(mq[5]) - 1 !== iAut || iCorreo < 0 || elegidas.some(t => /correo|autorizada/i.test(t)) || num(mq[2]) < iAut + 1)
         mG.push(k + ': QUERY ' + pub.formula + ' sobre ' + JSON.stringify(resp.cabecera));
+      /* «Autorizada»: compara el correo de la fila con la pestaña de autorizados */
+      const L = n => String.fromCharCode(65 + n);
+      const fAut = (resp.formulas || {})[iAut + 1] || '';
+      if (iCorreo < 0 || !fAut.startsWith('={"Autorizada"; ARRAYFORMULA(') || !fAut.includes('TRIM(' + L(iCorreo) + '2:' + L(iCorreo) + ')') || !fAut.includes("'Personas autorizadas'!A2:A") || !/"sí", "no"/.test(fAut))
+        mG.push(k + ': la columna «Autorizada» → ' + fAut);
     }
     const h = bloque.hoja || {};
     if (!h.id || JSON.stringify(h.pestanas) !== JSON.stringify({ avisos: pest.avisos, agenda: pest.agenda, noticias: pest.noticias }) || Object.keys(h.formularios || {}).join() !== 'avisos,agenda,noticias' || Object.values(h.formularios).some(x => !/^https:\/\//.test(x)))
@@ -3717,8 +3725,13 @@ async function v3cGuia() {
     const leame = apps.hojas.find(x => x.nombre === 'Léame');
     if (!leame || !leame.texto.includes(h.id) || !/Publicar en la web/.test(leame.texto)) mG.push('la pestaña «Léame» no lleva el id y el paso de publicar');
     if (apps.hojas.map(x => x.nombre).slice(0, 4).join() !== ['Léame', pest.avisos, pest.agenda, pest.noticias].join()) mG.push('orden de las pestañas: ' + apps.hojas.map(x => x.nombre).join(', '));
+    /* la pestaña privada de autorizados, con el correo de quien ejecuta el script; el «Léame» dice cómo añadir y que no se publique */
+    const aut = apps.hojas.find(x => x.nombre === 'Personas autorizadas');
+    if (!aut || !aut.valores || !aut.valores.some((fila, i) => i > 0 && fila[0] === 'ayuntamiento@ejemplo.es') || Object.values(pest).includes('Personas autorizadas'))
+      mG.push('«Personas autorizadas»: ' + JSON.stringify(aut && aut.valores));
+    if (!leame || !/Personas autorizadas/.test(leame.texto) || !/Verificado/.test(leame.texto)) mG.push('el «Léame» no explica los autorizados y el correo «Verificado»');
   }
-  comprobar(!mG.length, 'v3c F18: plantillas-hoja/crear-hoja.gs compila y, contra una imitación de la API de Apps Script, crea los 3 formularios (sin correos, enviando a la hoja) con las preguntas que lee la web (= plantillas-hoja/*.csv y comprobar-hoja.mjs; obligatorias fecha y título), las pestañas «Avisos», «Agenda» y «Noticias» con una QUERY que copia esas columnas y «Estado» sin la marca temporal, el «Léame» y el bloque «hoja» (id, pestañas y formularios) en el registro' + (mG.length ? ' → ' + mG.slice(0, 4).join(' | ') : ''));
+  comprobar(!mG.length, 'v3c F18: plantillas-hoja/crear-hoja.gs compila y, contra una imitación de la API de Apps Script, crea los 3 formularios (recogen el correo de quien responde y envían a la hoja) con las preguntas que lee la web (= plantillas-hoja/*.csv y comprobar-hoja.mjs; obligatorias fecha y título), las pestañas «Avisos», «Agenda» y «Noticias» con una QUERY que copia esas columnas y «Estado» solo de las filas con «Autorizada» = sí (el correo comparado con la pestaña privada «Personas autorizadas», creada con el correo de quien ejecuta el script) y sin la marca temporal ni el correo, el «Léame» y el bloque «hoja» (id, pestañas y formularios) en el registro' + (mG.length ? ' → ' + mG.slice(0, 4).join(' | ') : ''));
 
   /* ── 6. la propuesta enlaza al simulador ── */
   if (M.propuesta !== false) {
@@ -3739,9 +3752,10 @@ function imitarAppsScript() {
   const encadena = (o, nombres) => { for (const n of nombres) o[n] = () => o; return o; };
   const rango = (h, fila, col, nf = 1, nc = 1) => encadena({
     getValues: () => [Array.from({ length: nc }, (_, i) => (fila === 1 ? h.cabecera[col - 1 + i] : '') || '')],
-    setValues: v => { if (fila === 1 && col === 1 && h.nombre !== 'Léame') h.cabecera = v[0].slice(); h.texto += v.map(x => x.join(' ')).join('\n'); return rango(h, fila, col, nf, nc); },
+    setValues: v => { if (fila === 1 && col === 1 && h.nombre !== 'Léame') h.cabecera = v[0].slice(); h.valores = v.map(x => x.slice()); h.texto += v.map(x => x.join(' ')).join('\n'); return rango(h, fila, col, nf, nc); },
     setValue: v => { if (fila === 1) h.cabecera[col - 1] = v; return rango(h, fila, col); },
-    setFormula: f => { h.formula = f; return rango(h, fila, col); }
+    /* en la cabecera, una fórmula ={"Título"; …} se ve como su primer valor */
+    setFormula: f => { h.formula = f; (h.formulas = h.formulas || {})[col] = f; const t = /^=\{"([^"]+)"/.exec(f); if (fila === 1 && t) h.cabecera[col - 1] = t[1]; return rango(h, fila, col); }
   }, ['setNote', 'setFontWeight', 'setFontSize', 'setWrap']);
   const nuevaHoja = nombre => {
     const h = { id: ++nHoja, nombre, cabecera: [], texto: '', formula: null, formulario: null };
@@ -3773,7 +3787,7 @@ function imitarAppsScript() {
         a.formularios.push(f);
         return encadena(Object.assign(f, {
           getId: () => id, getTitle: () => titulo, getPublishedUrl: () => f.url, setCollectEmail: v => { f.correo = v; return f; },
-          setDestination: (tipo, libroId) => { f.destino = libroId; const h = nuevaHoja('Respuestas de formulario ' + nForm); h.formulario = f; h.cabecera = ['Marca temporal', ...f.items.map(i => i.titulo)]; return f; },
+          setDestination: (tipo, libroId) => { f.destino = libroId; const h = nuevaHoja('Respuestas de formulario ' + nForm); h.formulario = f; h.cabecera = ['Marca temporal', ...(f.correo ? ['Dirección de correo electrónico'] : []), ...f.items.map(i => i.titulo)]; return f; },
           addDateItem: () => item(f, 'fecha'), addTimeItem: () => item(f, 'hora'), addTextItem: () => item(f, 'corta'), addParagraphTextItem: () => item(f, 'parrafo'),
           addListItem: () => item(f, 'lista'), addMultipleChoiceItem: () => item(f, 'opcion'), addCheckboxItem: () => item(f, 'casilla')
         }), ['setDescription', 'setConfirmationMessage', 'setAllowResponseEdits', 'setShowLinkToRespondAgain', 'setProgressBar', 'setRequireLogin']);

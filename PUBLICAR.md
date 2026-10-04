@@ -14,13 +14,15 @@ La web ya sabe leer la hoja (README, «La hoja de cálculo»; `js/main.js → le
 
 ## El camino corto: `plantillas-hoja/crear-hoja.gs` (unos diez minutos)
 
-Un Google Apps Script que lo crea todo de una vez: la hoja «Web del Ayuntamiento», los tres formularios con las preguntas que lee la web, las pestañas de respuestas (con la columna «Estado») y las tres pestañas que se publican, con su `QUERY` (solo las columnas de la web: ni la marca temporal ni correos). Lo pone todo en una carpeta «Web del Ayuntamiento» de su Drive.
+Un Google Apps Script que lo crea todo de una vez: la hoja «Web del Ayuntamiento», los tres formularios con las preguntas que lee la web, la pestaña privada **«Personas autorizadas»**, las pestañas de respuestas (con «Estado» y «Autorizada») y las tres pestañas que se publican, con su `QUERY` (solo las filas autorizadas y solo las columnas de la web: ni la marca temporal ni el correo). Lo pone todo en una carpeta «Web del Ayuntamiento» de su Drive.
+
+**Quién publica (v3c · F18 bis).** Solo las personas de «Personas autorizadas». Los formularios recogen el correo de la cuenta de Google con la que se entra; en cada pestaña de respuestas, la columna «Autorizada» dice «sí» si ese correo está en la lista, y las pestañas publicadas solo copian las filas con «sí». Lo que mande cualquier otra persona (aunque tenga el enlace del formulario) se queda en las respuestas, privado, y no llega nunca a la web. No hace falta Google Workspace: vale con cuentas de Gmail. El script crea la lista con el correo de quien lo ejecuta (la cuenta del Ayuntamiento); `OTRAS_PERSONAS`, arriba del script, añade más desde el principio.
 
 > **No se ha podido ejecutar en Google al escribirlo** (no hay cuenta en este entorno). Está hecho con la API documentada de Apps Script y `verificar.mjs → v3cguia` lo ejecuta contra una imitación de esa API y comprueba que las preguntas se llaman como las columnas que lee la web. La primera vez de verdad, haga la comprobación del paso 3.
 
 **1. Ejecutar el script** (con la cuenta de Google **del Ayuntamiento**: los formularios y la hoja quedan a su nombre).
 1. Abra <https://script.google.com> → **Nuevo proyecto**. Borre lo que haya, pegue `plantillas-hoja/crear-hoja.gs` entero y guarde.
-2. Arriba del todo puede cambiar `TEMAS` (los temas del tablón), `AVISAR_POR_CORREO` (de serie, `true`: un correo a la cuenta del Ayuntamiento con cada envío, para enterarse si alguien que no debe tiene un formulario) y `SOLO_CUENTAS_DE_LA_ORGANIZACION` (solo con Google Workspace: los formularios piden entrar con una cuenta del Ayuntamiento).
+2. Arriba del todo puede cambiar `TEMAS` (los temas del tablón), `OTRAS_PERSONAS` (más correos de Google autorizados desde el principio, por ejemplo el de la secretaría) y `AVISAR_POR_CORREO` (de serie, `true`: un correo a la cuenta del Ayuntamiento con cada envío, con quién lo mandó).
 3. En el desplegable de funciones elija **`crearHojaDeLaWeb`** → **Ejecutar**. Google pide permiso (Drive, Formularios, Hojas y, con el aviso por correo, enviar correo y activadores). Si sale «Google no ha verificado esta aplicación»: **Configuración avanzada → Ir a … (no seguro)**; el script es suyo.
 4. Al acabar, el **Registro de ejecución** enseña el bloque para `municipio.json` (y queda escrito en la pestaña «Léame» de la hoja):
    ```json
@@ -28,9 +30,13 @@ Un Google Apps Script que lo crea todo de una vez: la hoja «Web del Ayuntamient
              "formularios": { "avisos": "https://docs.google.com/forms/d/e/…/viewform", "agenda": "…", "noticias": "…" } }
    ```
 
-**2. Publicar las pestañas (a mano: un script no puede).** Abra la hoja (está en la carpeta «Web del Ayuntamiento»):
+**2. Dos pasos a mano (un script no puede).**
+
+*A. El correo, «Verificado».* El script pide el correo con `setCollectEmail(true)`, que es lo único que deja fijar la API documentada de Apps Script (no hay forma de elegir el tipo de recogida, y `setRequireLogin` está obsoleto y solo vale dentro de un dominio de Workspace). En **cada uno de los tres formularios**: **Configuración → Respuestas → «Recopilar direcciones de correo electrónico» → «Verificado»**. Así hay que entrar con la cuenta de Google y el correo no se puede escribir a mano. **Si se queda en la opción en la que cada uno escribe su correo, cualquiera podría poner uno autorizado**: este paso no se puede saltar.
+
+*B. Publicar las pestañas.* Abra la hoja (está en la carpeta «Web del Ayuntamiento»):
 1. **Archivo → Compartir → Publicar en la web**.
-2. Pestaña «Enlace». En el **primer desplegable** quite «Documento completo» y marque **solo** «Avisos», «Agenda» y «Noticias» (nunca «Léame» ni las «Respuestas …»).
+2. Pestaña «Enlace». En el **primer desplegable** quite «Documento completo» y marque **solo** «Avisos», «Agenda» y «Noticias» (nunca «Léame», «Personas autorizadas» ni las «Respuestas …»).
 3. En el segundo desplegable deje «Página web».
 4. Despliegue **«Contenido publicado y configuración»** y marque **«Volver a publicar automáticamente cuando se hagan cambios»**.
 5. **Publicar** → Aceptar. El enlace que sale no hace falta.
@@ -39,7 +45,9 @@ Un Google Apps Script que lo crea todo de una vez: la hoja «Web del Ayuntamient
 **3. Comprobar** (dos minutos, en una ventana privada del navegador):
 - `https://docs.google.com/spreadsheets/d/<id>/gviz/tq?sheet=Avisos` **tiene que devolver datos** (un texto que empieza por `/*O_o*/`). Si pide entrar, falta el paso 2.
 - `https://docs.google.com/spreadsheets/d/<id>/gviz/tq?sheet=Respuestas%20avisos` **tiene que dar error o pedir acceso**. Si devuelve datos, se ha publicado de más (paso 2.2) o la hoja está compartida con «Cualquier persona con el enlace».
-- Envíe un aviso de prueba desde el formulario, mire que sale en la pestaña «Avisos» y retírelo escribiendo `oculto` en su «Estado» (en «Respuestas avisos»).
+- Abra un formulario en la ventana privada: **tiene que pedir entrar con Google** (si no, falta el paso 2.A).
+- Envíe un aviso de prueba con la cuenta del Ayuntamiento: sale en la pestaña «Avisos» («Autorizada» = sí en «Respuestas avisos»). Retírelo escribiendo `oculto` en su «Estado».
+- Envíe otro con una cuenta de Google que **no** esté en la lista: se queda en «Respuestas avisos» con «Autorizada» = no y **no** aparece en «Avisos». Luego borre esa fila.
 
 **4. Decírselo a la web:** pegue el bloque en `municipio.json → hoja` y `node scripts/aplicar.mjs`. Desde ese momento:
 - la web lee la hoja cada vez que alguien la abre (lo nuevo sale en unos minutos);
@@ -47,9 +55,12 @@ Un Google Apps Script que lo crea todo de una vez: la hoja «Web del Ayuntamient
 
 **5. Dárselo al Ayuntamiento:** la dirección de `publicar.html` (o el enlace del pie) a quien vaya a publicar, para que la guarde en la pantalla de inicio del móvil, y la página impresa para la mesa. En una demo sin hoja, el simulador «Pruébelo» de esa página enseña lo que pasaría (no envía nada).
 
+**Añadir y quitar personas** (lo puede hacer el propio Ayuntamiento, o usted con su permiso): en la hoja, pestaña **«Personas autorizadas»**, un correo de Google por fila (columna A; la B es para apuntar quién es). Para añadir a alguien, su correo en una fila nueva: desde ese momento lo que mande sale en la web (y lo que ya hubiera mandado, también). Para quitarlo, se borra su fila: lo suyo deja de copiarse a las pestañas publicadas. Da igual mayúsculas o espacios de más. Tiene que ser la cuenta con la que esa persona entra en Google en el móvil (si usa dos, las dos).
+
 **Lo que conviene saber de este camino:**
-- **`publicar.html` no sale en buscadores ni en el menú, pero no es secreta**: quien la abra ve los botones. Si eso no basta, `SOLO_CUENTAS_DE_LA_ORGANIZACION` (con Workspace), el correo de cada envío (`AVISAR_POR_CORREO`) y, si un enlace se escapa, una copia nueva del formulario (el viejo se borra o deja de aceptar respuestas).
-- Lo que llega por los formularios lo puede leer cualquiera en las pestañas publicadas, también lo que se deja en `borrador`: nada que no pueda ser público.
+- **`publicar.html` no sale en buscadores ni en el menú y no es secreta**, pero ver los botones no basta para publicar: hace falta entrar con una cuenta de «Personas autorizadas». El correo de cada envío (`AVISAR_POR_CORREO`) dice además quién lo mandó.
+- Lo publicado lo puede leer cualquiera en las pestañas publicadas, **también lo que se deja en `borrador`**: «borrador» no sale en la web, pero **no es privado**. Nada que no pueda ser público. (Lo de personas no autorizadas, en cambio, no pasa a las pestañas publicadas.)
+- El correo de quien publica **no** se copia a las pestañas publicadas: solo está en las de respuestas y en «Personas autorizadas», que son privadas.
 - No cambie los títulos de las preguntas ni su orden: son los nombres de las columnas y la `QUERY` los busca por su letra. Si hace falta, se borra todo y se vuelve a ejecutar el script.
 - Tras enviar, el formulario ofrece «Editar su respuesta» (para una errata); un cambio de título hace que la web lo tome como otro aviso y quite el anterior.
 
@@ -58,6 +69,14 @@ Un Google Apps Script que lo crea todo de una vez: la hoja «Web del Ayuntamient
 ## El camino manual (si no se puede usar el script)
 
 Lo mismo, a mano: unos treinta minutos de clics. Al terminar, `hoja.formularios` (las direcciones de «Enviar → enlace» de cada formulario) va en `municipio.json` como en el paso 4 de arriba.
+
+> **Para que solo publiquen las personas autorizadas (v3c · F18 bis), en el camino manual:**
+> 1. Una pestaña **«Personas autorizadas»** con «Correo» en A1 y un correo de Google por fila desde A2. Nunca se publica.
+> 2. En cada formulario, **«Recopilar direcciones de correo electrónico» → «Verificado»** (paso 2.4). En las respuestas aparece la columna «Dirección de correo electrónico» (normalmente la B: entonces las preguntas empiezan en la C).
+> 3. En cada pestaña de respuestas, tras «Estado», una columna con esta fórmula en la fila 1 (cambie `B` por la letra de la columna del correo):
+>    `={"Autorizada"; ARRAYFORMULA(IF(B2:B = ""; ""; IF(ISNUMBER(MATCH(LOWER(TRIM(B2:B)); LOWER(TRIM('Personas autorizadas'!A2:A)); 0)); "sí"; "no")))}`
+>    (con la hoja en español, los argumentos de las funciones van separados con «;»).
+> 4. En las `QUERY` del paso 4, sin la columna del correo y con el filtro: `… where <Título> is not null and <Autorizada> = 'sí'`.
 
 ## 1. La hoja
 
@@ -80,7 +99,7 @@ Lo mismo, a mano: unos treinta minutos de clics. Al terminar, `hoja.formularios`
 | `Caduca` | Fecha | no | Último día que se enseña en la franja. **Sin esta fecha, un aviso urgente o programado no sale en la franja** |
 | `Título corto` | Respuesta corta, validación «Longitud máxima: 70» | no | Solo si el título pasa de 70 caracteres: es lo que sale en la franja del móvil |
 
-4. Configuración del formulario: **no** recopilar direcciones de correo (la pestaña publicada no debe llevar datos de nadie). Mensaje de confirmación: «Publicado. Saldrá en la web en unos minutos». Active **«Permitir editar después de enviar»** (para corregir una errata al momento).
+4. Configuración del formulario: **recopilar direcciones de correo electrónico: «Verificado»** (v3c · F18 bis: con eso se sabe si quien envía está autorizado; el correo no pasa a la pestaña publicada, ver el recuadro de arriba). Mensaje de confirmación: «Enviado. Si su cuenta está autorizada, saldrá en la web en unos minutos». Active **«Permitir editar después de enviar»** (para corregir una errata al momento).
 
 *Captura descrita:* el formulario en el móvil tiene, de arriba abajo, un calendario para «Fecha», una línea para «Título», un desplegable «Tema», una caja grande «Texto», tres botones redondos «informativo / programado / urgente», otro calendario «Caduca» y una línea «Título corto». Abajo, el botón «Enviar».
 
@@ -119,12 +138,12 @@ Las respuestas tienen la «Marca temporal» y lo que se haya escrito tal cual. S
 
 1. Pestaña nueva **«Avisos»**. En la celda A1:
    ```
-   =QUERY('Respuestas avisos'!A:Z; "select B, C, D, E, F, G, H, I where C is not null"; 1)
+   =QUERY('Respuestas avisos'!A:Z; "select C, D, E, F, G, H, I, J where D is not null and K = 'sí'"; 1)
    ```
-   (B…H son Fecha, Título, Tema, Texto, Gravedad, Caduca y Título corto, en el orden del formulario; I es «Estado», ver abajo. Si cambia el orden de las preguntas, cambie las letras.)
-2. Pestaña nueva **«Agenda»**, igual con `'Respuestas agenda'!A:Z` y sus columnas; y **«Noticias»** con `'Respuestas noticias'!A:Z` (B…E y la de «Estado»).
-3. **Estado (para retirar algo sin borrarlo):** en cada pestaña de respuestas, escriba a mano «Estado» en la primera celda libre de la fila 1. Para quitar un aviso de la web, ponga `oculto` en su fila; para guardarlo sin publicar, `borrador`.
-4. **Archivo → Compartir → Publicar en la web** → en «Enlace», elija **solo** las pestañas «Avisos», «Agenda» y «Noticias» (no «Documento entero») → Publicar. Marque «Volver a publicar automáticamente cuando se hagan cambios».
+   (A es la marca temporal y B el correo: no se copian. C…I son Fecha, Título, Tema, Texto, Gravedad, Caduca y Título corto, en el orden del formulario; J es «Estado», ver abajo, y K «Autorizada», la del recuadro de arriba. Si cambia el orden de las preguntas, cambie las letras.)
+2. Pestaña nueva **«Agenda»**, igual con `'Respuestas agenda'!A:Z` y sus columnas; y **«Noticias»** con `'Respuestas noticias'!A:Z` (C…F y la de «Estado», con el mismo filtro de «Autorizada»).
+3. **Estado (para retirar algo sin borrarlo):** en cada pestaña de respuestas, escriba a mano «Estado» en la primera celda libre de la fila 1. Para quitar un aviso de la web, ponga `oculto` en su fila; para guardarlo sin publicar, `borrador` (que no sale en la web, pero **no es privado**: se lee en la pestaña publicada).
+4. **Archivo → Compartir → Publicar en la web** → en «Enlace», elija **solo** las pestañas «Avisos», «Agenda» y «Noticias» (no «Documento entero», ni «Personas autorizadas») → Publicar. Marque «Volver a publicar automáticamente cuando se hagan cambios».
 5. Copie el identificador de la hoja: es lo que hay entre `/d/` y `/edit` en la dirección (`https://docs.google.com/spreadsheets/d/`**`1AbC…xyz`**`/edit`).
 
 *Captura descrita:* el diálogo «Publicar en la web» tiene dos desplegables: el de la izquierda dice «Avisos, Agenda, Noticias» (marcadas con una casilla) y el de la derecha «Página web»; debajo, el botón verde «Publicar» y la casilla «Volver a publicar automáticamente».
@@ -168,6 +187,6 @@ Sin `id`, la web se lo inventa con la fecha y el título: si se corrige el títu
 ## Lo que hay que saber
 
 - **Tarda unos minutos.** Google vuelve a publicar la hoja cada pocos minutos; la web la lee al abrirse.
-- **Quien tiene el formulario, publica.** El enlace del formulario es como una llave: solo a quien deba publicar. Si se escapa, se hace una copia del formulario y se borra el viejo.
+- **Solo publican las personas autorizadas** (v3c · F18 bis): hay que entrar en el formulario con una cuenta de Google de la pestaña «Personas autorizadas». Lo que mande cualquier otra persona, aunque tenga el enlace, se queda en las respuestas y no sale en la web.
 - **La hoja manda sobre lo que viene en la página** cuando un aviso tiene el mismo `id`.
 - Lo publicado desde la hoja **no** entra en `feed.xml` ni en `agenda.ics` hasta que se vuelve a montar la web (`node scripts/aplicar.mjs`), porque esos archivos se escriben al montarla. Ver INFORME-v3b-servicio.md.
