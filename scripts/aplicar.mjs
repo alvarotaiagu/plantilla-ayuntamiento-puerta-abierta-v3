@@ -76,7 +76,9 @@ if (!existe('css/fuentes.css')) errores.push('Falta css/fuentes.css: ejecuta nod
 for (const [c, que] of [['servicios', 'el listín: [{nombre, telefono, grupo…}]'], ['tramites.todos', 'el catálogo de trámites de su sede']])
   if (!Array.isArray(valor(M, c))) errores.push(`municipio.json: falta «${c}» (${que}; RESKIN.md §3)`);
 if (M._borrador) avisos.push(`municipio.json sigue marcado como borrador ("_borrador": true): repasa ALTA-${M.slug || '<slug>'}.md y quita la marca`);
-if (errores.some(e => e.startsWith('municipio.json: falta'))) {
+/* con --forzar solo se sigue si lo que falta no es la estructura (listín y catálogo): un correo ausente, p. ej., sí */
+const faltaEstructura = errores.some(e => /^municipio\.json: falta «(servicios|tramites\.todos)»/.test(e));
+if (errores.some(e => e.startsWith('municipio.json: falta')) && (!FORZAR || faltaEstructura)) {
   console.error(`\n✗ No se escribe nada: faltan datos obligatorios de municipio.json${M._borrador ? ` (es un borrador de nuevo-municipio.mjs: en ALTA-${M.slug || '<slug>'}.md está cada uno, con sus pistas)` : ''}. Arregla esto:\n  - ` + errores.join('\n  - ') + '\n');
   process.exit(1);
 }

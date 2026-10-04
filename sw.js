@@ -2,9 +2,9 @@
    El listín de teléfonos sin cobertura: precarga telefonos.html y lo que necesita para verse
    (CSS, JS, letras y escudo) y lo sirve red primero, con lo guardado de respaldo, SOLO en esas
    rutas. Nada más pasa por aquí. Versión = huella de esos archivos. */
-var CACHE = "ribera-del-fresno-telefonos-ff9cf80309";
+var CACHE = "ribera-del-fresno-telefonos-d805c5106c";
 var PREFIJO = "ribera-del-fresno-telefonos-";
-var RUTAS = ["telefonos.html","css/base.css?v=7c835d9a","css/fuentes.css?v=5c32df95","css/imprimir.css?v=b8be18a5","css/marca.css?v=5abdee72","css/movimiento.css?v=f4ef5a0d","favicon.png","favicon.svg","fonts/besley-600-latin-ext.woff2","fonts/besley-600-latin.woff2","fonts/besley-600i-latin-ext.woff2","fonts/besley-600i-latin.woff2","fonts/besley-700-latin-ext.woff2","fonts/besley-700-latin.woff2","fonts/libre-franklin-400-latin-ext.woff2","fonts/libre-franklin-400-latin.woff2","fonts/libre-franklin-600-latin-ext.woff2","fonts/libre-franklin-600-latin.woff2","js/identidad.js?v=848289b2","js/main.js?v=39c613e1","js/movimiento.js?v=daa5c706","js/vivo.js?v=d812402c","marca/escudo-160.png"];
+var RUTAS = ["telefonos.html","css/base.css?v=b2aef50f","css/fuentes.css?v=5c32df95","css/imprimir.css?v=ebacf0af","css/marca.css?v=5abdee72","css/movimiento.css?v=f4ef5a0d","favicon.png","favicon.svg","fonts/besley-600-latin-ext.woff2","fonts/besley-600-latin.woff2","fonts/besley-600i-latin-ext.woff2","fonts/besley-600i-latin.woff2","fonts/besley-700-latin-ext.woff2","fonts/besley-700-latin.woff2","fonts/libre-franklin-400-latin-ext.woff2","fonts/libre-franklin-400-latin.woff2","fonts/libre-franklin-600-latin-ext.woff2","fonts/libre-franklin-600-latin.woff2","js/identidad.js?v=848289b2","js/main.js?v=2504b34e","js/movimiento.js?v=daa5c706","js/vivo.js?v=11a1482f","marca/escudo-160.png"];
 var BASE = new URL('./', self.location).href;
 var URLS = RUTAS.map(function (r) { return new URL(r, BASE).href; });
 var SIN_Q = URLS.map(function (u) { return u.split('?')[0]; });

@@ -36,6 +36,15 @@
     <summary type="text">Hoy viernes, a las 20:30, en la Casa de la Cultura.</summary>
   </entry>
   <entry>
+    <title>EJEMPLO: Bolsa de trabajo de auxiliar de ayuda a domicilio: plazo de solicitudes</title>
+    <id>urn:uuid:57c1504b-8da4-eb81-1a1e-0ea2e4fb3176</id>
+    <link rel="alternate" type="text/html" href="https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/avisos.html#aviso-empleo-ejemplo"/>
+    <published>2026-10-01T09:00:00+02:00</published>
+    <updated>2026-10-01T09:00:00+02:00</updated>
+    <category term="aviso" label="Aviso"/>
+    <summary type="text">Dato de ejemplo de la propuesta de diseño, no es un aviso real. Así se vería una oferta de empleo del Ayuntamiento: qué puesto es, cuántas plazas, los requisitos básicos y hasta cuándo se puede pedir, con el enlace a las bases en el tablón de la sede. Sale con el tema «Empleo», su cuenta atrás y, mientras el plazo esté abierto, en la ficha «Empleo» de la portada.</summary>
+  </entry>
+  <entry>
     <title>Abierta la convocatoria 2026 de ayudas a la natalidad</title>
     <id>urn:uuid:c8e6bf7c-70c5-0e31-0b1c-bc14068badc6</id>
     <link rel="alternate" type="text/html" href="https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/noticia-ayudas-natalidad-2026.html"/>
