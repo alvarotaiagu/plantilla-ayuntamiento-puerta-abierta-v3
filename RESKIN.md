@@ -340,6 +340,7 @@ Mira las capturas, sobre todo estas:
    - `node scripts/aplicar.mjs --fijar-paleta b` (o `c`) si es otro color.
 3. Quita el mando: `python scripts/quitar_mandos.py --comprobar` y después `python scripts/quitar_mandos.py`.
 4. Pon `"propuesta": false` y `"indexar": true` en `municipio.json` **solo** cuando sea la web oficial en su dominio.
+   - Quita lo que es solo de muestra en `contenido/`: los avisos con `"ejemplo": true` que no sean del Ayuntamiento (en Ribera, `empleo-ejemplo` de `avisos.json`, la oferta de empleo de muestra). Los huecos «Pendiente» de `transparencia.html` ya no salen solos con `"propuesta": false`; rellénalos cuando se sepa.
 5. Ejecuta `node scripts/aplicar.mjs` y `node scripts/verificar.mjs`.
 
 ---
