@@ -3526,6 +3526,259 @@ async function v3bPueblo() {
   }
 }
 
+/* ═════════════ v3c · guia: «Publicar en la web», crear-hoja.gs y la propuesta ═════════════
+   F19. publicar.html: noindex (también con indexar: true), fuera del menú y enlazada en el pie de todas
+        las páginas; sin hoja.formularios no hay botones falsos (sale «Se activa al montar la hoja…») y,
+        en una copia con las URLs, los botones van a ellas y las URLs no salen en ninguna otra página;
+        una URL sin https hace que aplicar.mjs se niegue. Las muestras pintadas con las piezas reales y
+        sin enlaces; el simulador (título urgente → franja roja con ese título y el resumen para el
+        lector de pantalla; programado → ámbar; informativo o sin «Caduca» → sin franja y la nota), sin
+        ninguna petición de red, con teclado y axe 0. Impresa: una A4 y sin lo interactivo.
+   F18. crear-hoja.gs: compila y, ejecutado contra una imitación de la API de Apps Script, crea los tres
+        formularios con los títulos de pregunta que lee la web (los de plantillas-hoja/*.csv y
+        comprobar-hoja.mjs), las pestañas publicables con QUERY sin la marca temporal y el bloque «hoja». */
+async function v3cGuia() {
+  const AXE = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+  const AVISO_SIN = 'Se activa al montar la hoja (lo hace quien mantiene la web)';
+  const clave = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim().replace(/\s+/g, '_');   /* como js/main.js */
+
+  /* ── 1. la página, en el HTML ── */
+  const malos = [];
+  const html = fs.existsSync(path.join(RAIZ, 'publicar.html')) ? leer(RAIZ, 'publicar.html') : '';
+  if (!html) malos.push('no existe publicar.html');
+  if (!/<meta name="robots" content="noindex, nofollow">/.test(html)) malos.push('publicar.html sin noindex');
+  for (const p of PAGINAS) {
+    const h = leer(RAIZ, p);
+    const menu = (h.match(/<ul class="menu__lista">[\s\S]*?<\/ul>/) || [''])[0], pie = (h.match(/<footer[\s\S]*<\/footer>/) || [''])[0];
+    if (/publicar\.html/.test(menu)) malos.push(p + ': publicar.html en el menú');
+    if (!/<p class="pie__personal"><a href="publicar\.html">Personal del Ayuntamiento: publicar<\/a><\/p>/.test(pie)) malos.push(p + ': sin el enlace del pie');
+  }
+  const forms = (M.hoja && M.hoja.formularios) || {};
+  const conUrl = ['avisos', 'agenda', 'noticias'].filter(k => forms[k]);
+  const botones = [...html.matchAll(/<a class="publicar-boton" href="([^"]+)" data-formulario="(\w+)"/g)].map(m => m[2] + '=' + m[1].replace(/&amp;/g, '&'));
+  const inactivos = [...html.matchAll(/<div class="publicar-boton publicar-boton--inactivo" data-formulario="(\w+)">[\s\S]*?<\/div>/g)];
+  if (botones.join() !== conUrl.map(k => k + '=' + forms[k]).join()) malos.push('botones ' + JSON.stringify(botones) + ' ≠ hoja.formularios');
+  if (inactivos.length !== 3 - conUrl.length || inactivos.some(m => !m[0].includes(AVISO_SIN))) malos.push(`${inactivos.length} botones sin formulario con «${AVISO_SIN}»`);
+
+  /* ── 2. una copia con las tres URLs (e indexar: true) y otra con una URL mala ── */
+  const URLS = { avisos: 'https://docs.google.com/forms/d/e/1FAIpQLSe-prueba-avisos/viewform', agenda: 'https://forms.gle/PruebaAgenda123', noticias: 'https://docs.google.com/forms/d/e/1FAIpQLSe-prueba-noticias/viewform' };
+  const dest = copiar();
+  try {
+    const m = JSON.parse(fs.readFileSync(path.join(dest, 'municipio.json'), 'utf8'));
+    m.hoja = { ...(m.hoja || {}), id: '1PruebaDeHojaDeLaWeb', formularios: URLS };
+    m.indexar = true;
+    fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(m, null, 2));
+    /* --sin-hoja: que el montaje no salga a buscar la hoja de prueba a Google (si aplicar.mjs lo entiende) */
+    const ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio', '--sin-hoja'], { encoding: 'utf8', cwd: dest });
+    if (ap.status !== 0) malos.push('copia con formularios: aplicar.mjs falla → ' + (ap.stderr || ap.stdout).slice(-300));
+    else {
+      const h = fs.readFileSync(path.join(dest, 'publicar.html'), 'utf8');
+      const b = Object.fromEntries([...h.matchAll(/<a class="publicar-boton" href="([^"]+)" data-formulario="(\w+)"/g)].map(x => [x[2], x[1].replace(/&amp;/g, '&')]));
+      if (JSON.stringify(b) !== JSON.stringify(URLS) || h.includes(AVISO_SIN)) malos.push('copia: los botones no van a hoja.formularios → ' + JSON.stringify(b));
+      if (!/<meta name="robots" content="noindex, nofollow">/.test(h)) malos.push('copia con indexar: publicar.html pierde el noindex');
+      if (/<meta name="robots"/.test(fs.readFileSync(path.join(dest, 'index.html'), 'utf8'))) malos.push('copia con indexar: la portada sigue con noindex (la prueba no prueba nada)');
+      const fuga = fs.readdirSync(dest).filter(f => f.endsWith('.html') && f !== 'publicar.html').filter(f => { const x = fs.readFileSync(path.join(dest, f), 'utf8'); return Object.values(URLS).some(u => x.includes(u)); });
+      if (fuga.length) malos.push('las URLs de los formularios salen en ' + fuga.join(', '));
+    }
+    m.hoja.formularios = { ...URLS, agenda: 'http://forms.gle/sin-https' };
+    fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(m, null, 2));
+    const mal = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio', '--sin-hoja'], { encoding: 'utf8', cwd: dest });
+    if (mal.status === 0 || !/hoja\.formularios\.agenda/.test(mal.stderr + mal.stdout)) malos.push('una URL sin https no para aplicar.mjs');
+  } finally { fs.rmSync(dest, { recursive: true, force: true }); }
+  comprobar(!malos.length, `v3c F19: publicar.html con noindex (también con indexar: true), fuera del menú y con «Personal del Ayuntamiento: publicar» en el pie de las ${PAGINAS.length} páginas; ${conUrl.length ? conUrl.length + ' botones a hoja.formularios' : 'sin hoja.formularios, ningún botón falso y los 3 con «Se activa al montar la hoja»'}; en una copia con las URLs, los botones van a ellas y no salen en otra página; una URL sin https para aplicar.mjs` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+
+  /* ── 3. las muestras y el simulador, en el navegador ── */
+  const mS = [], viol = [];
+  const { ctx, page, errores } = await nueva({ viewport: { width: 390, height: 844 } });
+  await ir(page, 'publicar.html');
+  const peticiones = [];
+  page.on('request', r => peticiones.push(r.url()));
+  const muestras = await page.evaluate(() => {
+    const c = document.querySelector('[data-muestras]');
+    const n = s => c.querySelectorAll(s).length;
+    return { visible: c.checkVisibility(), franjas: n('.franja-urgente__fondo.es-urgente') + '+' + n('.franja-urgente__fondo.es-programado'), hoy: n('.hoy__fila--aviso.es-urgente') + n('.hoy__fila--agenda'),
+      tablon: n('.tablon__fila'), evento: n('.evento'), noticia: n('.linea__item--noticia'), enlaces: n(['a', 'button', '[id]', 'h3', 'h4', 'h5', 'h6'].map(x => '.publicar-muestra ' + x).join(', ')),
+      sinJs: [...document.querySelectorAll('[data-sin-js]')].some(e => e.checkVisibility()) };
+  });
+  if (!muestras.visible || muestras.franjas !== '1+1' || muestras.hoy !== 2 || muestras.tablon !== 1 || muestras.evento !== 1 || muestras.noticia !== 1 || muestras.enlaces || muestras.sinJs) mS.push('muestras: ' + JSON.stringify(muestras));
+  await axeEn(page, 'publicar al llegar', viol, AXE);
+  /* con el teclado: el título, Tab a la gravedad (la marcada) y flechas */
+  const TIT = 'Avería: sin agua en la calle Real hasta las 15:00';
+  await page.focus('#sim-titulo');
+  await page.keyboard.type(TIT);
+  await espera(1000);
+  const leerSim = () => page.evaluate(() => {
+    const f = document.querySelector('[data-sim-franja] .franja-urgente__fondo'), s = document.querySelector('[data-simulador]');
+    const nota = s.querySelector('[data-sim-nota]');
+    return { franja: f ? f.className.replace('franja-urgente__fondo ', '') : null, texto: f ? f.textContent : '', fondo: f ? getComputedStyle(f).backgroundColor : null,
+      hoy: (s.querySelector('[data-sim-hoy] .hoy__fila--aviso') || {}).textContent || '', tablon: (s.querySelector('[data-sim-tablon] .tablon__fila') || {}).textContent || '',
+      estado: s.querySelector('[data-sim-estado]').textContent, rol: s.querySelector('[data-sim-estado]').getAttribute('role'),
+      nota: nota.checkVisibility() ? nota.textContent : '', marca: s.querySelector('.simulador__marca').checkVisibility() && /Simulación: no se publica nada/.test(s.querySelector('.simulador__marca').textContent),
+      enlaces: s.querySelectorAll('.simulador__resultado a, .simulador__resultado button').length,
+      alerta: getComputedStyle(document.documentElement).getPropertyValue('--alerta').trim() };
+  });
+  const rgb = h => { const x = h.replace('#', ''); return 'rgb(' + [0, 2, 4].map(i => parseInt(x.slice(i, i + 2), 16)).join(', ') + ')'; };
+  const u = await leerSim();
+  if (u.franja !== 'es-urgente' || !u.texto.includes(TIT) || u.fondo !== rgb(u.alerta) || !u.hoy.includes(TIT) || !u.tablon.includes(TIT) || !u.marca || u.enlaces) mS.push('urgente: ' + JSON.stringify(u));
+  if (u.rol !== 'status' || !u.estado.includes('«' + TIT + '»') || !/franja roja/.test(u.estado) || !/no se publica nada/.test(u.estado)) mS.push('lector de pantalla (urgente): ' + u.estado);
+  await axeEn(page, 'simulador urgente', viol, AXE);
+  await page.keyboard.press('Tab');
+  const enRadio = await page.evaluate(() => ({ id: document.activeElement.id, contorno: getComputedStyle(document.activeElement).outlineStyle }));
+  if (enRadio.id !== 'sim-urgente' || enRadio.contorno === 'none') mS.push('Tab no lleva a la gravedad marcada con foco visible: ' + JSON.stringify(enRadio));
+  await page.keyboard.press('ArrowDown');
+  await espera(1000);
+  const p = await leerSim();
+  if (p.franja !== 'es-programado' || !p.texto.includes(TIT) || !/franja ámbar/.test(p.estado)) mS.push('programado: ' + JSON.stringify({ franja: p.franja, estado: p.estado }));
+  await page.fill('#sim-caduca', '');
+  await espera(900);
+  const sc = await leerSim();
+  if (sc.franja || !/Sin «Caduca»/.test(sc.nota) || !sc.tablon.includes(TIT)) mS.push('programado sin «Caduca»: ' + JSON.stringify({ franja: sc.franja, nota: sc.nota }));
+  await page.focus('#sim-programado');
+  await page.keyboard.press('ArrowDown');
+  await espera(900);
+  const inf = await leerSim();
+  if (inf.franja || !/informativo no sale en la franja/.test(inf.nota) || !inf.hoy.includes(TIT)) mS.push('informativo: ' + JSON.stringify({ franja: inf.franja, nota: inf.nota }));
+  await axeEn(page, 'simulador informativo', viol, AXE);
+  /* «Empezar de nuevo» vacía y vuelve a lo de serie */
+  await page.click('[data-simulador] button[type="reset"]');
+  await espera(300);
+  const r0 = await page.evaluate(() => ({ vista: document.querySelector('[data-sim-vista]').checkVisibility(), vacio: document.querySelector('[data-sim-vacio]').checkVisibility(), urgente: document.getElementById('sim-urgente').checked, caduca: document.getElementById('sim-caduca').value }));
+  if (r0.vista || !r0.vacio || !r0.urgente || !r0.caduca) mS.push('reset: ' + JSON.stringify(r0));
+  /* Intro en el título no envía nada */
+  await page.focus('#sim-titulo'); await page.keyboard.type('Prueba'); await page.keyboard.press('Enter'); await espera(300);
+  if (!page.url().endsWith('publicar.html')) mS.push('Intro navega a ' + page.url());
+  if (peticiones.length) mS.push('peticiones al usarlo: ' + peticiones.slice(0, 3).join(' | '));
+  if (errores.length) mS.push('consola: ' + [...new Set(errores)].slice(0, 2).join(' | '));
+  await ctx.close();
+  /* sin JavaScript: ni simulador ni muestras, y el aviso de que hace falta */
+  const sj = await navegador.newContext({ javaScriptEnabled: false });
+  const pj = await sj.newPage();
+  await pj.goto(BASE + 'publicar.html', { waitUntil: 'networkidle' });
+  const sinJs = await pj.evaluate(() => ({ sim: document.querySelector('[data-simulador]').checkVisibility(), muestras: document.querySelector('[data-muestras]').checkVisibility(), aviso: document.querySelector('[data-sin-js]').checkVisibility() }));
+  await sj.close();
+  if (sinJs.sim || sinJs.muestras || !sinJs.aviso) mS.push('sin JS: ' + JSON.stringify(sinJs));
+  comprobar(!mS.length && !viol.length, 'v3c F19: muestras de «Así se ve» con las piezas reales (2 franjas, 2 fichas de «Hoy», tablón, agenda y noticia) y sin enlaces; simulador «Pruébelo» con teclado: un título urgente pinta la franja roja (--alerta) con ese título, la ficha de «Hoy» y el tablón, y el lector de pantalla oye el resumen (role=status); programado → ámbar; sin «Caduca» o informativo → sin franja y la nota; «Empezar de nuevo»; Intro no envía; 0 peticiones de red al usarlo; sin JS, el aviso; axe 0 en tres estados' + (mS.length ? ' → ' + mS.slice(0, 4).join(' | ') : '') + (viol.length ? ' → axe: ' + viol.slice(0, 3).join(' | ') : ''));
+
+  /* ── 4. impresa: una A4, sin lo interactivo y con dónde están los formularios ── */
+  const mP = [];
+  const q = await nueva({ conCookies: true });
+  await ir(q.page, 'publicar.html');
+  await q.page.emulateMedia({ media: 'print' });
+  const papel = await q.page.evaluate(() => {
+    const ve = s => [...document.querySelectorAll(s)].filter(e => e.checkVisibility()).length;
+    return { interactivo: ve('main button, main input, main form, main .publicar-boton, [data-simulador], [data-muestras], .indice, #cookies, .menu, .propuesta, .pie__personal'),
+      papel: [...document.querySelectorAll('.publicar-solo-papel')].filter(e => e.checkVisibility()).map(e => e.textContent.trim()),
+      secciones: ['t-publicar', 't-donde', 't-corregir', 't-titulo', 't-no', 't-mantenimiento'].filter(id => document.getElementById(id) && document.getElementById(id).checkVisibility()).length };
+  });
+  if (papel.interactivo || papel.secciones !== 6 || !papel.papel.some(t => /publicar/.test(t)) || !papel.papel.some(t => /^Impreso el/.test(t))) mP.push('en papel: ' + JSON.stringify(papel));
+  const pdf = await q.page.pdf({ format: 'A4' });
+  const hojas = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) || []).length;
+  if (hojas !== 1) mP.push(`el PDF A4 tiene ${hojas} hojas`);
+  if (CAPTURAS) fs.writeFileSync(captura('v3c-publicar-impresion.pdf'), pdf);
+  await q.ctx.close();
+  comprobar(!mP.length, 'v3c F19: «Publicar en la web» impresa es UNA hoja A4 para la mesa: las seis secciones de texto, dónde están los formularios y la fecha de impresión, sin botones, simulador, muestras, índice ni cookies' + (mP.length ? ' → ' + mP.join(' | ') : ''));
+
+  /* ── 5. crear-hoja.gs contra una imitación de la API de Apps Script ── */
+  const mG = [];
+  const gs = leer(RAIZ, 'plantillas-hoja', 'crear-hoja.gs');
+  try { new vm.Script(gs, { filename: 'crear-hoja.gs' }); } catch (e) { mG.push('no compila: ' + e.message); }
+  const apps = imitarAppsScript();
+  const res = {};
+  try { vm.runInNewContext(gs + '\n;__r.bloque = crearHojaDeLaWeb();', { ...apps.globales, __r: res }); } catch (e) { mG.push('al ejecutarlo: ' + e.message); }
+  const bloque = res.bloque ? JSON.parse(JSON.stringify(res.bloque)) : null;
+  const { COLUMNAS } = await import('./comprobar-hoja.mjs');
+  const csv = n => fs.readFileSync(path.join(RAIZ, 'plantillas-hoja', n + '.csv'), 'utf8').split(/\r?\n/)[0].split(',').map(clave).filter(c => c !== 'marca_temporal' && c !== 'estado');
+  const LEE = { avisos: [...COLUMNAS.avisos.obligatorias, ...COLUMNAS.avisos.opcionales], agenda: [...COLUMNAS.agenda.obligatorias, ...COLUMNAS.agenda.opcionales],
+    noticias: ['id', 'fecha', 'titulo', 'resumen', 'texto', 'estado'] };   /* noticias: lo que pinta vivo.js (fecha, título, resumen) y el cuerpo */
+  const pest = (M.hoja && M.hoja.pestanas) || {};
+  if (bloque) {
+    for (const k of ['avisos', 'agenda', 'noticias']) {
+      const f = apps.formularios.find(x => x.clave === k);
+      if (!f) { mG.push('no crea el formulario de ' + k); continue; }
+      const t = f.items.map(i => clave(i.titulo));
+      if (t.join() !== csv(k).join()) mG.push(`${k}: preguntas ${t.join(',')} ≠ plantillas-hoja/${k}.csv ${csv(k).join(',')}`);
+      if (t.some(c => !LEE[k].includes(c)) || ['fecha', 'titulo'].some(c => !t.includes(c))) mG.push(`${k}: preguntas que la web no lee o faltan fecha/título: ${t.join(',')}`);
+      if (f.items.filter(i => i.requerida).map(i => clave(i.titulo)).join() !== 'fecha,titulo') mG.push(k + ': obligatorias ≠ fecha y título');
+      if (f.correo !== false || !f.destino) mG.push(k + ': recoge correos o no manda a la hoja');
+      const resp = apps.hojas.find(h => h.formulario === f), pub = apps.hojas.find(h => h.nombre === pest[k]);
+      if (!resp || !pub || !pub.formula) { mG.push(k + ': falta la pestaña de respuestas o la publicable «' + pest[k] + '»'); continue; }
+      /* la QUERY: de la pestaña de respuestas, las columnas de las preguntas y «Estado», sin la A (marca temporal) */
+      const mq = /^=QUERY\('([^']+)'!A:([A-Z]+), "select ([A-Z, ]+) where ([A-Z]+) is not null", 1\)$/.exec(pub.formula);
+      const num = l => [...l].reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0);
+      const elegidas = mq ? mq[3].split(', ').map(l => resp.cabecera[num(l) - 1]) : [];
+      if (!mq || mq[1] !== resp.nombre || elegidas.join('|') !== [...f.items.map(i => i.titulo), 'Estado'].join('|') || resp.cabecera[num(mq[4]) - 1] !== 'Título' || mq[3].split(', ').includes('A'))
+        mG.push(k + ': QUERY ' + pub.formula + ' sobre ' + JSON.stringify(resp.cabecera));
+    }
+    const h = bloque.hoja || {};
+    if (!h.id || JSON.stringify(h.pestanas) !== JSON.stringify({ avisos: pest.avisos, agenda: pest.agenda, noticias: pest.noticias }) || Object.keys(h.formularios || {}).join() !== 'avisos,agenda,noticias' || Object.values(h.formularios).some(x => !/^https:\/\//.test(x)))
+      mG.push('el bloque para municipio.json: ' + JSON.stringify(h));
+    if (!apps.registro.some(l => l.includes('"formularios"') && l.includes(h.id))) mG.push('el registro no enseña el bloque «hoja»');
+    const leame = apps.hojas.find(x => x.nombre === 'Léame');
+    if (!leame || !leame.texto.includes(h.id) || !/Publicar en la web/.test(leame.texto)) mG.push('la pestaña «Léame» no lleva el id y el paso de publicar');
+    if (apps.hojas.map(x => x.nombre).slice(0, 4).join() !== ['Léame', pest.avisos, pest.agenda, pest.noticias].join()) mG.push('orden de las pestañas: ' + apps.hojas.map(x => x.nombre).join(', '));
+  }
+  comprobar(!mG.length, 'v3c F18: plantillas-hoja/crear-hoja.gs compila y, contra una imitación de la API de Apps Script, crea los 3 formularios (sin correos, enviando a la hoja) con las preguntas que lee la web (= plantillas-hoja/*.csv y comprobar-hoja.mjs; obligatorias fecha y título), las pestañas «Avisos», «Agenda» y «Noticias» con una QUERY que copia esas columnas y «Estado» sin la marca temporal, el «Léame» y el bloque «hoja» (id, pestañas y formularios) en el registro' + (mG.length ? ' → ' + mG.slice(0, 4).join(' | ') : ''));
+
+}
+async function axeEn(page, nombre, viol, tags) {
+  (await new AxeBuilder({ page }).withTags(tags).analyze()).violations.forEach(v => viol.push(nombre + ': ' + v.id + ' ' + v.nodes[0].target.join(' ')));
+}
+/* lo justo de SpreadsheetApp, FormApp, DriveApp, ScriptApp, MailApp, Session y Logger (con los nombres
+   de la API documentada) para ejecutar crear-hoja.gs en Node y ver qué haría */
+function imitarAppsScript() {
+  const a = { formularios: [], hojas: [], registro: [] };
+  let nHoja = 0, nForm = 0;
+  const encadena = (o, nombres) => { for (const n of nombres) o[n] = () => o; return o; };
+  const rango = (h, fila, col, nf = 1, nc = 1) => encadena({
+    getValues: () => [Array.from({ length: nc }, (_, i) => (fila === 1 ? h.cabecera[col - 1 + i] : '') || '')],
+    setValues: v => { if (fila === 1 && col === 1 && h.nombre !== 'Léame') h.cabecera = v[0].slice(); h.texto += v.map(x => x.join(' ')).join('\n'); return rango(h, fila, col, nf, nc); },
+    setValue: v => { if (fila === 1) h.cabecera[col - 1] = v; return rango(h, fila, col); },
+    setFormula: f => { h.formula = f; return rango(h, fila, col); }
+  }, ['setNote', 'setFontWeight', 'setFontSize', 'setWrap']);
+  const nuevaHoja = nombre => {
+    const h = { id: ++nHoja, nombre, cabecera: [], texto: '', formula: null, formulario: null };
+    Object.assign(h, encadena({
+      getSheetId: () => h.id, getName: () => h.nombre, setName: n => { h.nombre = n; return h; }, getLastColumn: () => h.cabecera.length,
+      getRange: (x, c, nf, nc) => (typeof x === 'string' ? rango(h, 1, 1) : rango(h, x, c, nf, nc)), getFormUrl: () => (h.formulario ? h.formulario.url : null),
+      protect: () => encadena({}, ['setDescription', 'setWarningOnly'])
+    }, ['setFrozenRows', 'setColumnWidth']));
+    a.hojas.push(h);
+    return h;
+  };
+  const libro = encadena({ getId: () => 'HOJA-PRUEBA-1', getUrl: () => 'https://docs.google.com/spreadsheets/d/HOJA-PRUEBA-1/edit', getSheets: () => a.hojas.slice(),
+    getSheetByName: n => a.hojas.find(h => h.nombre === n) || null, insertSheet: n => nuevaHoja(n), setActiveSheet: h => { libro.activa = h; return h; },
+    moveActiveSheet: i => { a.hojas.splice(a.hojas.indexOf(libro.activa), 1); a.hojas.splice(i - 1, 0, libro.activa); } }, ['setSpreadsheetLocale', 'setSpreadsheetTimeZone']);
+  const item = (f, tipo) => {
+    const it = { tipo, titulo: '', requerida: false };
+    f.items.push(it);
+    return encadena(Object.assign(it, { setTitle: t => { it.titulo = t; return it; }, setRequired: r => { it.requerida = r; return it; } }), ['setHelpText', 'setChoiceValues', 'setIncludesYear', 'setValidation']);
+  };
+  const validacion = () => encadena({ build: () => ({}) }, ['setHelpText', 'requireTextLengthLessThanOrEqualTo', 'requireTextIsUrl']);
+  const globales = {
+    SpreadsheetApp: { create: () => { nuevaHoja('Hoja 1'); return libro; }, openById: () => libro, flush: () => {} },
+    FormApp: {
+      DestinationType: { SPREADSHEET: 'SPREADSHEET' }, createTextValidation: validacion,
+      create: titulo => {
+        const id = 'FORM' + ++nForm;
+        const f = { id, titulo, items: [], correo: null, destino: null, url: 'https://docs.google.com/forms/d/e/' + id + '/viewform',
+          clave: /aviso/i.test(titulo) ? 'avisos' : /acto|agenda/i.test(titulo) ? 'agenda' : /noticia/i.test(titulo) ? 'noticias' : null };
+        a.formularios.push(f);
+        return encadena(Object.assign(f, {
+          getId: () => id, getTitle: () => titulo, getPublishedUrl: () => f.url, setCollectEmail: v => { f.correo = v; return f; },
+          setDestination: (tipo, libroId) => { f.destino = libroId; const h = nuevaHoja('Respuestas de formulario ' + nForm); h.formulario = f; h.cabecera = ['Marca temporal', ...f.items.map(i => i.titulo)]; return f; },
+          addDateItem: () => item(f, 'fecha'), addTimeItem: () => item(f, 'hora'), addTextItem: () => item(f, 'corta'), addParagraphTextItem: () => item(f, 'parrafo'),
+          addListItem: () => item(f, 'lista'), addMultipleChoiceItem: () => item(f, 'opcion'), addCheckboxItem: () => item(f, 'casilla')
+        }), ['setDescription', 'setConfirmationMessage', 'setAllowResponseEdits', 'setShowLinkToRespondAgain', 'setProgressBar', 'setRequireLogin']);
+      }
+    },
+    DriveApp: { createFolder: () => ({}), getFileById: () => ({ moveTo: () => {} }) },
+    ScriptApp: { newTrigger: () => encadena({}, ['forForm', 'onFormSubmit', 'create']) },
+    MailApp: { sendEmail: () => {} }, Session: { getEffectiveUser: () => ({ getEmail: () => 'ayuntamiento@ejemplo.es' }) },
+    Logger: { log: x => { a.registro.push(String(x)); } }
+  };
+  return Object.assign(a, { globales });
+}
+
 /* ═════════════ orden ═════════════ */
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
@@ -3540,6 +3793,7 @@ for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', pa
   ['v3bservicio', v3bServicio],
   ['v3bpueblo', v3bPueblo],
   ['v3binteriores', v3bInteriores],
+  ['v3cguia', v3cGuia],
   ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();

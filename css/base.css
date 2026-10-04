@@ -928,6 +928,9 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 .pie__legal { padding-top: .5rem; border-top: 1px solid var(--linea-fuerte); }
 .pie__creditos, .pie__propuesta { color: var(--apagado); font-size: .9375rem; }
 .pie__propuesta { color: var(--tinta); font-weight: 600; }
+/* v3c · guia: «Personal del Ayuntamiento: publicar», discreto y con su zona táctil */
+.pie__personal { margin: 0; font-size: .9375rem; }
+.pie__personal a { display: inline-flex; align-items: center; min-height: 44px; }
 
 /* ── aviso de cookies: :not([hidden]) o el botón «no hace nada» ── */
 /* compacto: una o dos líneas con el botón al lado, también en escritorio, para no tapar el

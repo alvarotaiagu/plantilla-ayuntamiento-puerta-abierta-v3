@@ -65,7 +65,7 @@ Fuentes que funcionaron en Ribera y Segura:
 | `sede` | sí | Ver §4 |
 | `tablon_autorizado` | — | `false` hasta que el Ayuntamiento autorice por escrito leer su tablón (ver §7) |
 | `tablon_max` | no | Cuántos anuncios del tablón enseña la web (40 si no se dice). Hace falta en las sedes que guardan años de tablón (Diputación) |
-| `hoja` | no | `{id, pestanas: {avisos, agenda, noticias, farmacias}}` de la hoja de Google publicada (ver README). `farmacias` es opcional: la pestaña de guardias |
+| `hoja` | no | `{id, pestanas: {avisos, agenda, noticias, farmacias}, formularios: {avisos, agenda, noticias}}` de la hoja de Google publicada (ver README y PUBLICAR.md). `farmacias` es opcional: la pestaña de guardias. **v3c · `formularios`** (opcional): las direcciones (https) de los tres Formularios de Google; salen como botones en `publicar.html` y en ningún otro sitio (no van en los datos de las demás páginas). `null` o sin el campo: el botón dice «Se activa al montar la hoja». Las escribe `plantillas-hoja/crear-hoja.gs` al montarlo todo |
 | `legal` | sí | `titular`, `nif` y `dir3` |
 | `escudo_credito` | sí | Autor, licencia y URL de la ficha de Commons |
 | `corporacion` | no | `grupos` (sigla, nombre, color, trama `liso`/`rayas`/`puntos`/`cuadros`, gobierno) y `miembros` (nombre, grupo, cargo, delegación y `alcalde: true`). Sin `grupos` no sale el hemiciclo; con 13 concejales o menos, sale de una sola fila |
@@ -314,6 +314,12 @@ Copia `contenido/pueblo.en.json` de Ribera y cambia los textos. Lo que lleva:
 | `assets/propuesta-portada.jpg` | La portada nueva para el comparador de `propuesta.html` (no se escribe con `--sin-og`) |
 
 Para publicar desde el móvil con un Formulario de Google, ver **[PUBLICAR.md](PUBLICAR.md)** y `node scripts/comprobar-hoja.mjs <exportación.csv>`.
+
+### «Publicar en la web» (v3c · guia)
+
+- `publicar.html` es la página del personal del Ayuntamiento: los botones a los formularios (`hoja.formularios`), qué sale dónde con muestras pintadas por `js/publicar.js` con las piezas de `vivo.js`, el simulador «Pruébelo» (no envía nada), cómo corregir y retirar, el buen título, lo que no se publica y lo que se le pide a quien mantiene la web. Impresa (`css/imprimir.css`) es una hoja A4 para la mesa.
+- Se genera siempre (también sin hoja y con `"propuesta": false`), lleva `noindex` **siempre** (`noindex: true` en `PAGINAS`, aunque `indexar` sea `true`), no está en el menú y la enlaza el pie: «Personal del Ayuntamiento: publicar».
+- Para montar la hoja y los formularios de un clic: `plantillas-hoja/crear-hoja.gs` (PUBLICAR.md, «El camino corto»). Lo que se le dice al Ayuntamiento: `RESPUESTA-CLIENTE.md`.
 
 ## 8. Aplicar y verificar
 
