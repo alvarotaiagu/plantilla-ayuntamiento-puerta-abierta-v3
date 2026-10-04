@@ -5,8 +5,8 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Teléfonos y servicios · Ayuntamiento de Ribera del Fresno</title>
-<meta name="description" content="Teléfonos útiles y servicios municipales de Ribera del Fresno.">
+<title>Avisar de un problema · Ayuntamiento de Ribera del Fresno</title>
+<meta name="description" content="Avise al Ayuntamiento de Ribera del Fresno de un problema en la calle: alumbrado, agua, limpieza, baches o ruidos.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_ES">
 
@@ -26,7 +26,7 @@
 <link rel="stylesheet" href="css/imprimir.css?v=b8be18a5" media="print">
 <link rel="alternate" type="application/atom+xml" title="Avisos y noticias · Ayuntamiento de Ribera del Fresno" href="feed.xml">
 <link rel="alternate" type="text/calendar" title="Agenda de Ribera del Fresno" href="agenda.ics">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/index.html"},{"@type":"ListItem","position":2,"name":"Teléfonos y servicios","item":"https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/telefonos.html"}]}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/index.html"},{"@type":"ListItem","position":2,"name":"Trámites","item":"https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/tramites.html"},{"@type":"ListItem","position":3,"name":"Avisar de un problema","item":"https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/incidencia.html"}]}]}</script>
 <script>/* el listín sin cobertura (sw.js, v3b): se registra al terminar de cargar; si no hay service worker o falla, todo sigue igual */
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });</script>
 <script>
@@ -53,7 +53,7 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) addEven
 </script>
 
 </head>
-<body class="pagina-telefonos">
+<body class="pagina-incidencia">
 <svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">
   <symbol id="i-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
   <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
@@ -114,7 +114,7 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) addEven
           <li><a class="menu__enlace" href="noticias.html">Noticias</a></li>
           <li><a class="menu__enlace" href="agenda.html">Agenda</a></li>
           <li><a class="menu__enlace" href="pueblo.html">El pueblo</a></li>
-          <li><a class="menu__enlace" href="telefonos.html" aria-current="page">Teléfonos</a></li>
+          <li><a class="menu__enlace" href="telefonos.html">Teléfonos</a></li>
           <li><a class="menu__enlace" href="contacto.html">Contacto</a></li>
           
         </ul>
@@ -150,157 +150,154 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) addEven
     <nav class="migas" aria-label="Usted está aquí">
       <ol>
         <li><a href="index.html">Inicio</a></li>
-        
-        <li><span aria-current="page">Teléfonos y servicios</span></li>
+        <li><a href="tramites.html">Trámites</a></li>
+        <li><span aria-current="page">Avisar de un problema</span></li>
       </ol>
     </nav>
-    <h1 class="cabeza-pagina__titulo" id="titulo-pagina">Teléfonos y servicios</h1>
-    <p class="entradilla">El listín del pueblo, con las urgencias primero.</p>
+    <h1 class="cabeza-pagina__titulo" id="titulo-pagina">Avisar de un problema</h1>
+    <p class="entradilla">Una farola apagada, una fuga de agua, un bache… Cuéntenos qué pasa y le preparamos el correo para el Ayuntamiento.</p>
     
-    <div class="cabeza-pagina__puerta cabeza-pagina__puerta--linea" aria-hidden="true"><span class="cabeza-pagina__arco cabeza-pagina__arco--linea"><svg class="cabeza-pagina__picto" viewBox="0 0 24 24" focusable="false" data-picto="telefono"><path pathLength="1" d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4.5 5.5a2 2 0 0 1 2-2Z"/><path pathLength="1" d="M14.5 3.5a6 6 0 0 1 6 6"/><path pathLength="1" d="M14.5 7a2.5 2.5 0 0 1 2.5 2.5"/></svg></span><span class="cabeza-pagina__umbral"></span></div>
+    <div class="cabeza-pagina__puerta cabeza-pagina__puerta--linea" aria-hidden="true"><span class="cabeza-pagina__arco cabeza-pagina__arco--linea"><svg class="cabeza-pagina__picto" viewBox="0 0 24 24" focusable="false" data-picto="farola"><path pathLength="1" d="M6 21h7"/><path pathLength="1" d="M9.5 21V8a4.5 4.5 0 0 1 4.5-4.5h1.5"/><path pathLength="1" d="M13.5 8h7l-1.8-4.5h-3.4Z"/><path pathLength="1" d="M17 11v1.8"/><path pathLength="1" d="M20.6 10.2l1.1 1.1"/><path pathLength="1" d="M13.4 10.2l-1.1 1.1"/></svg></span><span class="cabeza-pagina__umbral"></span></div>
   </div>
 </div>
 
 
 
-<section class="seccion seccion--primera" aria-labelledby="t-listin">
+<!-- v3b · F9. «Avisar de un problema» sin servidor: el formulario prepara un correo al Ayuntamiento
+     (municipio.json → incidencias.correo). Con JavaScript (js/incidencia.js) valida con mensajes
+     accesibles y compone el mailto con asunto y cuerpo; sin JavaScript, el propio formulario se
+     envía como mailto (enctype text/plain) y el navegador valida los obligatorios -->
+<section class="seccion seccion--primera" aria-labelledby="t-urgente">
   <div class="contenedor">
-    <h2 class="sr" id="t-listin">Listín de teléfonos</h2>
-    <div class="nevera-accion" data-imprimir-caja hidden>
-      <button class="boton boton--borde" type="button" data-imprimir><svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3.5h10V8M7 17H4.5A1.5 1.5 0 0 1 3 15.5v-6A1.5 1.5 0 0 1 4.5 8h15A1.5 1.5 0 0 1 21 9.5v6a1.5 1.5 0 0 1-1.5 1.5H17"/><path d="M7 13.5h10v7H7zM17.5 10.8h.1"/></svg>Imprimir los teléfonos</button>
-      <p>Una hoja A4 con los números grandes, para tenerla a mano.</p>
-    </div>
-    <div class="nevera-cabeza">
-      <img src="marca/escudo-160.png" width="91" height="160" alt="">
+    <div class="incidencia-urgente">
+      <svg class="icono incidencia-urgente__icono" aria-hidden="true"><use href="#i-aviso"/></svg>
       <div>
-        <p class="nevera-cabeza__titulo">Teléfonos útiles de Ribera del Fresno</p>
-        <p class="nevera-cabeza__sub">Ayuntamiento de Ribera del Fresno · C/ Ayuntamiento, 1 · 924 536 011</p>
+        <h2 class="incidencia-urgente__titulo" id="t-urgente">¿Es urgente o hay peligro?</h2>
+        <p>Si hay peligro o alguien está herido, llame al <a class="incidencia-urgente__tel" href="tel:112">112</a>. Para algo urgente en la calle, a la Policía Local: <a class="incidencia-urgente__tel" href="tel:+34654338096">654 338 096</a>.</p>
+        <p>Este formulario es para lo que puede esperar: le prepara un correo y el Ayuntamiento lo lee en horario de oficina.</p>
       </div>
     </div>
-    <div class="listin-completo">
-      <div class="listin-grupo">
-        <h3 class="listin-grupo__titulo">Urgencias y seguridad</h3>
-        <ul class="listin">
-          <li class="listin__fila listin__fila--urgente">
-            <span class="listin__nombre">Emergencias</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:112"><span class="sr">Llamar a Emergencias: </span>112</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Policía Local<small>C/ Hospital (antigua Cámara Agraria)</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34654338096"><span class="sr">Llamar a Policía Local: </span>654 338 096</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Guardia Civil<small>Avda. Cuartel, s/n</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536013"><span class="sr">Llamar a Guardia Civil: </span>924 536 013</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Protección Civil<small>C/ Escuela</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34638763187"><span class="sr">Llamar a Protección Civil: </span>638 763 187</a>
-          </li>
-          
-        </ul>
-      </div>
-      <div class="listin-grupo">
-        <h3 class="listin-grupo__titulo">Ayuntamiento</h3>
-        <ul class="listin">
-          <li class="listin__fila">
-            <span class="listin__nombre">Ayuntamiento<small>Registro, padrón y OMIC (consumo) · C/ Ayuntamiento, 1</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536011"><span class="sr">Llamar a Ayuntamiento: </span>924 536 011</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Guardería Rural y Punto de Información Catastral<small>Oficina de 13:00 a 15:00 (cambia en campaña de uva y aceituna) · Antiguo centro de salud</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34615196716"><span class="sr">Llamar a Guardería Rural y Punto de Información Catastral: </span>615 196 716</a>
-          </li>
-          
-        </ul>
-      </div>
-      <div class="listin-grupo">
-        <h3 class="listin-grupo__titulo">Salud y mayores</h3>
-        <ul class="listin">
-          <li class="listin__fila">
-            <span class="listin__nombre">Consultorio médico</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536551"><span class="sr">Llamar a Consultorio médico: </span>924 536 551</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Centro de Día «La Ribera»<small>C/ Virgilio Gutiérrez, s/n · Lunes a viernes, de 10:00 a 18:00</small><span class="listin__estado" data-vivo="servicio" data-clave="centro-de-dia-la-ribera"><p class="estado estado--servicio esta-cerrado"><span class="estado__punto" aria-hidden="true"></span><b>Cerrado ahora</b> · abre mañana a las 10:00</p></span></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924028924"><span class="sr">Llamar a Centro de Día «La Ribera»: </span>924 028 924</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Hogar del Pensionista</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536819"><span class="sr">Llamar a Hogar del Pensionista: </span>924 536 819</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Residencia «San Juan Macías»</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924537280"><span class="sr">Llamar a Residencia «San Juan Macías»: </span>924 537 280</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Hogar de Nazaret «La Providencia»<small>Atención a personas con discapacidad</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536278"><span class="sr">Llamar a Hogar de Nazaret «La Providencia»: </span>924 536 278</a>
-          </li>
-          
-        </ul>
-      </div>
-      <div class="listin-grupo">
-        <h3 class="listin-grupo__titulo">Educación, cultura y deporte</h3>
-        <ul class="listin">
-          <li class="listin__fila">
-            <span class="listin__nombre">CEIP Meléndez Valdés<small>C/ Escuelas, s/n</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924028770"><span class="sr">Llamar a CEIP Meléndez Valdés: </span>924 028 770</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">IESO Valdemedel</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924281470"><span class="sr">Llamar a IESO Valdemedel: </span>924 281 470</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Biblioteca «Virgilio Gutiérrez»<small>C/ San Juan Macías, 2 (Casa de la Cultura) · Lunes a viernes, de 9:30 a 14:00</small><span class="listin__estado" data-vivo="servicio" data-clave="biblioteca-virgilio-gutierrez"><p class="estado estado--servicio esta-cerrado"><span class="estado__punto" aria-hidden="true"></span><b>Cerrado ahora</b> · abre mañana a las 9:30</p></span></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924537224"><span class="sr">Llamar a Biblioteca «Virgilio Gutiérrez»: </span>924 537 224</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Casa de la Cultura y Escuela de Música<small>C/ San Juan Macías, 2</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924537224"><span class="sr">Llamar a Casa de la Cultura y Escuela de Música: </span>924 537 224</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Piscina municipal</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536804"><span class="sr">Llamar a Piscina municipal: </span>924 536 804</a>
-          </li>
-          
-        </ul>
-      </div>
-      <div class="listin-grupo">
-        <h3 class="listin-grupo__titulo">Otros</h3>
-        <ul class="listin">
-          <li class="listin__fila">
-            <span class="listin__nombre">Parroquia de Nuestra Señora de Gracia<small>C/ Iglesia, 2</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536002"><span class="sr">Llamar a Parroquia de Nuestra Señora de Gracia: </span>924 536 002</a>
-          </li>
-          
-        </ul>
-      </div>
-      
-    </div>
-    <p class="nota-fuente">Solo aparecen los teléfonos confirmados. Si echa en falta uno, llame al Ayuntamiento: <a href="tel:+34924536011">924 536 011</a>.</p>
-    <p class="nevera-pie">Datos actualizados el 2 de octubre de 2026. <span data-fecha-impresion></span> Más teléfonos y horarios en alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3. Propuesta de diseño: no es la web oficial.</p>
   </div>
 </section>
 
+<section class="seccion" aria-labelledby="t-aviso">
+  <div class="contenedor">
+    <h2 class="seccion__titulo" id="t-aviso">Cuéntenos qué pasa</h2>
+    <p class="seccion__entradilla">Los campos con <span aria-hidden="true">*</span><span class="sr">asterisco</span> son obligatorios. Al final le preparamos un correo para <b class="rompe">ayuntamiento@riberadelfresno.es</b>: lo revisa y lo envía usted desde su correo.</p>
 
+    <div class="incidencia-errores" id="incidencia-errores" tabindex="-1" hidden data-incidencia-errores>
+      <h3 class="incidencia-errores__titulo">Revise estos datos antes de seguir:</h3>
+      <ul class="incidencia-errores__lista" data-incidencia-errores-lista></ul>
+    </div>
+
+    <form class="incidencia" action="mailto:ayuntamiento@riberadelfresno.es?subject=Aviso%20de%20un%20problema" method="post" enctype="text/plain" data-incidencia data-correo="ayuntamiento@riberadelfresno.es" data-municipio="Ribera del Fresno">
+      <fieldset class="incidencia__grupo" id="campo-categoria" aria-describedby="error-categoria">
+        <legend class="incidencia__pregunta">1. ¿Qué pasa? <span aria-hidden="true">*</span></legend>
+        <p class="campo__error" id="error-categoria" hidden data-error-de="categoria"></p>
+        <div class="incidencia__opciones">
+          <label class="incidencia__opcion" for="cat-alumbrado">
+            <input type="radio" id="cat-alumbrado" name="categoria" value="Alumbrado" required><span class="incidencia__marca" aria-hidden="true"></span>
+            <span><b>Alumbrado</b><span class="incidencia__ayuda">Una farola apagada, rota o que se queda encendida de día</span></span>
+          </label>
+          <label class="incidencia__opcion" for="cat-agua">
+            <input type="radio" id="cat-agua" name="categoria" value="Agua" required><span class="incidencia__marca" aria-hidden="true"></span>
+            <span><b>Agua</b><span class="incidencia__ayuda">Una fuga, una tapa de alcantarilla movida o falta de agua</span></span>
+          </label>
+          <label class="incidencia__opcion" for="cat-limpieza">
+            <input type="radio" id="cat-limpieza" name="categoria" value="Limpieza" required><span class="incidencia__marca" aria-hidden="true"></span>
+            <span><b>Limpieza</b><span class="incidencia__ayuda">Basura en la calle, un contenedor lleno o roto</span></span>
+          </label>
+          <label class="incidencia__opcion" for="cat-via-publica">
+            <input type="radio" id="cat-via-publica" name="categoria" value="Vía pública" required><span class="incidencia__marca" aria-hidden="true"></span>
+            <span><b>Vía pública</b><span class="incidencia__ayuda">Un bache, una acera rota, una señal caída</span></span>
+          </label>
+          <label class="incidencia__opcion" for="cat-ruidos">
+            <input type="radio" id="cat-ruidos" name="categoria" value="Ruidos" required><span class="incidencia__marca" aria-hidden="true"></span>
+            <span><b>Ruidos</b><span class="incidencia__ayuda">Ruidos que molestan de forma repetida</span></span>
+          </label>
+          <label class="incidencia__opcion" for="cat-otro">
+            <input type="radio" id="cat-otro" name="categoria" value="Otro" required><span class="incidencia__marca" aria-hidden="true"></span>
+            <span><b>Otro</b><span class="incidencia__ayuda">Cualquier otra cosa de la calle</span></span>
+          </label>
+          
+        </div>
+      </fieldset>
+
+      <fieldset class="incidencia__grupo">
+        <legend class="incidencia__pregunta">2. ¿Dónde?</legend>
+        <div class="campo">
+          <label class="campo__etiqueta" for="campo-donde">Calle y número, o cómo llegar <span aria-hidden="true">*</span></label>
+          <p class="campo__ayuda campo__ayuda--arriba" id="ayuda-donde">Por ejemplo: «Calle Mayor, delante del 12» o «el camino del cementerio, a la altura del pozo».</p>
+          <p class="campo__error" id="error-donde" hidden data-error-de="donde"></p>
+          <textarea class="campo__entrada incidencia__texto--corto" id="campo-donde" name="donde" rows="2" required aria-describedby="ayuda-donde error-donde" autocomplete="off"></textarea>
+        </div>
+        <div class="incidencia__ubicacion" data-ubicacion hidden>
+          <button type="button" class="boton boton--borde" data-usar-ubicacion><svg class="icono" aria-hidden="true"><use href="#i-pin"/></svg>Usar mi ubicación</button>
+          <p class="campo__ayuda">Añade sus coordenadas al texto de arriba. No se abre ningún mapa ni se envían a nadie hasta que usted mande el correo.</p>
+          <p class="incidencia__estado" role="status" data-ubicacion-estado></p>
+        </div>
+      </fieldset>
+
+      <fieldset class="incidencia__grupo">
+        <legend class="incidencia__pregunta">3. Cuéntelo</legend>
+        <div class="campo">
+          <label class="campo__etiqueta" for="campo-descripcion">¿Qué ha visto? <span aria-hidden="true">*</span></label>
+          <p class="campo__ayuda campo__ayuda--arriba" id="ayuda-descripcion">Con sus palabras: qué pasa, desde cuándo y si molesta o es peligroso.</p>
+          <p class="campo__error" id="error-descripcion" hidden data-error-de="descripcion"></p>
+          <textarea class="campo__entrada" id="campo-descripcion" name="descripcion" rows="5" required aria-describedby="ayuda-descripcion error-descripcion"></textarea>
+        </div>
+        <div class="incidencia__foto">
+          <label class="incidencia__casilla" for="campo-foto"><input type="checkbox" id="campo-foto" name="foto" value="Adjunto una foto a este correo" aria-describedby="ayuda-foto"><span class="incidencia__marca incidencia__marca--casilla" aria-hidden="true"></span><span>Tengo una foto y la adjuntaré al correo</span></label>
+          <p class="campo__ayuda" id="ayuda-foto">Una foto ayuda mucho. Esta página no puede mandarla por usted: cuando se abra su correo, adjúntela allí (el clip o «Adjuntar»).</p>
+        </div>
+      </fieldset>
+
+      <fieldset class="incidencia__grupo">
+        <legend class="incidencia__pregunta">4. Sus datos <span class="incidencia__opcional">(si quiere que le respondan)</span></legend>
+        <div class="incidencia__datos">
+          <div class="campo">
+            <label class="campo__etiqueta" for="campo-nombre">Nombre</label>
+            <input class="campo__entrada" id="campo-nombre" name="nombre" type="text" autocomplete="name">
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="campo-telefono">Teléfono</label>
+            <p class="campo__error" id="error-telefono" hidden data-error-de="telefono"></p>
+            <input class="campo__entrada" id="campo-telefono" name="telefono" type="tel" autocomplete="tel" inputmode="tel" aria-describedby="error-telefono">
+          </div>
+          <div class="campo">
+            <label class="campo__etiqueta" for="campo-correo">Correo electrónico</label>
+            <p class="campo__error" id="error-correo" hidden data-error-de="correo"></p>
+            <input class="campo__entrada" id="campo-correo" name="correo" type="email" autocomplete="email" aria-describedby="error-correo">
+          </div>
+        </div>
+        <p class="campo__ayuda">El correo sale desde su propia cuenta, así que el Ayuntamiento ya sabrá a quién contestar. Más sobre sus datos en <a href="privacidad.html">Privacidad</a>.</p>
+      </fieldset>
+
+      <div class="incidencia__enviar">
+        <button class="boton boton--marca" type="submit"><svg class="icono" aria-hidden="true"><use href="#i-correo"/></svg>Preparar el correo</button>
+        <noscript><p class="campo__ayuda">Sin JavaScript, el botón abre su programa de correo con lo que haya escrito. Si no se abre, escriba a <a href="mailto:ayuntamiento@riberadelfresno.es">ayuntamiento@riberadelfresno.es</a>.</p></noscript>
+      </div>
+    </form>
+
+    <div class="incidencia-listo" id="incidencia-listo" tabindex="-1" hidden data-incidencia-listo>
+      <h3 class="incidencia-listo__titulo">Su aviso está listo</h3>
+      <p>Pulse el botón: se abrirá su programa de correo con el aviso escrito. Revíselo y pulse «Enviar».</p>
+      <p class="incidencia-listo__foto" data-recordar-foto hidden>Acuérdese de adjuntar la foto en el correo antes de enviarlo.</p>
+      <p><a class="boton boton--marca" href="mailto:ayuntamiento@riberadelfresno.es" data-incidencia-mailto><svg class="icono" aria-hidden="true"><use href="#i-correo"/></svg>Abrir mi correo con el aviso</a></p>
+      <div class="incidencia-listo__copiar" data-incidencia-copiar>
+        <p data-aviso-largo hidden><b>El aviso es largo</b> y algunos programas de correo lo cortan. Copie el texto y péguelo en el correo.</p>
+        <p>Si no se abre su correo, copie el texto y envíelo a <b class="rompe">ayuntamiento@riberadelfresno.es</b> con el asunto que aparece arriba del texto.</p>
+        <label class="campo__etiqueta" for="incidencia-texto">Texto del aviso</label>
+        <textarea class="campo__entrada incidencia-listo__texto" id="incidencia-texto" rows="10" readonly data-incidencia-texto></textarea>
+        <p class="incidencia-listo__acciones"><button class="boton boton--borde" type="button" data-copiar-texto>Copiar el texto</button> <span class="incidencia__estado" role="status" data-copiar-estado></span></p>
+      </div>
+      <p><button class="boton boton--borde" type="button" data-incidencia-volver>Cambiar algo del aviso</button></p>
+    </div>
+
+    <p class="nota-fuente">¿Tiene certificado digital o Cl@ve? También puede avisar en la sede electrónica, con registro de entrada: <a href="https://riberadelfresno.sedelectronica.es/catalog/t/d643e8cf-0824-4617-a997-c523799b4a93">Aviso de Incidencia en la Vía Pública<span class="sr">, se abre la sede electrónica</span></a>.</p>
+  </div>
+</section>
+<script src="js/incidencia.js?v=f51c0c8c" defer></script>
 
 </main>
 <footer class="pie">

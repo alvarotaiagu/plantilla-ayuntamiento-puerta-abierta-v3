@@ -5,8 +5,8 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Teléfonos y servicios · Ayuntamiento de Ribera del Fresno</title>
-<meta name="description" content="Teléfonos útiles y servicios municipales de Ribera del Fresno.">
+<title>Avisos y agenda en su móvil · Ayuntamiento de Ribera del Fresno</title>
+<meta name="description" content="Cómo recibir la agenda y los avisos del Ayuntamiento de Ribera del Fresno sin redes sociales.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_ES">
 
@@ -24,9 +24,10 @@
 <link rel="stylesheet" href="css/base.css?v=7c835d9a">
 <link rel="stylesheet" href="css/movimiento.css?v=f4ef5a0d">
 <link rel="stylesheet" href="css/imprimir.css?v=b8be18a5" media="print">
+<link rel="stylesheet" href="css/propuesta.css?v=d08ba296">
 <link rel="alternate" type="application/atom+xml" title="Avisos y noticias · Ayuntamiento de Ribera del Fresno" href="feed.xml">
 <link rel="alternate" type="text/calendar" title="Agenda de Ribera del Fresno" href="agenda.ics">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/index.html"},{"@type":"ListItem","position":2,"name":"Teléfonos y servicios","item":"https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/telefonos.html"}]}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inicio","item":"https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/index.html"},{"@type":"ListItem","position":2,"name":"Avisos y agenda en su móvil","item":"https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/suscribirse.html"}]}]}</script>
 <script>/* el listín sin cobertura (sw.js, v3b): se registra al terminar de cargar; si no hay service worker o falla, todo sigue igual */
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });</script>
 <script>
@@ -53,7 +54,7 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) addEven
 </script>
 
 </head>
-<body class="pagina-telefonos">
+<body class="pagina-suscribirse">
 <svg class="sprite" aria-hidden="true" focusable="false" width="0" height="0">
   <symbol id="i-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
   <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
@@ -114,7 +115,7 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) addEven
           <li><a class="menu__enlace" href="noticias.html">Noticias</a></li>
           <li><a class="menu__enlace" href="agenda.html">Agenda</a></li>
           <li><a class="menu__enlace" href="pueblo.html">El pueblo</a></li>
-          <li><a class="menu__enlace" href="telefonos.html" aria-current="page">Teléfonos</a></li>
+          <li><a class="menu__enlace" href="telefonos.html">Teléfonos</a></li>
           <li><a class="menu__enlace" href="contacto.html">Contacto</a></li>
           
         </ul>
@@ -151,156 +152,52 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) addEven
       <ol>
         <li><a href="index.html">Inicio</a></li>
         
-        <li><span aria-current="page">Teléfonos y servicios</span></li>
+        <li><span aria-current="page">Avisos y agenda en su móvil</span></li>
       </ol>
     </nav>
-    <h1 class="cabeza-pagina__titulo" id="titulo-pagina">Teléfonos y servicios</h1>
-    <p class="entradilla">El listín del pueblo, con las urgencias primero.</p>
+    <h1 class="cabeza-pagina__titulo" id="titulo-pagina">Avisos y agenda en su móvil</h1>
+    <p class="entradilla">La agenda del Ayuntamiento en el calendario de su móvil y los avisos en un lector de noticias, sin redes sociales.</p>
     
-    <div class="cabeza-pagina__puerta cabeza-pagina__puerta--linea" aria-hidden="true"><span class="cabeza-pagina__arco cabeza-pagina__arco--linea"><svg class="cabeza-pagina__picto" viewBox="0 0 24 24" focusable="false" data-picto="telefono"><path pathLength="1" d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4.5 5.5a2 2 0 0 1 2-2Z"/><path pathLength="1" d="M14.5 3.5a6 6 0 0 1 6 6"/><path pathLength="1" d="M14.5 7a2.5 2.5 0 0 1 2.5 2.5"/></svg></span><span class="cabeza-pagina__umbral"></span></div>
+    <div class="cabeza-pagina__puerta cabeza-pagina__puerta--linea" aria-hidden="true"><span class="cabeza-pagina__arco cabeza-pagina__arco--linea"><svg class="cabeza-pagina__picto" viewBox="0 0 24 24" focusable="false" data-picto="megafono"><path pathLength="1" d="M4.5 9.5H7l7-4.5v14l-7-4.5H4.5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1Z"/><path pathLength="1" d="M7 9.5v5"/><path pathLength="1" d="M7.6 14.9 8.8 19.5h2.4l-1-3.4"/><path pathLength="1" d="M16.5 9.5a3.5 3.5 0 0 1 0 5"/><path pathLength="1" d="M18.5 7.5a6.5 6.5 0 0 1 0 9"/></svg></span><span class="cabeza-pagina__umbral"></span></div>
   </div>
 </div>
 
 
 
-<section class="seccion seccion--primera" aria-labelledby="t-listin">
-  <div class="contenedor">
-    <h2 class="sr" id="t-listin">Listín de teléfonos</h2>
-    <div class="nevera-accion" data-imprimir-caja hidden>
-      <button class="boton boton--borde" type="button" data-imprimir><svg class="icono" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V3.5h10V8M7 17H4.5A1.5 1.5 0 0 1 3 15.5v-6A1.5 1.5 0 0 1 4.5 8h15A1.5 1.5 0 0 1 21 9.5v6a1.5 1.5 0 0 1-1.5 1.5H17"/><path d="M7 13.5h10v7H7zM17.5 10.8h.1"/></svg>Imprimir los teléfonos</button>
-      <p>Una hoja A4 con los números grandes, para tenerla a mano.</p>
-    </div>
-    <div class="nevera-cabeza">
-      <img src="marca/escudo-160.png" width="91" height="160" alt="">
-      <div>
-        <p class="nevera-cabeza__titulo">Teléfonos útiles de Ribera del Fresno</p>
-        <p class="nevera-cabeza__sub">Ayuntamiento de Ribera del Fresno · C/ Ayuntamiento, 1 · 924 536 011</p>
-      </div>
-    </div>
-    <div class="listin-completo">
-      <div class="listin-grupo">
-        <h3 class="listin-grupo__titulo">Urgencias y seguridad</h3>
-        <ul class="listin">
-          <li class="listin__fila listin__fila--urgente">
-            <span class="listin__nombre">Emergencias</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:112"><span class="sr">Llamar a Emergencias: </span>112</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Policía Local<small>C/ Hospital (antigua Cámara Agraria)</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34654338096"><span class="sr">Llamar a Policía Local: </span>654 338 096</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Guardia Civil<small>Avda. Cuartel, s/n</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536013"><span class="sr">Llamar a Guardia Civil: </span>924 536 013</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Protección Civil<small>C/ Escuela</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34638763187"><span class="sr">Llamar a Protección Civil: </span>638 763 187</a>
-          </li>
-          
-        </ul>
-      </div>
-      <div class="listin-grupo">
-        <h3 class="listin-grupo__titulo">Ayuntamiento</h3>
-        <ul class="listin">
-          <li class="listin__fila">
-            <span class="listin__nombre">Ayuntamiento<small>Registro, padrón y OMIC (consumo) · C/ Ayuntamiento, 1</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536011"><span class="sr">Llamar a Ayuntamiento: </span>924 536 011</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Guardería Rural y Punto de Información Catastral<small>Oficina de 13:00 a 15:00 (cambia en campaña de uva y aceituna) · Antiguo centro de salud</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34615196716"><span class="sr">Llamar a Guardería Rural y Punto de Información Catastral: </span>615 196 716</a>
-          </li>
-          
-        </ul>
-      </div>
-      <div class="listin-grupo">
-        <h3 class="listin-grupo__titulo">Salud y mayores</h3>
-        <ul class="listin">
-          <li class="listin__fila">
-            <span class="listin__nombre">Consultorio médico</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536551"><span class="sr">Llamar a Consultorio médico: </span>924 536 551</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Centro de Día «La Ribera»<small>C/ Virgilio Gutiérrez, s/n · Lunes a viernes, de 10:00 a 18:00</small><span class="listin__estado" data-vivo="servicio" data-clave="centro-de-dia-la-ribera"><p class="estado estado--servicio esta-cerrado"><span class="estado__punto" aria-hidden="true"></span><b>Cerrado ahora</b> · abre mañana a las 10:00</p></span></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924028924"><span class="sr">Llamar a Centro de Día «La Ribera»: </span>924 028 924</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Hogar del Pensionista</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536819"><span class="sr">Llamar a Hogar del Pensionista: </span>924 536 819</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Residencia «San Juan Macías»</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924537280"><span class="sr">Llamar a Residencia «San Juan Macías»: </span>924 537 280</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Hogar de Nazaret «La Providencia»<small>Atención a personas con discapacidad</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536278"><span class="sr">Llamar a Hogar de Nazaret «La Providencia»: </span>924 536 278</a>
-          </li>
-          
-        </ul>
-      </div>
-      <div class="listin-grupo">
-        <h3 class="listin-grupo__titulo">Educación, cultura y deporte</h3>
-        <ul class="listin">
-          <li class="listin__fila">
-            <span class="listin__nombre">CEIP Meléndez Valdés<small>C/ Escuelas, s/n</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924028770"><span class="sr">Llamar a CEIP Meléndez Valdés: </span>924 028 770</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">IESO Valdemedel</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924281470"><span class="sr">Llamar a IESO Valdemedel: </span>924 281 470</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Biblioteca «Virgilio Gutiérrez»<small>C/ San Juan Macías, 2 (Casa de la Cultura) · Lunes a viernes, de 9:30 a 14:00</small><span class="listin__estado" data-vivo="servicio" data-clave="biblioteca-virgilio-gutierrez"><p class="estado estado--servicio esta-cerrado"><span class="estado__punto" aria-hidden="true"></span><b>Cerrado ahora</b> · abre mañana a las 9:30</p></span></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924537224"><span class="sr">Llamar a Biblioteca «Virgilio Gutiérrez»: </span>924 537 224</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Casa de la Cultura y Escuela de Música<small>C/ San Juan Macías, 2</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924537224"><span class="sr">Llamar a Casa de la Cultura y Escuela de Música: </span>924 537 224</a>
-          </li>
-          <li class="listin__fila">
-            <span class="listin__nombre">Piscina municipal</span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536804"><span class="sr">Llamar a Piscina municipal: </span>924 536 804</a>
-          </li>
-          
-        </ul>
-      </div>
-      <div class="listin-grupo">
-        <h3 class="listin-grupo__titulo">Otros</h3>
-        <ul class="listin">
-          <li class="listin__fila">
-            <span class="listin__nombre">Parroquia de Nuestra Señora de Gracia<small>C/ Iglesia, 2</small></span>
-            <span class="listin__puntos" aria-hidden="true"></span>
-            <a class="listin__numero" href="tel:+34924536002"><span class="sr">Llamar a Parroquia de Nuestra Señora de Gracia: </span>924 536 002</a>
-          </li>
-          
-        </ul>
-      </div>
-      
-    </div>
-    <p class="nota-fuente">Solo aparecen los teléfonos confirmados. Si echa en falta uno, llame al Ayuntamiento: <a href="tel:+34924536011">924 536 011</a>.</p>
-    <p class="nevera-pie">Datos actualizados el 2 de octubre de 2026. <span data-fecha-impresion></span> Más teléfonos y horarios en alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3. Propuesta de diseño: no es la web oficial.</p>
+<section class="seccion seccion--primera" aria-labelledby="t-agenda-movil">
+  <div class="contenedor texto-largo">
+    <h2 class="seccion__titulo" id="t-agenda-movil">Añadir la agenda a mi móvil</h2>
+    <p>La agenda del Ayuntamiento (13 actos, con las fiestas y los plenos) se puede añadir al calendario del móvil. Una vez añadida, se actualiza sola: cuando el Ayuntamiento anuncia un acto nuevo, le aparece sin hacer nada más.</p>
+    <p class="suscribirse-acciones">
+      <a class="boton boton--marca" href="webcal://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/agenda.ics"><svg class="icono" aria-hidden="true"><use href="#i-calendario"/></svg>Añadir la agenda a mi calendario<span class="sr"> (se abre la aplicación de calendario)</span></a>
+      <a class="boton boton--borde" href="agenda.ics" download><svg class="icono" aria-hidden="true"><use href="#i-calendario"/></svg>Descargar la agenda<span class="sr"> (archivo .ics)</span></a>
+    </p>
+    <h3 class="subtitulo">Paso a paso</h3>
+    <ul class="suscribirse-pasos">
+      <li><b>iPhone:</b> pulse «Añadir la agenda a mi calendario» y después «Suscribirse».</li>
+      <li><b>Android (Google Calendar):</b> abra calendar.google.com en el navegador, pulse «+» junto a «Otros calendarios», elija «Desde URL» y pegue esta dirección: <code class="rompe">https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/agenda.ics</code></li>
+      <li><b>Ordenador (Outlook, Thunderbird):</b> «Añadir calendario» → «Desde internet» y la misma dirección.</li>
+    </ul>
+    <p class="nota-fuente">«Descargar la agenda» guarda una copia de hoy: sirve para importarla una vez, pero no se actualiza.</p>
   </div>
 </section>
 
+<section class="seccion" aria-labelledby="t-lector">
+  <div class="contenedor texto-largo">
+    <h2 class="seccion__titulo" id="t-lector">Recibir los avisos en un lector</h2>
+    <p>Los avisos y las noticias del Ayuntamiento se publican también como canal de noticias (Atom). Con una aplicación lectora de noticias (Feedly, Inoreader, NetNewsWire, Thunderbird…) le llegan en cuanto se publican, sin redes sociales y sin dar su teléfono ni su correo a nadie.</p>
+    <p class="suscribirse-acciones"><a class="boton boton--borde" href="feed.xml"><svg class="icono" aria-hidden="true"><use href="#i-aviso"/></svg>Canal de avisos y noticias<span class="sr"> (archivo Atom)</span></a></p>
+    <p>En su lector, pulse «Añadir» o «Suscribirse» y pegue esta dirección: <code class="rompe">https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v3/feed.xml</code></p>
+    
+  </div>
+</section>
 
+<section class="seccion" aria-labelledby="t-sin-cobertura">
+  <div class="contenedor texto-largo">
+    <h2 class="seccion__titulo" id="t-sin-cobertura">Los teléfonos, también sin cobertura</h2>
+    <p>Si ha visitado esta web una vez desde el móvil, la página de <a href="telefonos.html">teléfonos</a> se abre aunque no tenga cobertura ni datos: el móvil guarda una copia y la renueva cada vez que hay conexión. Y recuerde: el 112 se puede llamar sin saldo y aunque su compañía no tenga cobertura, si llega la de otra.</p>
+  </div>
+</section>
 
 </main>
 <footer class="pie">
