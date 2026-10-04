@@ -24,6 +24,18 @@
   "url": "https://alvarotaiagu.github.io/plantilla-ayuntamiento-puerta-abierta-v2/",
   "fecha_datos": "2026-10-02",
   "web_actual": "https://riberadelfresno.es",
+  "propuesta_web": {
+    "_leeme": "Solo para propuesta.html (la página para el alcalde; se quita sola con \"propuesta\": false). problemas: lo que se puede comprobar en su web actual, con su fuente (DATOS.md). captura_antes: {archivo, alt} con una captura de su portada actual (si no, sale un hueco marcado PENDIENTE). contacto: {nombre, correo, telefono} de quien presenta la propuesta (si no, «responda al correo con el que le ha llegado»). revisada: AAAA-MM-DD de la revisión.",
+    "problemas": [
+      { "texto": "El icono de Instagram lleva a plus.google.com, una red que cerró en 2019; la cuenta de Instagram del Ayuntamiento (@aytoriberadelfresno) no está enlazada en ninguna parte.", "fuente": "DATOS.md, redes sociales" },
+      { "texto": "El teléfono que da para la Guardia Civil (924 53 60 11) es el del propio Ayuntamiento; el del puesto es el 924 536 013.", "fuente": "guardiacivil.es" },
+      { "texto": "Hay enlaces que no llevan a ningún sitio: el «Histórico del perfil» del contratante que enlaza la sede y la cita previa de la ITV.", "fuente": "comprobado en octubre de 2026" },
+      { "texto": "Sigue ofreciendo las inscripciones de la temporada deportiva 2023.", "fuente": "formularios enlazados desde la web" },
+      { "texto": "Arrastra erratas en nombres propios: «Vigilio» por Virgilio (la biblioteca), «Matrachel» por Matachel (la mancomunidad) y «Alcade» por Alcalde.", "fuente": "DATOS.md" }
+    ],
+    "captura_antes": null,
+    "contacto": null
+  },
   "contacto": {
     "direccion": "C/ Ayuntamiento, 1",
     "cp": "06225",
