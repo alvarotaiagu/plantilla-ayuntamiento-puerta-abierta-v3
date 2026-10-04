@@ -12,6 +12,8 @@
 
      node scripts/aplicar.mjs                  todo
      node scripts/aplicar.mjs --sin-og         sin la imagen para compartir
+     node scripts/aplicar.mjs --sin-capturas   sin og.jpg ni propuesta-portada.jpg (se quedan las que hay;
+                                               sin Chromium: lo usa la tarea diaria de GitHub Actions)
      node scripts/aplicar.mjs --sin-hoja       sin pedir la hoja de Google: solo contenido/hoja.json
      node scripts/aplicar.mjs --hoja-url <base>   otra dirección en vez de docs.google.com (pruebas)
      node scripts/aplicar.mjs --fecha 2026-10-06T10:00:00+02:00   «hoy» fijo (pruebas)
@@ -35,7 +37,7 @@ import { leerHojaAlMontar } from './lib/hoja.mjs';   /* v3c · automatico */
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const arg = n => (args.includes(n) ? args[args.indexOf(n) + 1] : null);
-const SIN_OG = args.includes('--sin-og');
+const SIN_OG = args.includes('--sin-og') || args.includes('--sin-capturas');   /* v3c: --sin-capturas, el de la tarea diaria */
 const FORZAR = args.includes('--forzar');
 const SILENCIO = args.includes('--silencio');
 

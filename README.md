@@ -132,15 +132,16 @@ Cada paso funciona igual que en la veterinaria:
 
 | Qué | Cómo | Quién |
 |---|---|---|
-| **Avisos, agenda y noticias** | `contenido/*.json` o una **hoja de Google** publicada (ver abajo). La web pinta primero lo que trae y luego fusiona lo de la hoja | El Ayuntamiento, desde la hoja |
+| **Avisos, agenda y noticias** | `contenido/*.json` o una **hoja de Google** publicada (ver abajo). La web pinta primero lo que trae y luego fusiona lo de la hoja; la tarea diaria la mete también en el feed, los calendarios y las páginas de noticia (v3c) | El Ayuntamiento, desde la hoja |
+| **La tarea diaria** (v3c) | `.github/workflows/actualizar.yml` (GitHub Actions), dos veces al día: tablón (si está autorizado), hoja y `aplicar.mjs --sin-capturas`; sube la web si hay algo nuevo y una vez al día aunque no lo haya. El pie dice «Web actualizada el …». Cómo se activa y cómo se ve si falla: [PUBLICAR.md](PUBLICAR.md), «La tarea diaria» | Nadie |
 | **Aviso destacado** | Un aviso con `"gravedad": "urgente"` (franja roja) o `"programado"` (franja ámbar) y `"caduca": "AAAA-MM-DD"`. Sale arriba en todas las páginas y se quita solo al caducar | El Ayuntamiento |
 | **Tablón oficial** | `node scripts/tablon.mjs` lee `/board` de la sede, quita lo que lleva datos personales y conserva el `titulo_claro` que haya puesto una persona. La web refresca `contenido/tablon.json` al cargar | Una tarea diaria (ver abajo) + una persona para el lenguaje claro |
 | **Fiestas** | `municipio.json → pueblo.fiestas`. Las de `fecha_fija` entran solas en la agenda | Una vez al año |
 | **Abierto ahora, «hoy», mes actual** | Se calculan en el navegador con la hora de Madrid | Nadie |
 | **Farmacia de guardia** | `municipio.json → farmacias`: rotación (semanal, por ejemplo) y/o fechas sueltas, también desde la pestaña `Farmacias` de la hoja. Cambia sola a la hora del relevo (`cambio`, 09:30) | El Ayuntamiento, una vez al año con el calendario del Colegio |
 | **Próximo pleno y recogida** | `municipio.json → plenos` (o la agenda con `tipo` «pleno») y `recogida` (días de la semana o fechas) | El Ayuntamiento |
-| **Calendarios (.ics)** | `aplicar.mjs` escribe `ics/<id>.ics` para cada evento; los de la hoja se generan en el navegador al pulsar | Nadie |
-| **Suscribirse sin redes** | `aplicar.mjs` escribe `feed.xml` (avisos y noticias, Atom) y `agenda.ics` (toda la agenda); `suscribirse.html` lo explica al vecino | Nadie |
+| **Calendarios (.ics)** | `aplicar.mjs` escribe `ics/<id>.ics` para cada evento, también los de la hoja (v3c); uno que llegue de la hoja entre dos pasadas de la tarea diaria se genera en el navegador al pulsar | Nadie |
+| **Suscribirse sin redes** | `aplicar.mjs` escribe `feed.xml` (avisos y noticias, Atom) y `agenda.ics` (toda la agenda), con lo de la hoja (v3c); `suscribirse.html` lo explica al vecino | Nadie |
 | **Teléfonos sin cobertura** | `sw.js` guarda `telefonos.html` y lo que necesita; se renueva con cada build | Nadie |
 | **Publicar desde el móvil** | Formulario de Google → hoja → web: **[PUBLICAR.md](PUBLICAR.md)**, con `scripts/comprobar-hoja.mjs` para revisar una exportación | La secretaría |
 
@@ -155,9 +156,11 @@ Cada paso funciona igual que en la veterinaria:
 
 La web lee la hoja por el endpoint `gviz`, con `credentials: "omit"` (sin cookies) y un corte a 7 segundos. Si la hoja no contesta, se queda lo que venía en la página. Está probado en los dos sentidos.
 
+**También al montar (v3c):** `aplicar.mjs` lee la misma hoja (`scripts/lib/hoja.mjs`, con el mismo código de `js/vivo.js` que el navegador) y la fusiona con `contenido/*.json` antes de pintar: así sale en `feed.xml`, `agenda.ics`, los `ics/<id>.ics`, la lista de `avisos.html`, y cada noticia de la hoja tiene su página. Lo último bueno se guarda en `contenido/hoja.json`: si la hoja no contesta, se usa eso. Lo que no se puede enseñar (sin título, una fecha imposible) se queda fuera con un aviso; nunca para el montaje. RESKIN.md §7 ter.
+
 **El tablón y el robots.txt.** La sede de Gestiona **no tiene RSS, JSON ni CORS**, y su `robots.txt` prohíbe a los robots todo salvo `/info` (comprobado el 02/10/2026). Por eso:
 - **en la maqueta** el tablón sale de una copia del 2 de octubre (`pruebas/tablon/board-ribera.html`, con el nombre del causante de una declaración de herederos sustituido), con `node scripts/tablon.mjs --desde …`;
-- **en producción** la lectura automática solo se activa con `"tablon_autorizado": true`, cuando el Ayuntamiento (titular de la sede) lo autorice por escrito. Entonces, una tarea diaria (GitHub Actions o un cron del hosting) ejecuta `node scripts/tablon.mjs && node scripts/aplicar.mjs` y publica.
+- **en producción** la lectura automática solo se activa con `"tablon_autorizado": true`, cuando el Ayuntamiento (titular de la sede) lo autorice por escrito. Entonces la tarea diaria (`.github/workflows/actualizar.yml`, ya incluida; en otro hosting, un cron con lo mismo) ejecuta `node scripts/tablon.mjs` y `node scripts/aplicar.mjs --sin-capturas`, y publica. Sin la autorización, la tarea corre igual y no toca el tablón.
 - Si la sede no responde o cambia el marcado, **no se toca** el último `tablon.json`.
 
 Datos personales: se excluyen por patrón y hay pruebas con 17 títulos reales de sedes de la zona. Entran:
