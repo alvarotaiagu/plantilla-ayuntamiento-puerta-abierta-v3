@@ -634,6 +634,32 @@ const vivo = {
 for (const a of avisosOrden) a.plazo_html = a.plazo_inicio || a.plazo_fin ? pintar('plazo', { clave: a.id }) : null;
 gruposListin.forEach(g => g.items.forEach(i => { if (i.clave) i.estado = pintar('servicio', { clave: i.clave }); }));
 
+/* ───────────────────────── v3c · guia: «Publicar en la web» (publicar.html) ─────────────────────────
+   La página del personal del Ayuntamiento. Los botones van a los formularios de Google de
+   municipio.json → hoja.formularios {avisos, agenda, noticias} (los crea plantillas-hoja/crear-hoja.gs).
+   Sin URL, el botón no se inventa: la página dice que se activa al montar la hoja. Las URLs de los
+   formularios solo van a publicar.html: se quitan de los datos vivos que lleva cada página */
+const FORMS = (M.hoja && M.hoja.formularios) || {};
+const FORMULARIOS = [
+  ['avisos', 'Publicar un aviso', 'Un corte de agua, una obra, una alerta, un plazo que se abre'],
+  ['agenda', 'Publicar un acto en la agenda', 'Un concierto, una feria, una charla, un pleno'],
+  ['noticias', 'Publicar una noticia', 'Lo que ha pasado en el pueblo, contado en unas líneas']
+].map(([clave, titulo, texto]) => {
+  const u = FORMS[clave] || null;
+  if (u && !/^https:\/\/\S+$/.test(u)) errores.push(`hoja.formularios.${clave}: la dirección del formulario, entera y con https://`);
+  else if (u && !/^https:\/\/(docs\.google\.com\/forms\/|forms\.gle\/)/.test(u)) avisos.push(`hoja.formularios.${clave}: no parece un formulario de Google (${u})`);
+  return { clave, titulo, texto, url: u };
+});
+for (const k of Object.keys(FORMS)) if (!FORMULARIOS.some(f => f.clave === k)) errores.push(`hoja.formularios: «${k}» no es un formulario (avisos, agenda, noticias)`);
+const hojaMontada = !!(M.hoja && M.hoja.id);
+if (FORMULARIOS.some(f => f.url) && !hojaMontada) avisos.push('hoja.formularios sin hoja.id: lo que se mande por los formularios no saldrá en la web');
+if (D.hoja && D.hoja.formularios) D.hoja = { ...D.hoja, formularios: undefined };
+const publicar = {
+  formularios: FORMULARIOS, hay_formularios: FORMULARIOS.some(f => f.url), hoja_montada: hojaMontada,
+  /* lo que llega solo a la web: el tablón de la sede solo con la autorización (README, «El tablón y el robots.txt») */
+  tablon_solo: !!M.tablon_autorizado
+};
+
 /* ───────────────────────── el pueblo y las fotos ───────────────────────── */
 const P = M.pueblo || {};
 /* la foto del arco: una (fotos.hero) o varias (fotos.hero_fotos) que se turnan al azar en cada
@@ -1047,6 +1073,11 @@ const PAGINAS = [
   { archivo: 'suscribirse.html', id: 'suscribirse', titulo: 'Avisos y agenda en su móvil', estilos: ['propuesta.css'],
     entradilla: 'La agenda del Ayuntamiento en el calendario de su móvil y los avisos en un lector de noticias, sin redes sociales.',
     descripcion: `Cómo recibir la agenda y los avisos del Ayuntamiento de ${N} sin redes sociales.` },
+  /* v3c · guia: «Publicar en la web», para el personal del Ayuntamiento. Fuera del menú (un enlace
+     discreto en el pie) y con noindex siempre, también cuando la web ya se indexe */
+  { archivo: 'publicar.html', id: 'publicar', titulo: 'Publicar en la web', noindex: true, estilos: ['publicar.css'], scripts: ['publicar.js'],
+    entradilla: 'Para el personal del Ayuntamiento: cómo publicar un aviso, un acto o una noticia desde el móvil, dónde sale cada cosa y cómo corregirla.',
+    descripcion: `Cómo publica el personal del Ayuntamiento de ${N} avisos, actos y noticias en la web.` },
   /* v3b · F9: solo con municipio.json → incidencias.correo */
   ...(incidencias ? [{ archivo: 'incidencia.html', id: 'incidencia', titulo: 'Avisar de un problema', migas: [{ href: 'tramites.html', texto: 'Trámites' }],
     entradilla: 'Una farola apagada, una fuga de agua, un bache… Cuéntenos qué pasa y le preparamos el correo para el Ayuntamiento.',
@@ -1078,6 +1109,7 @@ const PICTO_DE = { 'tramites.html': 'tramites', 'ayuntamiento.html': 'ayuntamien
   'propuesta.html': 'ayuntamiento', 'suscribirse.html': 'megafono',   /* v3b · servicio */
   'incidencia.html': 'farola', 'facil.html': 'facil',
   'transparencia.html': 'transparencia', 'escribanos.html': 'mensaje' };   /* v3c · transparencia */
+PICTO_DE['publicar.html'] = 'publicar';   /* v3c · guia: un móvil con el formulario */
 const pictoDe = p => PICTO_DE[p.archivo] || (p.id === 'noticia' ? 'periodico' : null) || (p.traduccion ? PICTO_DE[p.fuente] : null);
 for (const p of PAGINAS) {
   if (p.id === 'inicio' || p.id === 'error') continue;
@@ -1213,6 +1245,7 @@ const comun = {
   web_actual: webActual, web_actual_texto: webActual ? webActual.replace(/^https?:\/\//, '').replace(/\/$/, '') : null,
   accesibilidad, privacidad,
   servicio,   /* v3b */
+  publicar,   /* v3c · guia: publicar.html */
   t: conT(T_ES, N, termino ? termino.fecha_texto : null), anio_traducido: null,
   perfil, plano, termino, pie_enlaces: pieEnlaces, fecha_datos_texto: fechaTexto(M.fecha_datos || ahora.iso), web_texto: url ? url.replace(/^https?:\/\//, '').replace(/\/$/, '') : null
 };

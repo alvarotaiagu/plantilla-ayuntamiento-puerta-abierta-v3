@@ -85,3 +85,37 @@ img { max-width: 100% !important; }
 .pagina-telefonos .listin-grupo:first-child .listin__nombre { font-size: 13pt; font-weight: 600; }
 .pagina-telefonos .listin-grupo:first-child .listin__numero { font-size: 18pt; }
 .pagina-telefonos .listin-grupo .listin__fila--urgente .listin__numero { font-size: 26pt; line-height: 1.1; border: 2pt solid var(--tinta); border-radius: 2mm; padding: 0 3mm !important; }
+
+/* ═══ v3c · guia: «Publicar en la web» (publicar.html) es la hoja para la mesa de la secretaría ═══
+   UNA hoja A4: el escudo con el nombre, los tres pasos y dónde están los formularios, qué sale dónde,
+   cuánto tarda, corregir o retirar, el buen título, lo que no se publica y lo que se le pide a quien
+   mantiene la web, en dos columnas. Fuera lo interactivo (los botones, el simulador y las muestras) y
+   el índice. Lo comprueba verificar.mjs → v3cguia (PDF A4 de una sola página). */
+.pie__personal { display: none !important; }
+.pagina-publicar .publicar-botones, .pagina-publicar .publicar-pruebelo, .pagina-publicar .publicar-muestras,
+.pagina-publicar .publicar-solo-pantalla, .pagina-publicar .indice, .pagina-publicar .pie__cuerpo .pie__base > :not(.pie__propuesta) { display: none !important; }
+.pagina-publicar .publicar-solo-papel { display: block !important; }
+.pagina-publicar .con-indice { display: block !important; }
+.pagina-publicar .cabeza-pagina { padding-block: 0 2mm !important; }
+.pagina-publicar .cabeza-pagina__titulo { font-size: 17pt; margin: 0; }
+.pagina-publicar .cabeza-pagina .entradilla { display: none; }
+.pagina-publicar .con-indice__cuerpo { columns: 2; column-gap: 8mm; }
+.pagina-publicar main { font-size: 8.4pt; line-height: 1.25; }
+.pagina-publicar .seccion { padding: 0 0 2.5mm !important; }
+.pagina-publicar .seccion__titulo { font-size: 11pt; margin: 0 0 1mm; }
+.pagina-publicar .publicar-sub { font-size: 9.5pt; margin: 1.5mm 0 .8mm; }
+.pagina-publicar p, .pagina-publicar li, .pagina-publicar dd { max-width: none; margin-bottom: .8mm; }
+.pagina-publicar .publicar-pasos, .pagina-publicar .publicar-lista { margin: 0 0 1mm; padding-left: 4.5mm; }
+.pagina-publicar .publicar-lista li + li, .pagina-publicar .publicar-pasos li + li { margin-top: .6mm; }
+.pagina-publicar .publicar-donde { gap: 1mm; margin: 0; }
+.pagina-publicar .publicar-donde__fila { padding: .6mm 0 .6mm 2mm; border-width: 0 0 0 2pt; border-color: var(--tinta); }
+.pagina-publicar .publicar-donde dd { margin: .3mm 0 0; }
+.pagina-publicar .chip { padding: 0 1.2mm; border: .5pt solid var(--tinta); font-size: 8pt; }
+.pagina-publicar .publicar-titulos { gap: 1mm; margin: 1mm 0; }
+.pagina-publicar .publicar-titulos li { padding: 0 0 0 2mm; border: 0; border-left: 1pt solid var(--tinta); }
+.pagina-publicar .publicar-solo-papel { border: 1pt solid var(--tinta); padding: 1.5mm 2mm; }
+.pagina-publicar .publicar-papel-pie { border: 0; padding: 0; font-size: 8.5pt; }
+.pagina-publicar .publicar-quien { padding: 0 0 0 2mm; border-left: 2pt solid var(--tinta); }
+/* en papel, de los títulos de ejemplo solo los buenos */
+.pagina-publicar .publicar-titulos__mal { display: none; }
+.pagina-publicar .pie__cuerpo { border-top: .5pt solid var(--tinta); padding-top: 1.5mm !important; }

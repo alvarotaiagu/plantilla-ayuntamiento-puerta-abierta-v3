@@ -59,6 +59,8 @@
           <li><a href="{{raiz}}contacto.html">Contacto</a></li>
         </ul>
       </nav>
+      <!-- v3c · guia: la página para quien publica, fuera del menú (noindex siempre) -->
+      <p class="pie__personal"><a href="{{raiz}}publicar.html">Personal del Ayuntamiento: publicar</a></p>
       <p class="pie__creditos">Escudo: {{escudo_credito.autor}}, {{escudo_credito.licencia}} (<a href="{{escudo_credito.url}}">Wikimedia Commons</a>).{{#hay_creditos_fotos}} Las fotos llevan su autor y licencia en <a href="{{raiz}}pueblo.html#creditos">El pueblo</a>.{{/hay_creditos_fotos}}</p>
       <p class="pie__actualizada">Web actualizada el <time datetime="{{actualizada.iso}}">{{actualizada.texto}}</time>.</p>
       {{#propuesta}}<p class="pie__propuesta" data-propuesta>Propuesta de diseño para el Ayuntamiento de {{nombre}} · no es la web oficial.</p>{{/propuesta}}

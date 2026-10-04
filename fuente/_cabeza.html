@@ -1,6 +1,7 @@
 <meta charset="utf-8">
 {{#robots_no}}<meta name="robots" content="noindex, nofollow">
-{{/robots_no}}<meta name="viewport" content="width=device-width, initial-scale=1">
+{{/robots_no}}{{^robots_no}}{{#pagina.noindex}}<meta name="robots" content="noindex, nofollow">
+{{/pagina.noindex}}{{/robots_no}}<meta name="viewport" content="width=device-width, initial-scale=1">
 {{#base_404}}<base href="{{base_404}}">
 {{/base_404}}<title>{{pagina.titulo_doc}}</title>
 <meta name="description" content="{{pagina.descripcion}}">

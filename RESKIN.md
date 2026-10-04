@@ -98,7 +98,7 @@ Fuentes que funcionaron en Ribera y Segura:
 | `sede` | sí | Ver §4 |
 | `tablon_autorizado` | — | `false` hasta que el Ayuntamiento autorice por escrito leer su tablón (ver §7) |
 | `tablon_max` | no | Cuántos anuncios del tablón enseña la web (40 si no se dice). Hace falta en las sedes que guardan años de tablón (Diputación) |
-| `hoja` | no | `{id, pestanas: {avisos, agenda, noticias, farmacias}}` de la hoja de Google publicada (ver README). `farmacias` es opcional: la pestaña de guardias. (v3c) La lee también `aplicar.mjs` al montar la web: §7 ter |
+| `hoja` | no | `{id, pestanas: {avisos, agenda, noticias, farmacias}, formularios: {avisos, agenda, noticias}}` de la hoja de Google publicada (ver README y PUBLICAR.md). `farmacias` es opcional: la pestaña de guardias. **v3c · `formularios`** (opcional): las direcciones (https) de los tres Formularios de Google; salen como botones en `publicar.html` y en ningún otro sitio (no van en los datos de las demás páginas). `null` o sin el campo: el botón dice «Se activa al montar la hoja». Las escribe `plantillas-hoja/crear-hoja.gs` al montarlo todo. (v3c · automatico) La lee también `aplicar.mjs` al montar la web: §7 ter |
 | `legal` | sí | `titular`, `nif` y `dir3` |
 | `escudo_credito` | sí | Autor, licencia y URL de la ficha de Commons |
 | `corporacion` | no | `grupos` (sigla, nombre, color, trama `liso`/`rayas`/`puntos`/`cuadros`, gobierno) y `miembros` (nombre, grupo, cargo, delegación y `alcalde: true`). Sin `grupos` no sale el hemiciclo; con 13 concejales o menos, sale de una sola fila |
@@ -365,6 +365,12 @@ Nadie tiene que ejecutar `aplicar.mjs` a mano para que lo publicado salga en tod
 - **«Avisos del Ayuntamiento»** (`avisos.html`) la pinta `js/vivo.js` (bloque `avisos`): al montar, y en el navegador con lo que llegue de la hoja, con su texto, su enlace y su ancla `#aviso-<id>`. Sin ningún aviso, la sección no sale.
 
 Opciones de `aplicar.mjs` para esto: `--sin-capturas` (no hace `assets/og.jpg` ni `assets/propuesta-portada.jpg`, se quedan las que hay: no pide Chromium), `--sin-hoja` (no pide la hoja: solo `contenido/hoja.json`) y `--hoja-url <base>` (otra dirección en vez de `docs.google.com`, para las pruebas).
+
+### «Publicar en la web» (v3c · guia)
+
+- `publicar.html` es la página del personal del Ayuntamiento: los botones a los formularios (`hoja.formularios`), qué sale dónde con muestras pintadas por `js/publicar.js` con las piezas de `vivo.js`, el simulador «Pruébelo» (no envía nada), cómo corregir y retirar, el buen título, lo que no se publica y lo que se le pide a quien mantiene la web. Impresa (`css/imprimir.css`) es una hoja A4 para la mesa.
+- Se genera siempre (también sin hoja y con `"propuesta": false`), lleva `noindex` **siempre** (`noindex: true` en `PAGINAS`, aunque `indexar` sea `true`), no está en el menú y la enlaza el pie: «Personal del Ayuntamiento: publicar».
+- Para montar la hoja y los formularios de un clic: `plantillas-hoja/crear-hoja.gs` (PUBLICAR.md, «El camino corto»). Lo que se le dice al Ayuntamiento: `RESPUESTA-CLIENTE.md`.
 
 ## 8. Aplicar y verificar
 

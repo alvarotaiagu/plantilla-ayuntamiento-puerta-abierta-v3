@@ -41,3 +41,7 @@ html:not(.en-revision) [data-solo-revision] { display: none; }
 .suscribirse-acciones { display: flex; flex-wrap: wrap; gap: .75rem; }
 .suscribirse-pasos { padding-left: 1.25rem; }
 .suscribirse-pasos li + li { margin-top: .5rem; }
+
+/* v3c · guia: «Publicar es rellenar un formulario» en tres pasos */
+.propuesta-pasos { padding-left: 1.4rem; }
+.propuesta-pasos li + li { margin-top: .4rem; }

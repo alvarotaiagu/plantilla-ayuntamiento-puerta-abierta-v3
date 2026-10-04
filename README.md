@@ -89,6 +89,7 @@ El RD 1112/2018 obliga a cumplir WCAG 2.1 AA. Por eso esta plantilla **rompe a p
 | `aviso-legal.html`, `privacidad.html`, `cookies.html`, `accesibilidad.html`, `404.html` | Lo legal y la página de error |
 | `propuesta.html` | **Solo en la maqueta, para el alcalde** (se manda por correo; ni en el menú ni en el pie). Qué falla en su web actual (comprobable, de `propuesta_web`), comparador antes/después con deslizador, qué cambia, «publicar es rellenar un formulario» y el siguiente paso. El precio, `[PRECIO: lo pone Álvaro]`, solo con `?revision` |
 | `suscribirse.html` | «Avisos y agenda en su móvil»: la agenda con `webcal://` (`agenda.ics`), los avisos en un lector (`feed.xml`) y el listín sin cobertura |
+| `publicar.html` (v3c) | **«Publicar en la web», para el personal del Ayuntamiento** (fuera del menú, `noindex` siempre; la enlaza el pie: «Personal del Ayuntamiento: publicar»). Botones a los formularios de Google (`hoja.formularios`; sin ellos, «Se activa al montar la hoja»), qué sale dónde con muestras hechas con las piezas reales, el simulador «Pruébelo» (no envía nada), corregir y retirar, el buen título, lo que no se publica y lo que se pide a quien mantiene la web. Impresa, una hoja A4 para la mesa |
 
 ## Cómo está hecho (y cómo se reskinea)
 
@@ -146,7 +147,7 @@ Cada paso funciona igual que en la veterinaria:
 | **Calendarios (.ics)** | `aplicar.mjs` escribe `ics/<id>.ics` para cada evento, también los de la hoja (v3c); uno que llegue de la hoja entre dos pasadas de la tarea diaria se genera en el navegador al pulsar | Nadie |
 | **Suscribirse sin redes** | `aplicar.mjs` escribe `feed.xml` (avisos y noticias, Atom) y `agenda.ics` (toda la agenda), con lo de la hoja (v3c); `suscribirse.html` lo explica al vecino | Nadie |
 | **Teléfonos sin cobertura** | `sw.js` guarda `telefonos.html` y lo que necesita; se renueva con cada build | Nadie |
-| **Publicar desde el móvil** | Formulario de Google → hoja → web: **[PUBLICAR.md](PUBLICAR.md)**, con `scripts/comprobar-hoja.mjs` para revisar una exportación | La secretaría |
+| **Publicar desde el móvil** | Formulario de Google → hoja → web: **[PUBLICAR.md](PUBLICAR.md)**. Se monta de un clic con `plantillas-hoja/crear-hoja.gs`; quien publica usa `publicar.html`; `scripts/comprobar-hoja.mjs` revisa una exportación | La secretaría |
 
 **La hoja de cálculo** (memoria «hoja de cálculo como CMS»):
 1. Crea una hoja de Google con tres pestañas: `Avisos`, `Agenda` y `Noticias`.

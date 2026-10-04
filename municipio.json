@@ -147,6 +147,11 @@
       "avisos": "Avisos",
       "agenda": "Agenda",
       "noticias": "Noticias"
+    },
+    "formularios": {
+      "avisos": null,
+      "agenda": null,
+      "noticias": null
     }
   },
   "legal": {
