@@ -607,7 +607,33 @@
     return s ? estadoHtml(s, ahora, 'estado estado--servicio') : '';
   }
 
-  var BLOQUES = { franja: franja, hoy: hoy, tablon: tablon, linea: linea, anio: anio, agenda: agenda, servicio: servicio, lado: lado, plazos: plazos, plazo: plazoAviso };
+  /* ═══ v3c · automatico ═══ */
+  /* ── F16 · «Avisos del Ayuntamiento» (página de avisos), desde los datos vivos ──
+     Antes era una lista fija de la plantilla: un aviso que llegaba de la hoja salía en la franja y en
+     «Hoy», pero no aquí, y su enlace (avisos.html#aviso-<id>) no llevaba a ningún sitio. Ahora la pinta
+     este bloque: aplicar.mjs al montar (es lo que se ve sin JavaScript) y main.js con lo de la hoja.
+     Todos los avisos no ocultos, también los caducados (es el archivo), del más nuevo al más antiguo */
+  function fechaTexto(iso) { var p = partes(iso); return p.d + ' de ' + MESES[p.m - 1] + ' de ' + p.a; }
+  var ENLACE_RARO = /^\s*(javascript|data|vbscript):/i;
+  function avisosLista(D, ahora) {
+    var lista = (D.avisos || []).filter(function (a) { return !a.oculto; }).slice().sort(function (a, b) { return b.fecha.localeCompare(a.fecha); });
+    if (!lista.length) return '';
+    return '<ol class="avisos">' + lista.map(function (a) {
+      var g = gravedad(a), pz = (a.plazo_inicio || a.plazo_fin) ? chipPlazo(a, ahora, a.id) : '';
+      return '<li class="aviso aviso--' + g + (g === 'urgente' ? ' aviso--urgente' : '') + '" id="aviso-' + esc(a.id) + '"' + marcaEjemplo(a, 'aviso:' + a.id) + '>' +
+        '<p class="aviso__meta"><span class="chip">' + esc(a.tema) + '</span><time datetime="' + esc(a.fecha) + '">' + fechaTexto(a.fecha) + '</time>' +
+        (g === 'urgente' ? '<span class="chip chip--urgente">Urgente</span>' : '') + (g === 'programado' ? '<span class="chip chip--programado">Programado</span>' : '') +
+        /* el chip del plazo lleva su propio data-vivo: se repinta con la fecha real aunque la lista no cambie */
+        (pz ? '<span class="aviso__plazo" data-vivo="plazo" data-clave="' + esc(a.id) + '">' + pz + '</span>' : '') + (a.ejemplo ? EJEMPLO : '') + '</p>' +
+        '<h3 class="aviso__titulo">' + esc(a.titulo) + '</h3>' +
+        (a.texto ? '<p class="aviso__texto">' + esc(a.texto) + '</p>' : '') +
+        (a.enlace && !ENLACE_RARO.test(a.enlace) ? '<p><a href="' + esc(a.enlace) + '">Más información<span class="sr"> sobre ' + esc(a.titulo) + '</span></a></p>' : '') +
+        '</li>';
+    }).join('') + '</ol>';
+  }
+
+  var BLOQUES = { franja: franja, hoy: hoy, tablon: tablon, linea: linea, anio: anio, agenda: agenda, servicio: servicio, lado: lado, plazos: plazos, plazo: plazoAviso,
+    avisos: avisosLista };   /* v3c · automatico */
 
   raiz.Vivo = {
     plazo: plazo, plazosAbiertos: plazosAbiertos, esNuevo: esNuevo,

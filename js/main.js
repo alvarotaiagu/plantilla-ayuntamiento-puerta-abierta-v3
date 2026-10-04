@@ -31,6 +31,8 @@
       if (bloque === 'franja') el.hidden = !nuevo;
       /* v3b · «Plazos abiertos»: sin ninguno abierto, la sección entera fuera (sin hueco) */
       if (bloque === 'plazos' && el.closest('section')) el.closest('section').hidden = !nuevo;
+      /* v3c · la lista de avisos propios: sin ninguno, su sección fuera (y sale si llega uno de la hoja) */
+      if (bloque === 'avisos' && el.closest('section')) el.closest('section').hidden = !nuevo;
       if (bloque === 'tablon') montarTablon(el);
       if (bloque === 'agenda') montarCalendario(el);
     });
@@ -172,7 +174,7 @@
       leerHoja(par[1]).then(function (filas) {
         /* un evento de la hoja no tiene .ics escrito (o el que había ya no vale): se genera al pulsar */
         if (par[0] === 'agenda') filas.forEach(function (f) { f.ics = null; if (f.tipo) f.tipo = normal(f.tipo); });
-        fusionar(D[par[0]], filas); pintarVivo();
+        fusionar(D[par[0]], filas); pintarVivo(); irAlAncla();
       }).catch(function (e) { if (window.console) console.warn('Hoja «' + par[1] + '»: se queda el respaldo', e && e.message); });
     });
     /* pestaña de guardias de farmacia (desde, hasta, farmacia): manda sobre la rotación */
@@ -183,6 +185,18 @@
         pintarVivo();
       }).catch(function (e) { if (window.console) console.warn('Hoja «' + p.farmacias + '»: se quedan las guardias de la página', e && e.message); });
     }
+  }
+
+  /* ═══ v3c · el ancla de un aviso o un acto que llega de la hoja (avisos.html#aviso-<id>): al abrir la
+     página aún no existe y el navegador no baja; cuando la hoja lo pinta, se baja una vez ═══ */
+  var anclaPendiente = (function () {
+    try { var id = decodeURIComponent(location.hash.slice(1)); return id && !document.getElementById(id) ? id : null; } catch (e) { return null; }
+  })();
+  function irAlAncla() {
+    var el = anclaPendiente && document.getElementById(anclaPendiente);
+    if (!el) return;
+    anclaPendiente = null;
+    el.scrollIntoView({ block: 'start' });
   }
 
   /* ═══ «Añadir a mi calendario» de un evento que llegó de la hoja: el .ics se hace aquí ═══ */
