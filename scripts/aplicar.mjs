@@ -65,6 +65,16 @@ for (const [n, d] of [['municipio.json', M], ['contenido/avisos.json', C.avisos]
 for (const f of ['marca/escudo-160.png', 'marca/escudo-480.png', 'marca/favicon-64.png'])
   if (!existe(f)) errores.push('Falta ' + f + ': ejecuta node scripts/escudo.mjs ruta/al/escudo.svg');
 if (!existe('css/fuentes.css')) errores.push('Falta css/fuentes.css: ejecuta node scripts/fuentes.mjs');
+/* v3c · alta: un municipio.json a medias (el borrador de scripts/nuevo-municipio.mjs, con null en lo
+   que no se encontró) se para AQUÍ, con la lista entera de lo que falta, antes de que lo de abajo
+   tropiece con un null. Ni con --forzar: sin esto no hay web que escribir */
+for (const [c, que] of [['servicios', 'el listín: [{nombre, telefono, grupo…}]'], ['tramites.todos', 'el catálogo de trámites de su sede']])
+  if (!Array.isArray(valor(M, c))) errores.push(`municipio.json: falta «${c}» (${que}; RESKIN.md §3)`);
+if (M._borrador) avisos.push(`municipio.json sigue marcado como borrador ("_borrador": true): repasa ALTA-${M.slug || '<slug>'}.md y quita la marca`);
+if (errores.some(e => e.startsWith('municipio.json: falta'))) {
+  console.error(`\n✗ No se escribe nada: faltan datos obligatorios de municipio.json${M._borrador ? ` (es un borrador de nuevo-municipio.mjs: en ALTA-${M.slug || '<slug>'}.md está cada uno, con sus pistas)` : ''}. Arregla esto:\n  - ` + errores.join('\n  - ') + '\n');
+  process.exit(1);
+}
 
 const TEL = /^(\d{3} \d{3} \d{3}|\d{3})$/;
 const telefonos = [M.contacto.telefono, ...(M.servicios || []).map(s => s.telefono), ...(M.urgencias || []).map(s => s.telefono),

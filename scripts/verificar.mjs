@@ -3526,6 +3526,155 @@ async function v3bPueblo() {
   }
 }
 
+/* ═════════════ v3c · alta: el mapa del término de Ribera de verdad y el alta de un municipio nuevo ═════════════
+   - F25. marca/termino.json es de Ribera: su relación de OSM, la atribución, ni rastro de la muestra, y cada lugar con
+     el id de OSM comprobado a mano (la lista de abajo) y dentro del contorno del término (el del propio SVG). En
+     «El pueblo», a 1440 y a 320 px: los 7 puntos enlazan a su ficha, el recuadro del pueblo ampliado y su leyenda
+     salen, y ningún círculo pisa a otro ni a un rótulo de carretera (medido en pantalla, con el ×1,6 del móvil).
+   - F26. nuevo-municipio.mjs --sin-red con las respuestas guardadas de Segura de León (pruebas/alta/06124/): los
+     datos que da casan con los del reskin de pruebas/segura-de-leon/, cada uno con su fuente y su fecha; lo que no
+     se encuentra queda null; ALTA-<slug>.md lista lo que falta en orden; por nombre da el mismo municipio; si dos
+     fuentes no casan (habitantes del mismo año), no elige y lo dice. Nunca pisa municipio.json (ni el de la raíz
+     ni uno que no sea un borrador). aplicar.mjs, con el borrador tal cual, se niega diciendo qué falta (sin
+     romperse); completado lo obligatorio, escribe la web. */
+async function v3cAlta() {
+  /* 1. F25: el término de Ribera */
+  {
+    const malos = [];
+    const meta = JSON.parse(leer(RAIZ, 'marca', 'termino.json')), svg = leer(RAIZ, 'marca', 'termino.svg');
+    /* los ids comprobados a mano el 4-10-2026 en openstreetmap.org (nombre, etiquetas y sitio dentro del término) */
+    const COMPROBADOS = {
+      'Iglesia de Nuestra Señora de Gracia': 'way/566210276', 'Casa de Vargas-Zúñiga': 'way/566195236',
+      'Ermita del Cristo de la Misericordia': 'way/566195241', 'Ermita de la Aurora': 'way/566205161', 'Ermita de San Juan Macías': 'way/566200526',
+      'Palacio de Quintanilla': 'way/566195238', 'Pozo de San Juan Macías': 'node/5904426027'
+    };
+    if (meta.relacion !== 'relation/344111' || meta.nombre_osm !== M.nombre || !svg.includes(`data-termino="${M.slug}"`)) malos.push(`no es el de ${M.nombre}: ${meta.relacion} «${meta.nombre_osm}»`);
+    if (meta.atribucion !== '© colaboradores de OpenStreetMap' || meta.atribucion_url !== 'https://www.openstreetmap.org/copyright' || meta.licencia !== 'ODbL 1.0') malos.push('sin la atribución de OSM');
+    if (meta.muestra || /90000\d\d/.test(JSON.stringify(meta)) || /XX-\d/.test(svg)) malos.push('trae restos de la muestra sintética');
+    const lugares = meta.lugares || [];
+    const raros = lugares.filter(l => COMPROBADOS[l.nombre] !== l.osm).map(l => l.nombre + ' → ' + l.osm);
+    if (raros.length || lugares.length !== Object.keys(COMPROBADOS).length) malos.push('lugares sin comprobar: ' + (raros.join(', ') || lugares.length + ' de ' + Object.keys(COMPROBADOS).length));
+    /* dentro del término: su sitio exacto (llevado al mapa grande si está en el recuadro) dentro del contorno del SVG */
+    const area = (/<path class="termino-area" d="([^"]+)"/.exec(svg) || [])[1] || '';
+    const anillos = area.split('M').filter(Boolean).map(a => a.replace(/Z$/, '').split('L').map(p => p.trim().split(/\s+/).map(Number)));
+    const dentro = ([x, y]) => { let c = false; for (const a of anillos) for (let i = 0, j = a.length - 1; i < a.length; j = i++) if ((a[i][1] > y) !== (a[j][1] > y) && x < (a[j][0] - a[i][0]) * (y - a[i][1]) / (a[j][1] - a[i][1]) + a[i][0]) c = !c; return c; };
+    for (const l of lugares) {
+      let p = l.sitio || [l.x, l.y];
+      if (l.recuadro) {
+        if (!meta.recuadro) { malos.push(l.nombre + ': en un recuadro que no existe'); continue; }
+        const [c0, c1, c2, c3] = meta.recuadro.caja, [z0, z1, z2, z3] = meta.recuadro.zona;
+        p = [z0 + (p[0] - c0) * (z2 - z0) / (c2 - c0), z1 + (p[1] - c1) * (z3 - z1) / (c3 - c1)];
+      }
+      if (!dentro(p)) malos.push(l.nombre + ' fuera del término');
+    }
+    /* en «El pueblo»: puntos, recuadro y leyenda, sin pisarse */
+    const srv = crearServidor(RAIZ, null);
+    await new Promise(r => srv.listen(0, '127.0.0.1', r));
+    try {
+      for (const w of [1440, 320]) {
+        const ctx = await navegador.newContext({ viewport: { width: w, height: 900 }, reducedMotion: 'reduce' });
+        await ctx.addInitScript(s => { try { localStorage.setItem(s + '-cookies', 'ok'); sessionStorage.setItem(s + '-cortina', '1'); } catch (e) {} }, SLUG);
+        const page = await ctx.newPage();
+        await page.goto('http://127.0.0.1:' + srv.address().port + '/pueblo.html', { waitUntil: 'networkidle' });
+        await page.locator('#t-termino').scrollIntoViewIfNeeded();
+        const r = await page.evaluate(() => {
+          const svg = document.querySelector('.termino__mapa');
+          if (!svg) return null;
+          const caja = e => { const b = e.getBoundingClientRect(); return { x0: b.left, x1: b.right, y0: b.top, y1: b.bottom }; };
+          const circulos = [...svg.querySelectorAll('a.termino-punto circle')].map(caja), rotulos = [...svg.querySelectorAll('.termino-ref rect')].map(caja);
+          const cortan = (a, b) => a.x0 < b.x1 - 0.5 && b.x0 < a.x1 - 0.5 && a.y0 < b.y1 - 0.5 && b.y0 < a.y1 - 0.5;
+          const pisan = [];
+          circulos.forEach((a, i) => { circulos.forEach((b, j) => { if (j > i && cortan(a, b)) pisan.push(`${i + 1} y ${j + 1}`); }); rotulos.forEach((b, j) => { if (cortan(a, b)) pisan.push(`${i + 1} y el rótulo ${j + 1}`); }); });
+          const enlaces = [...svg.querySelectorAll('a.termino-punto')].map(a => a.getAttribute('href'));
+          return { n: enlaces.length, sinFicha: enlaces.filter(h => !document.getElementById(h.slice(1))), pisan, radio: circulos.length ? circulos[0].x1 - circulos[0].x0 : 0,
+            recuadro: !!svg.querySelector('.termino-recuadro .termino-marco') && !!svg.querySelector('.termino-zona'), claves: [...document.querySelectorAll('.termino__claves li')].map(li => li.textContent.trim()),
+            ancho: document.documentElement.scrollWidth, vw: innerWidth };
+        });
+        await ctx.close();
+        if (!r) { malos.push(w + ' px: no sale el mapa'); continue; }
+        if (r.n !== lugares.length || r.sinFicha.length) malos.push(`${w} px: ${r.n} puntos, sin ficha ${r.sinFicha.join(', ')}`);
+        if (r.pisan.length) malos.push(`${w} px: se pisan ${r.pisan.slice(0, 4).join(', ')}`);
+        if (!r.recuadro || !r.claves.some(c => /^Recuadro: el pueblo ampliado; su barra mide \d+ m$/.test(c)) || !r.claves.some(c => /^Raya fina con un punto/.test(c))) malos.push(`${w} px: sin el recuadro o su leyenda (${r.claves.join(' | ')})`);
+        if (r.ancho > r.vw) malos.push(`${w} px: desborda (${r.ancho})`);
+        if (w === 320 && r.radio < 18) malos.push(`320 px: los círculos miden ${r.radio.toFixed(1)} px (con el ×1,6 deberían pasar de 18)`);
+      }
+    } finally { srv.close(); }
+    comprobar(!malos.length, `v3c F25: el mapa del término es el de ${M.nombre} (${meta.relacion}, © OpenStreetMap, sin restos de la muestra): ${lugares.length} lugares con su id de OSM comprobado y dentro del término; en «El pueblo» (1440 y 320 px) los puntos llevan a su ficha, sale el recuadro del pueblo ampliado con su leyenda y ningún círculo pisa a otro ni a un rótulo` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+
+  /* 2. F26: nuevo-municipio.mjs sin red */
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'alta-'));
+  const nm = (...a) => spawnSync('node', [path.join(RAIZ, 'scripts/nuevo-municipio.mjs'), ...a], { encoding: 'utf8', cwd: RAIZ });
+  const huella = f => createHash('sha1').update(fs.readFileSync(f)).digest('hex');
+  const antes = huella(path.join(RAIZ, 'municipio.json'));
+  try {
+    const malos = [];
+    const sal = path.join(tmp, 'segura');
+    const r = nm('06124', '--salida', sal, '--sin-red');
+    if (r.status !== 0) { comprobar(false, 'v3c F26: nuevo-municipio.mjs --sin-red falla → ' + (r.stderr || r.stdout).slice(-300)); return; }
+    const B = JSON.parse(fs.readFileSync(path.join(sal, 'municipio.json'), 'utf8')), S = JSON.parse(leer(RAIZ, 'pruebas', 'segura-de-leon', 'municipio.json'));
+    const de = (o, ruta) => ruta.split('.').reduce((x, k) => (x == null ? undefined : x[k]), o);
+    /* lo que casa con el reskin hecho a mano (los datos comprobados de pruebas/segura-de-leon/) */
+    for (const c of ['slug', 'nombre', 'provincia', 'gentilicio', 'habitantes.valor', 'contacto.direccion', 'contacto.cp', 'contacto.telefono', 'contacto.fax', 'contacto.correo', 'sede.tipo', 'sede.base', 'sede.instancia_general', 'sede.quejas', 'legal.titular', 'legal.dir3', 'escudo_credito.licencia', 'escudo_credito.url'])
+      if (de(B, c) !== de(S, c)) malos.push(`${c}: «${de(B, c)}» y en el reskin «${de(S, c)}»`);
+    if (B.ine !== '06124' || B._borrador !== true || !/^Mfarinias/.test((B.escudo_credito || {}).autor || '')) malos.push('ine, _borrador o autor del escudo');
+    /* cada dato con su fuente y su fecha; lo no encontrado, null */
+    const F = B._fuentes || {};
+    const sinFuente = ['nombre', 'ine', 'provincia', 'habitantes', 'gentilicio', 'web_actual', 'contacto.direccion', 'contacto.cp', 'contacto.telefono', 'contacto.correo', 'sede.base', 'legal.dir3', 'escudo_credito', 'cifras']
+      .filter(c => de(B, c) != null && !(F[c] && F[c].fuente && /^\d{4}-\d{2}-\d{2}$/.test(F[c].consultado || '')));
+    if (sinFuente.length) malos.push('sin fuente: ' + sinFuente.join(', '));
+    const noNulos = ['horario', 'legal.nif', 'corporacion', 'servicios', 'pueblo', 'fotos', 'comarca'].filter(c => de(B, c) !== null);
+    if (noNulos.length) malos.push('tendrían que ser null: ' + noNulos.join(', '));
+    if ((B.cifras || []).some(c => !c.fuente || c.valor == null)) malos.push('una cifra sin fuente');
+    /* ALTA: lo que falta, por orden de importancia, y el mapa pendiente (no hay copia de Overpass) */
+    const alta = fs.existsSync(path.join(sal, 'ALTA-segura-de-leon.md')) ? fs.readFileSync(path.join(sal, 'ALTA-segura-de-leon.md'), 'utf8') : '';
+    const pos = ['**horario**', '**legal.nif**', '**corporacion**', '**servicios**', '**fotos**', '**pueblo**', '**mapa del término**'].map(x => alta.indexOf(x));
+    if (!alta || pos.some(p => p < 0) || pos.some((p, i) => i && p < pos[i - 1])) malos.push('ALTA-segura-de-leon.md sin la lista en orden (' + pos.join(',') + ')');
+    if (!/## Contradicciones entre fuentes/.test(alta) || !/Pista: Wikidata da como alcalde/.test(alta)) malos.push('el alcalde de Wikidata tiene que ir a ALTA como pista, no al borrador');
+    /* por nombre, lo mismo */
+    const rn = nm('Segura de León', '--salida', path.join(tmp, 'nombre'), '--sin-red');
+    if (rn.status !== 0 || JSON.parse(fs.readFileSync(path.join(tmp, 'nombre', 'municipio.json'), 'utf8')).ine !== '06124') malos.push('por nombre no da el 06124 → ' + (rn.stderr || rn.stdout).slice(-160));
+    /* dos fuentes que no casan (los habitantes del mismo año): no se elige */
+    const otra = path.join(tmp, 'respuestas');
+    fs.cpSync(path.join(RAIZ, 'pruebas/alta/06124'), otra, { recursive: true });
+    const fd = path.join(otra, 'wikidata-Q1354528-declaraciones.json'), j = JSON.parse(fs.readFileSync(fd, 'utf8'));
+    const anio = Math.max(...JSON.parse(fs.readFileSync(path.join(otra, 'ine-tabla-2859-06124.json'), 'utf8')).flatMap(s => s.Data.map(d => d.Anyo)));
+    const st = j.results.bindings.find(b => /qualifier\/P585$/.test(b.p.value)).st.value;
+    for (const b of j.results.bindings) if (b.st.value === st) { if (/qualifier\/P585$/.test(b.p.value)) b.o.value = anio + '-01-01T00:00:00Z'; if (/statement\/P1082$/.test(b.p.value)) b.o.value = '1234'; }
+    fs.writeFileSync(fd, JSON.stringify(j));
+    const rc = nm('06124', '--salida', path.join(tmp, 'contradiccion'), '--desde', otra);
+    const Bc = rc.status === 0 ? JSON.parse(fs.readFileSync(path.join(tmp, 'contradiccion', 'municipio.json'), 'utf8')) : {};
+    const altaC = rc.status === 0 ? fs.readFileSync(path.join(tmp, 'contradiccion', 'ALTA-segura-de-leon.md'), 'utf8') : '';
+    if (Bc.habitantes !== null || !/\*\*habitantes\*\*: 1758 [^\n]*· 1234 /.test(altaC)) malos.push('con los habitantes en contra, elige o no lo dice → ' + JSON.stringify(Bc.habitantes));
+    /* nunca pisa: ni la raíz ni un municipio.json que no sea un borrador */
+    const enRaiz = nm('06124', '--salida', RAIZ, '--sin-red');
+    const ajeno = path.join(tmp, 'ajeno'); fs.mkdirSync(ajeno); fs.copyFileSync(path.join(RAIZ, 'pruebas/segura-de-leon/municipio.json'), path.join(ajeno, 'municipio.json'));
+    const sobreAjeno = nm('06124', '--salida', ajeno, '--sin-red');
+    if (enRaiz.status === 0 || sobreAjeno.status === 0 || huella(path.join(RAIZ, 'municipio.json')) !== antes || huella(path.join(ajeno, 'municipio.json')) !== huella(path.join(RAIZ, 'pruebas/segura-de-leon/municipio.json'))) malos.push('pisa un municipio.json que no es suyo');
+    comprobar(!malos.length, 'v3c F26: nuevo-municipio.mjs --sin-red con Segura de León (06124, también por nombre): los datos casan con el reskin hecho a mano, cada uno con su fuente y su fecha; horario, NIF, corporación y servicios quedan null; ALTA-segura-de-leon.md los pide en orden; si dos fuentes no casan, no elige; nunca pisa un municipio.json ajeno' + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+
+    /* aplicar.mjs con el borrador: se niega diciendo qué falta; completado lo obligatorio, escribe */
+    const dest = copiar();
+    try {
+      for (const d of ['contenido', 'media']) { fs.rmSync(path.join(dest, d), { recursive: true, force: true }); fs.cpSync(path.join(RAIZ, 'pruebas/segura-de-leon', d), path.join(dest, d), { recursive: true }); }
+      for (const f of fs.readdirSync(path.join(dest, 'marca')).filter(f => /^(perfil|plano|termino)\./.test(f))) fs.rmSync(path.join(dest, 'marca', f));
+      for (const f of fs.readdirSync(path.join(RAIZ, 'pruebas/segura-de-leon/marca'))) fs.copyFileSync(path.join(RAIZ, 'pruebas/segura-de-leon/marca', f), path.join(dest, 'marca', f));
+      fs.copyFileSync(path.join(sal, 'municipio.json'), path.join(dest, 'municipio.json'));
+      const a1 = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
+      const dice = a1.stderr + a1.stdout;
+      const niega = a1.status === 1 && ['«horario.texto»', '«legal.nif»', '«servicios»'].every(x => dice.includes(x)) && /ALTA-segura-de-leon\.md/.test(dice) && !/TypeError|at file:/.test(dice);
+      const C = JSON.parse(fs.readFileSync(path.join(sal, 'municipio.json'), 'utf8'));
+      Object.assign(C, { horario: { texto: 'Lunes a viernes, de 9:00 a 14:00', tramos: [{ dias: [1, 2, 3, 4, 5], de: '09:00', a: '14:00' }], ejemplo: true }, servicios: S.servicios });
+      C.legal.nif = S.legal.nif;
+      fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(C, null, 2));
+      const a2 = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
+      const escribe = a2.status === 0 && fs.readFileSync(path.join(dest, 'index.html'), 'utf8').includes('Segura de León');
+      comprobar(niega && escribe, 'v3c F26: aplicar.mjs con el borrador tal cual se niega y dice qué falta (horario, NIF, servicios; y dónde está la lista), sin romperse; con eso completado, escribe la web de Segura de León' +
+        (niega && escribe ? '' : ' → ' + JSON.stringify({ niega, s1: a1.status, d1: dice.slice(-300), s2: a2.status, d2: (a2.stderr || a2.stdout).slice(-300) })));
+    } finally { fs.rmSync(dest, { recursive: true, force: true }); }
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+}
+
 /* ═════════════ orden ═════════════ */
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
@@ -3540,6 +3689,7 @@ for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', pa
   ['v3bservicio', v3bServicio],
   ['v3bpueblo', v3bPueblo],
   ['v3binteriores', v3bInteriores],
+  ['v3calta', v3cAlta],
   ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();
