@@ -13,7 +13,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { createHash } from 'node:crypto';   /* v3b · servicio: la huella de los archivos de sw.js */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';   /* v3c · transparencia: pathToFileURL para importar lib/tablon.mjs */
 import { cargarPlaywright } from './og.mjs';
 import { crearServidor } from './servir.mjs';
 import { derivarTokens, paletaGirada, contraste } from './lib/color.mjs';
@@ -1482,7 +1482,10 @@ async function v3Pliegue() {
     });
     const lista = () => { const b = document.querySelector('.hoy__lista').getBoundingClientRect(); return { x: Math.round(b.left), r: Math.round(b.right) }; };
     const tieneFarmacia = !!(M.farmacias && ((M.farmacias.lista || []).length || M.farmacias.oficial));
-    const esperadas = 3 + (tieneFarmacia ? 1 : 0);
+    /* v3c · transparencia: más la ficha «Empleo» si hoy hay alguna oferta con el plazo abierto */
+    const Vh = cargarVivo(), Dh = JSON.parse(leer(RAIZ, 'index.html').match(/<script type="application\/json" id="datos-vivos">([\s\S]*?)<\/script>/)[1]);
+    const conEmpleo = Vh.empleosAbiertos(Dh, Vh.ahoraEn('Europe/Madrid', new Date())).length > 0;
+    const esperadas = 3 + (tieneFarmacia ? 1 : 0) + (conEmpleo ? 1 : 0);
     for (const [w, h, cols] of [[1366, 768, esperadas], [375, 667, 2]]) {
       const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
       await ir(page, 'index.html');
@@ -3526,6 +3529,268 @@ async function v3bPueblo() {
   }
 }
 
+/* ═════════════ v3c · transparencia: transparencia.html (F22), empleo público (F23) y «Escríbanos» (F24) ═════════════ */
+async function v3cTransparencia() {
+  const AXE = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+  const axeEn = async (page, nombre, viol) => (await new AxeBuilder({ page }).withTags(AXE).analyze()).violations.forEach(v => viol.push(nombre + ': ' + v.id + ' ' + v.nodes[0].target.join(' ')));
+  const APARTADOS = ['organizacion', 'normativa', 'presupuestos', 'cuentas', 'contratos', 'convenios', 'subvenciones', 'retribuciones', 'acceso'];
+  /* las anclas de los artículos que cita la página, leídos en el BOE (04/10/2026) */
+  const LEYES = /^https:\/\/www\.boe\.es\/buscar\/act\.php\?id=BOE-A-2013-(12887(#a(5|6|7|8|12|17|20|24))?|6050(#a(5|1-6|1-7))?)$/;
+  /* lo que la página puede enlazar en un apartado: lo de la sede (con su patrón), su perfil del contratante,
+     una página de esta web y lo que diga municipio.json → transparencia (comprobado a mano). Nada más */
+  const permitidos = (m, raiz) => {
+    const urls = new Set();
+    if (m.sede.perfil_contratante) urls.add(m.sede.perfil_contratante);
+    const t = m.transparencia || {};
+    if (t.portal && t.portal.url) urls.add(t.portal.url);
+    for (const a of Object.values(t.apartados || {})) for (const e of a.enlaces || []) urls.add(e.url);
+    const base = m.sede.base.replace(/\/$/, '');
+    const patron = m.sede.tipo === 'gestiona'
+      ? new RegExp('^' + base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/(catalog/t/[0-9a-f-]{36}|board|transparency|contractor-profile-list))?$')
+      : new RegExp('^' + base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(/(portal|sede)/[A-Za-z]+\\.do\\?[\\w=&%.-]+)?$');
+    return href => urls.has(href) || patron.test(href) || href.startsWith('#') || (/^[a-z0-9-]+\.html(#[\w-]+)?$/.test(href) && fs.existsSync(path.join(raiz, href.split('#')[0])));
+  };
+  /* los enlaces de cada apartado de una transparencia.html (texto), sin los de las leyes */
+  const leerApartados = html => [...html.matchAll(/data-apartado="([a-z]+)"[\s\S]*?(?=data-apartado="|<section class="seccion" aria-labelledby="t-transparencia-leyes")/g)].map(([bloque, id]) => ({
+    id, enlaces: [...bloque.matchAll(/<a [^>]*href="([^"]+)"/g)].map(x => x[1].replace(/&amp;/g, '&')).filter(h => !/boe\.es/.test(h)),
+    leyes: [...bloque.matchAll(/<a [^>]*href="([^"]+)"/g)].map(x => x[1].replace(/&amp;/g, '&')).filter(h => /boe\.es/.test(h)),
+    pendiente: (bloque.match(/<p class="pendiente" data-pendiente="[a-z]+"><b class="pendiente__marca">Pendiente:<\/b> ([^<]+)/) || [])[1] || null,
+    sin: /class="transparencia__sin"/.test(bloque) }));
+
+  /* ── F22 · 1. la página de Ribera: cada apartado, cada enlace real o un hueco «Pendiente», las leyes ── */
+  {
+    const malos = [], viol = [];
+    const h = fs.existsSync(path.join(RAIZ, 'transparencia.html')) ? leer(RAIZ, 'transparencia.html') : '';
+    if (!h) malos.push('no hay transparencia.html');
+    const aps = leerApartados(h), ok = permitidos(M, RAIZ), datos = (M.transparencia && M.transparencia.apartados) || {};
+    if (aps.map(a => a.id).join() !== APARTADOS.join()) malos.push('apartados: ' + aps.map(a => a.id).join());
+    for (const a of aps) {
+      const raros = a.enlaces.filter(x => !ok(x));
+      if (raros.length) malos.push(a.id + ': enlace que no es del municipio ni de los datos: ' + raros.join(' '));
+      if (!a.leyes.length || a.leyes.some(x => !LEYES.test(x))) malos.push(a.id + ': las leyes ' + JSON.stringify(a.leyes));
+      const quiere = datos[a.id] && datos[a.id].pendiente;
+      if ((quiere || null) !== (a.pendiente ? a.pendiente.replace(/&#39;/g, "'").replace(/&quot;/g, '"') : null)) malos.push(a.id + ': pendiente ' + JSON.stringify(a.pendiente) + ' (en los datos: ' + JSON.stringify(quiere) + ')');
+      /* nunca un apartado mudo: o un enlace, o el portal, o pedirlo (y el hueco si no consta) */
+      if (!a.enlaces.length && !a.sin && !a.pendiente) malos.push(a.id + ': ni enlace ni hueco');
+    }
+    for (const [id, d] of Object.entries(datos)) for (const e of d.enlaces || []) if (!h.includes('href="' + e.url.replace(/&/g, '&amp;') + '"')) malos.push(id + ': falta el enlace de los datos ' + e.url);
+    const acceso = aps.find(a => a.id === 'acceso');
+    const solicitud = (M.tramites.todos || []).find(t => /acceso a la informaci[oó]n p[uú]blica/i.test(t.nombre) && t.vigente !== false);
+    if (solicitud && !(acceso && acceso.enlaces.some(x => x.endsWith('/catalog/t/' + solicitud.id)))) malos.push('«Pedir información» no lleva a la solicitud de acceso del catálogo');
+    /* enlazada desde el pie y la franja de la sede de todas las páginas; en el menú, no */
+    const sinEnlace = PAGINAS.filter(p => { const x = leer(RAIZ, p); return !/<ul class="pie__lista">[\s\S]*?href="transparencia\.html"/.test(x) || !/<ul class="sede-franja__lista">[\s\S]*?href="transparencia\.html"/.test(x); });
+    if (sinEnlace.length) malos.push('sin enlace en el pie o en la franja: ' + sinEnlace.slice(0, 4).join(', '));
+    if (/class="menu[\s\S]*?href="transparencia\.html"[\s\S]*?<\/nav>/.test((leer(RAIZ, 'index.html').match(/<nav class="menu[\s\S]*?<\/nav>/) || [''])[0])) malos.push('está en el menú');
+    for (const ancho of [1280, 390]) {
+      const { ctx, page, errores } = await nueva({ viewport: { width: ancho, height: 900 } });
+      await ir(page, 'transparencia.html');
+      const r = await page.evaluate(() => ({ pendientes: [...document.querySelectorAll('.pendiente')].filter(e => e.checkVisibility()).length, desborda: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        indice: !!document.querySelector('.indice') }));
+      if (r.desborda) malos.push('desborda a ' + ancho);
+      if (r.pendientes !== Object.values(datos).filter(d => d.pendiente).length) malos.push('huecos «Pendiente» visibles: ' + r.pendientes);
+      await axeEn(page, 'transparencia a ' + ancho, viol);
+      if (errores.length) malos.push('consola: ' + errores.slice(0, 2).join(' | '));
+      if (CAPTURAS) await page.screenshot({ path: captura('v3c-transparencia-' + ancho + '.png'), fullPage: true });
+      await ctx.close();
+    }
+    comprobar(!malos.length && !viol.length, `v3c F22 · transparencia.html: los ${APARTADOS.length} apartados de la ley en su orden, cada enlace es del municipio (sede, perfil del contratante, esta web o los ${Object.values(datos).reduce((n, d) => n + (d.enlaces || []).length, 0)} comprobados en municipio.json), lo que no consta es un hueco «Pendiente» (${Object.values(datos).filter(d => d.pendiente).length}), cada apartado cita sus artículos del BOE, «Pedir información» lleva a la solicitud de acceso del catálogo, enlazada desde el pie y la franja de la sede de las ${PAGINAS.length} páginas y no desde el menú, sin desborde y 0 violaciones de axe a 1280 y 390 px` + (malos.length ? ' → ' + malos.slice(0, 5).join(' | ') : '') + (viol.length ? ' → axe: ' + viol.slice(0, 3).join(' | ') : ''));
+  }
+
+  /* ── F22 · 2. sin `transparencia` en municipio.json (y sin portal en la sede): lo general, sin inventar ── */
+  {
+    const malos = [];
+    for (const caso of ['sin datos', 'sin portal']) {
+      const dest = copiar();
+      try {
+        const m = JSON.parse(fs.readFileSync(path.join(dest, 'municipio.json'), 'utf8'));
+        delete m.transparencia;
+        /* una sede de la Diputación sin portal de transparencia (como Monesterio) */
+        if (caso === 'sin portal') m.sede = { tipo: 'diputacion', base: 'https://sede.ejemplo.es', ent_id: 1, opc: { tablon: 175 }, instancia_general: 'https://sede.ejemplo.es/sede/fichaInformativa.do?asu_cod=1&codVerif=x' };
+        fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(m, null, 2));
+        if (caso === 'sin portal') fs.writeFileSync(path.join(dest, 'contenido', 'tablon.json'), JSON.stringify({ entradas: [], excluidas: 0 }));
+        const ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
+        if (ap.status !== 0) { malos.push(caso + ': aplicar.mjs falla → ' + (ap.stderr || ap.stdout).slice(-300)); continue; }
+        const h = fs.readFileSync(path.join(dest, 'transparencia.html'), 'utf8'), ok = permitidos(m, dest);
+        const aps = leerApartados(h);
+        const raros = aps.flatMap(a => a.enlaces.filter(x => !ok(x)).map(x => a.id + ': ' + x));
+        if (raros.length) malos.push(caso + ': enlaces inventados ' + raros.slice(0, 3).join(' '));
+        const deRibera = Object.values((M.transparencia && M.transparencia.apartados) || {}).flatMap(d => (d.enlaces || []).map(e => e.url)).filter(u => h.includes(u.replace(/&/g, '&amp;')));
+        if (deRibera.length) malos.push(caso + ': quedan enlaces de los datos de ' + M.nombre);
+        if (/class="pendiente"/.test(h)) malos.push(caso + ': sale un hueco «Pendiente» sin datos');
+        if (aps.length !== APARTADOS.length || aps.some(a => a.id !== 'acceso' && !a.enlaces.length && !a.sin)) malos.push(caso + ': algún apartado mudo');
+        if (caso === 'sin portal' && (!/no tiene, de momento, un portal de transparencia/.test(h) || !aps.some(a => a.sin && /href="#t-transparencia-pedir"/.test(h)))) malos.push('sin portal: no lo dice o no manda a pedirlo');
+        if (caso === 'sin datos' && !/class="boton boton--marca" href="[^"]*\/transparency"/.test(h)) malos.push('sin datos: no lleva al portal de la sede');
+      } finally { fs.rmSync(dest, { recursive: true, force: true }); }
+    }
+    comprobar(!malos.length, 'v3c F22 · sin «transparencia» en municipio.json, transparencia.html explica lo general, enlaza solo la sede, el perfil del contratante y esta web, sin huecos «Pendiente» ni enlaces de otro municipio; con una sede de la Diputación sin portal, lo dice y manda a pedirlo' + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+
+  /* ── F23 · 1. la detección del empleo en Node: títulos reales y trampas ── */
+  {
+    const T = await import(pathToFileURL(path.join(RAIZ, 'scripts/lib/tablon.mjs')).href);
+    const malos = [];
+    for (const [e, es, fuente] of T.CASOS_EMPLEO) {
+      const x = { descripcion: '', procedimiento: '', categoria: '', ...e };
+      if (!!T.motivoEmpleo(x) !== es || (T.temaDe(x) === 'Empleo') !== es) malos.push((es ? 'no ve: ' : 've de más: ') + e.titulo.slice(0, 50) + ' (' + fuente + ')');
+    }
+    /* lo que lleva nombres sigue fuera antes de ponerle tema (las listas de una bolsa no llegan a «Empleo») */
+    if (!T.motivoPersonal({ titulo: 'Lista provisional de aspirantes admitidos y excluidos de la bolsa de trabajo', descripcion: '', procedimiento: '', categoria: '' })) malos.push('una lista de admitidos de una bolsa no se excluye');
+    /* una persona lo corrige con `tema` y `tema_manual` (se conserva al refrescar) */
+    const f = T.fusionar([{ url: 'u', titulo: 'Anuncio', descripcion: '', procedimiento: '', categoria: '' }], [{ url: 'u', tema: 'Empleo', tema_manual: true }]);
+    if (f[0].tema !== 'Empleo') malos.push('el tema manual no se conserva');
+    const reales = T.CASOS_EMPLEO.filter(c => !/trampa|inventado/.test(c[2])).length;
+    comprobar(!malos.length, `v3c F23 · empleo en el tablón (Node): ${T.CASOS_EMPLEO.length} títulos (${reales} reales del BOP y de los tablones, el resto trampas) se clasifican bien, las listas con nombres siguen fuera y un tema puesto a mano se conserva` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+  }
+
+  /* ── F23 · 2. la ficha «Empleo» de «Hoy» (Node, fechas fijas) ── */
+  {
+    const V = cargarVivo(), malos = [];
+    const hoy = V.ahoraEn('Europe/Madrid', new Date('2026-10-14T10:00:00+02:00'));
+    const rutas = { tramites: 't.html', avisos: 'avisos.html', agenda: 'a.html', noticia: 'n-{id}.html', media: 'media/' };
+    const base = { nombre_corto: 'P', horario: { texto: 'x', tramos: [] }, agenda: [], noticias: [], avisos: [], tablon: { entradas: [] }, rutas, tramites_sede: 1 };
+    const oferta = o => ({ fecha: '2026-10-05', tema: 'Empleo', titulo: 'T', titulo_claro: 'Bolsa de socorristas', url: 'https://sede/x', expediente: '9/2026', ...o });
+    const ficha = D => (V.pintar('hoy', { ...base, ...D }, hoy).match(/<li class="hoy__fila hoy__fila--empleo"[\s\S]*?<\/li>/) || [null])[0];
+    const abierta = ficha({ tablon: { entradas: [oferta({ plazo_fin: '2026-10-20' }), oferta({ titulo_claro: 'Otra', url: 'https://sede/y', plazo_fin: '2026-10-30' })] } });
+    if (!abierta || !/Empleo/.test(abierta) || !/href="https:\/\/sede\/x"/.test(abierta) || !/Quedan 6 días/.test(abierta) || !/href="avisos\.html\?tema=Empleo#t-tablon-todo">Las 2 ofertas/.test(abierta)) malos.push('con dos ofertas abiertas: ' + abierta);
+    if (ficha({ tablon: { entradas: [oferta({ plazo_fin: '2026-10-10' })] } })) malos.push('sale con el plazo cerrado');
+    if (ficha({ tablon: { entradas: [oferta({ plazo_inicio: '2026-10-20' })] } })) malos.push('sale con el plazo sin abrir');
+    if (ficha({ tablon: { entradas: [oferta({})] } })) malos.push('sale sin plazo');
+    if (ficha({ tablon: { entradas: [oferta({ tema: 'Ayudas', plazo_fin: '2026-10-20' })] } })) malos.push('sale con algo que no es empleo');
+    const propio = ficha({ avisos: [{ id: 'e', fecha: '2026-10-05', tema: 'Empleo público', titulo: 'Oferta', plazo_fin: '2026-10-20', ejemplo: true }] });
+    if (!propio || !/data-dato-ejemplo="aviso:e"/.test(propio) || !/class="ejemplo">Ejemplo/.test(propio) || !/href="avisos\.html#aviso-e"/.test(propio)) malos.push('aviso propio de ejemplo: ' + propio);
+    const tab = V.pintar('tablon', { ...base, avisos: [{ id: 'e', fecha: '2026-10-05', tema: 'empleo', titulo: 'Oferta' }] }, hoy);
+    if (!/data-tema="Empleo"[\s\S]*<span class="chip chip--empleo"><svg[^>]*><use href="#i-empleo"\/><\/svg>Empleo<\/span>/.test(tab)) malos.push('el chip de empleo (o el tema que se junta) en el tablón');
+    comprobar(!malos.length, 'v3c F23 · la ficha «Empleo» de «Hoy» (Node): sale con una oferta de plazo abierto (la que cierra antes, con su chip, su enlace y «Las N ofertas…» a avisos.html?tema=Empleo) y no sale con el plazo cerrado, sin abrir, sin plazo ni con otro tema; «Ejemplo» si lo es; el chip con maletín y «Empleo público» junto a «Empleo»' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* ── F23 · 3. en el navegador: la muestra de Ribera, la ficha, el filtro desde «?tema=Empleo» ── */
+  {
+    const malos = [], viol = [];
+    const muestra = contenido('avisos').avisos.find(a => !a.oculto && /^empleo/i.test(a.tema || '') && a.plazo_fin);
+    const realEmpleo = (contenido('tablon').entradas || []).some(t => !t.oculto && /^empleo/i.test(t.tema || ''));
+    if (muestra && !muestra.ejemplo && !realEmpleo) malos.push('el empleo de muestra no lleva «ejemplo»');
+    if (muestra) {
+      const antes = new Date(muestra.plazo_fin + 'T10:00:00+01:00'); antes.setUTCDate(antes.getUTCDate() - 3);
+      const despues = new Date(muestra.plazo_fin + 'T10:00:00+01:00'); despues.setUTCDate(despues.getUTCDate() + 2);
+      for (const [cuando, debe] of [[antes, true], [despues, false]]) {
+        const { ctx, page, errores } = await nueva({ viewport: { width: 1280, height: 900 } });
+        await page.clock.setFixedTime(cuando);
+        await ir(page, 'index.html');
+        const r = await page.evaluate(() => { const f = document.querySelector('.hoy__fila--empleo'); return f ? { visible: f.checkVisibility(), ejemplo: !!f.querySelector('.ejemplo'), enlace: f.querySelector('.hoy__valor a').getAttribute('href'), todo: f.querySelector('.hoy__nota a').getAttribute('href') } : null; });
+        if (debe && (!r || !r.visible || !r.ejemplo || r.enlace !== 'avisos.html#aviso-' + muestra.id)) malos.push('con el plazo abierto: ' + JSON.stringify(r));
+        if (!debe && r) malos.push('con el plazo cerrado sigue la ficha');
+        if (debe) {
+          await axeEn(page, 'portada con la ficha', viol);
+          await Promise.all([page.waitForURL(/avisos\.html/), page.click('.hoy__fila--empleo .hoy__nota a')]);
+          await page.waitForLoadState('networkidle');
+          const f = await page.evaluate(() => { const c = document.querySelector('#t-tablon-todo').closest('section').querySelector('.tablon');
+            const filas = [...c.querySelectorAll('.tablon__fila')].filter(x => !x.hidden);
+            return { pulsado: (c.querySelector('.filtro[aria-pressed="true"]') || {}).textContent, filas: filas.length, temas: [...new Set(filas.map(x => x.getAttribute('data-tema')))], url: location.pathname + location.search,
+              chip: !!c.querySelector('.tablon__fila:not([hidden]) .chip--empleo svg') }; });
+          if (f.pulsado !== 'Empleo' || !f.filas || f.temas.join() !== 'Empleo' || !f.chip || !/avisos\.html\?tema=Empleo/.test(f.url)) malos.push('«Todo el empleo» → ' + JSON.stringify(f));
+          /* y el filtro, a mano: «Todos» vuelve a enseñarlo todo */
+          await page.click('.filtro[data-tema=""]');
+          if (await page.evaluate(() => [...document.querySelectorAll('#t-tablon-todo ~ .tablon .tablon__fila')].filter(x => !x.hidden).length) <= f.filas) malos.push('«Todos» no enseña más que «Empleo»');
+          await axeEn(page, 'avisos con el filtro de empleo', viol);
+        }
+        if (errores.length) malos.push('consola: ' + errores.slice(0, 2).join(' | '));
+        await ctx.close();
+      }
+    }
+    comprobar(!malos.length && !viol.length, muestra ? `v3c F23 · empleo en la web: «${muestra.titulo}» (${muestra.ejemplo ? 'de muestra, con «Ejemplo»' : 'real'}) sale en la ficha «Empleo» de «Hoy» mientras su plazo está abierto y no después; «Todo el empleo» abre Avisos con el filtro «Empleo» puesto, solo filas de empleo y su chip con maletín; 0 violaciones de axe` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : '') + (viol.length ? ' → axe: ' + viol.slice(0, 3).join(' | ') : '')
+      : 'v3c F23 · empleo en la web: no hay ningún aviso de empleo con plazo (ni real ni de muestra)' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* ── F24 · «Escríbanos»: sin JS, validación, el mailto, copiar, axe y sin correo no sale ── */
+  {
+    const correo = M.escribanos === false ? null : (M.escribanos && M.escribanos.correo) || M.contacto.correo;
+    const malos = [], viol = [];
+    const h = fs.existsSync(path.join(RAIZ, 'escribanos.html')) ? leer(RAIZ, 'escribanos.html') : '';
+    if (correo && !h) malos.push('con correo no hay escribanos.html');
+    const formHtml = (h.match(/<form\b[^>]*data-escribanos[^>]*>/) || [''])[0];
+    if (!formHtml.includes('action="mailto:' + correo + '?subject=') || !/method="post"/.test(formHtml) || !/enctype="text\/plain"/.test(formHtml) || /novalidate/.test(formHtml)) malos.push('respaldo: ' + formHtml);
+    for (const n of ['tipo', 'asunto', 'mensaje']) if (!new RegExp('name="' + n + '"[^>]*required').test(h)) malos.push('sin JS, «' + n + '» no es obligatorio');
+    if (!/href="escribanos\.html"/.test(leer(RAIZ, 'contacto.html'))) malos.push('Contacto no enlaza «Escríbanos»');
+    /* lo que tiene efectos legales, al registro de la sede, con su enlace */
+    const registro = (h.match(/<div class="escribanos-registro">[\s\S]*?<\/ul>/) || [''])[0];
+    const instancia = M.sede.tipo === 'gestiona' ? sedeBase + '/catalog/t/' + M.sede.instancia_general : M.sede.instancia_general;
+    if (!/no es un registro/.test(registro) || !registro.includes('href="' + instancia.replace(/&/g, '&amp;') + '"')) malos.push('no dice que lo legal va por el registro de la sede');
+    const sj = await navegador.newContext({ javaScriptEnabled: false });
+    const pj = await sj.newPage();
+    await pj.goto(BASE + 'escribanos.html', { waitUntil: 'networkidle' });
+    const sinJs = await pj.evaluate(() => ({ form: document.querySelector('[data-escribanos]').checkVisibility(), listo: document.querySelector('[data-escribanos-listo]').checkVisibility() }));
+    await sj.close();
+    if (!sinJs.form || sinJs.listo) malos.push('sin JS: ' + JSON.stringify(sinJs));
+
+    const { ctx, page, errores } = await nueva({ viewport: { width: 390, height: 844 } });
+    await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE.replace(/\/$/, '') });
+    await ir(page, 'escribanos.html');
+    await page.click('[data-escribanos] [type="submit"]');
+    const errs = await page.evaluate(() => {
+      const r = document.querySelector('[data-escribanos-errores]');
+      const enlazado = el => { const err = (el.getAttribute('aria-describedby') || '').split(/\s+/).map(i => document.getElementById(i)).find(x => x && x.classList.contains('campo__error'));
+        return el.getAttribute('aria-invalid') === 'true' && !!err && err.checkVisibility() && err.textContent.trim().length > 10; };
+      return { visible: r.checkVisibility(), foco: document.activeElement === r, enlaces: [...r.querySelectorAll('a')].map(a => a.getAttribute('href')), primero: '#' + document.querySelector('input[name="tipo"]').id,
+        enlazados: [document.getElementById('campo-tipo'), document.getElementById('campo-asunto'), document.getElementById('campo-mensaje')].map(enlazado), opcional: document.getElementById('campo-correo').hasAttribute('aria-invalid') };
+    });
+    if (!errs.visible || !errs.foco || errs.enlaces.join() !== [errs.primero, '#campo-asunto', '#campo-mensaje'].join() || errs.enlazados.includes(false) || errs.opcional) malos.push('validación vacía: ' + JSON.stringify(errs));
+    await axeEn(page, 'escríbanos con errores', viol);
+    await page.click('[data-escribanos-errores] a[href="#campo-mensaje"]');
+    if (!(await page.evaluate(() => document.activeElement.id === 'campo-mensaje'))) malos.push('el enlace del resumen no lleva el foco al campo');
+    /* un teléfono opcional mal escrito también se avisa */
+    await page.check('input[name="tipo"][value="Sugerencia"]');
+    await page.fill('#campo-asunto', 'Bancos en la plaza');
+    await page.fill('#campo-mensaje', 'Estaría bien poner más bancos.');
+    await page.fill('#campo-telefono', '12ab');
+    await page.click('[data-escribanos] [type="submit"]');
+    const e2 = await page.evaluate(() => [...document.querySelectorAll('[data-escribanos-errores] a')].map(a => a.getAttribute('href')).join());
+    if (e2 !== '#campo-telefono') malos.push('teléfono mal escrito: ' + e2);
+    const datos = { asunto: 'Bancos & sombra; ¿en la plaza?', mensaje: 'Estaría bien poner más bancos.\nY algo de sombra & agua; ¿se puede?', nombre: 'Vecino de Prueba', telefono: '600 123 456', correo: 'vecino@ejemplo.es' };
+    await page.fill('#campo-asunto', datos.asunto); await page.fill('#campo-mensaje', datos.mensaje);
+    await page.fill('#campo-nombre', datos.nombre); await page.fill('#campo-telefono', datos.telefono); await page.fill('#campo-correo', datos.correo);
+    await page.click('[data-escribanos] [type="submit"]');
+    const ok = await page.evaluate(() => { const l = document.querySelector('[data-escribanos-listo]');
+      return { visible: l.checkVisibility(), foco: document.activeElement === l, titulo: l.querySelector('h3').textContent, formOculto: !document.querySelector('[data-escribanos]').checkVisibility(),
+        href: document.querySelector('[data-escribanos-mailto]').getAttribute('href'), texto: document.querySelector('[data-escribanos-texto]').value }; });
+    const q = ok.href.indexOf('?'), dest = ok.href.slice(7, q), params = {};
+    for (const par of ok.href.slice(q + 1).split('&')) { const [k, v] = par.split('='); params[k] = decodeURIComponent(v); }
+    const cuerpo = params.body || '';
+    if (!ok.visible || !ok.foco || !ok.formOculto || ok.titulo !== 'Su mensaje está listo') malos.push('listo: ' + JSON.stringify({ ...ok, href: undefined, texto: undefined }));
+    if (dest !== correo || !/^mailto:[^?]+\?subject=[^&]+&body=[^&]+$/.test(ok.href) || /[\s<>"]/.test(ok.href)) malos.push('mailto mal formado: ' + ok.href.slice(0, 120));
+    if (params.subject !== 'Sugerencia: ' + datos.asunto) malos.push('asunto: ' + params.subject);
+    const faltan = ['Sugerencia', datos.asunto, ...datos.mensaje.split('\n'), datos.nombre, datos.telefono, datos.correo].filter(x => !cuerpo.includes(x));
+    if (faltan.length) malos.push('al cuerpo le falta: ' + faltan.join(' | '));
+    if (/[^\r]\n/.test(cuerpo) || !cuerpo.includes('\r\n')) malos.push('el cuerpo no usa CRLF');
+    if (!ok.texto.includes(params.subject) || !ok.texto.includes(correo)) malos.push('el texto para copiar no lleva el asunto y el destinatario');
+    await axeEn(page, 'escríbanos listo', viol);
+    await page.click('[data-escribanos-copiar]');
+    await page.waitForFunction(() => document.querySelector('[data-escribanos-copiar-estado]').textContent.length > 5, null, { timeout: 3000 }).catch(() => malos.push('«Copiar el texto» no dice nada'));
+    /* largo: lo avisa; y «Cambiar algo» vuelve al formulario con lo escrito */
+    await page.click('[data-escribanos-volver]');
+    if (await page.inputValue('#campo-asunto') !== datos.asunto) malos.push('al volver se pierde lo escrito');
+    await page.fill('#campo-mensaje', 'Más bancos en la plaza. '.repeat(90));
+    await page.click('[data-escribanos] [type="submit"]');
+    const largo = await page.evaluate(() => ({ aviso: document.querySelector('[data-escribanos-largo]').checkVisibility(), n: document.querySelector('[data-escribanos-mailto]').href.length, max: window.Escribanos.LARGO_MAX }));
+    if (!(largo.n > largo.max) || !largo.aviso) malos.push('texto largo: ' + JSON.stringify(largo));
+    if (errores.length) malos.push('consola: ' + errores.slice(0, 2).join(' | '));
+    await ctx.close();
+
+    /* sin correo («escribanos»: false, o sin contacto.correo con --forzar) no se genera ni se enlaza */
+    for (const caso of ['escribanos: false', 'sin contacto.correo']) {
+      const d2 = copiar();
+      try {
+        const m = JSON.parse(fs.readFileSync(path.join(d2, 'municipio.json'), 'utf8'));
+        if (caso === 'escribanos: false') m.escribanos = false; else { delete m.escribanos; m.contacto.correo = ''; }
+        fs.writeFileSync(path.join(d2, 'municipio.json'), JSON.stringify(m, null, 2));
+        const ap = spawnSync('node', [path.join(d2, 'scripts/aplicar.mjs'), '--sin-og', '--silencio', ...(caso === 'sin contacto.correo' ? ['--forzar'] : [])], { encoding: 'utf8', cwd: d2 });
+        const restos = fs.readdirSync(d2).filter(f => f.endsWith('.html')).filter(f => /href="escribanos\.html/.test(fs.readFileSync(path.join(d2, f), 'utf8')));
+        if (ap.status !== 0 || fs.existsSync(path.join(d2, 'escribanos.html')) || restos.length) malos.push(caso + ': ' + JSON.stringify({ status: ap.status, existe: fs.existsSync(path.join(d2, 'escribanos.html')), restos, err: (ap.stderr || '').slice(-200) }));
+      } finally { fs.rmSync(d2, { recursive: true, force: true }); }
+    }
+    comprobar(!malos.length && !viol.length, `v3c F24 · «Escríbanos»: respaldo sin JS (form mailto text/plain con tipo, asunto y mensaje obligatorios), dice que lo legal va por el registro de la sede, validación accesible (resumen con el foco y un enlace por error, aria-invalid y error enlazado), un mailto a ${correo} con «Tipo: asunto» y el cuerpo codificado (todos los campos, CRLF), «Su mensaje está listo» con el foco, «Copiar el texto», aviso si es largo, enlazada desde Contacto, 0 violaciones de axe con errores y lista, y sin correo no se genera` + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : '') + (viol.length ? ' → axe: ' + viol.slice(0, 3).join(' | ') : ''));
+  }
+}
+
 /* ═════════════ orden ═════════════ */
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
@@ -3540,6 +3805,7 @@ for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', pa
   ['v3bservicio', v3bServicio],
   ['v3bpueblo', v3bPueblo],
   ['v3binteriores', v3bInteriores],
+  ['v3ctransparencia', v3cTransparencia],
   ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();
