@@ -1,6 +1,6 @@
 # Informe · rama `v3c-guia` («guia»: la cara de «publicar» para el Ayuntamiento)
 
-**Verificación completa: 162 de 162 comprobaciones en 1050 s (las 157 de la v3 y las 5 nuevas)** (`node scripts/verificar.mjs`, con el bloque nuevo `v3cGuia`).
+**Verificación completa: 162 de 162 comprobaciones en 807 s (las 157 de la v3 y las 5 del bloque nuevo; tras F18 bis)** (`node scripts/verificar.mjs`, con el bloque nuevo `v3cGuia`).
 
 ---
 
@@ -10,14 +10,14 @@
 - Un Google Apps Script para pegar en script.google.com con la cuenta del Ayuntamiento y ejecutar una vez (`crearHojaDeLaWeb`). Crea:
   - la carpeta «Web del Ayuntamiento» en su Drive, con todo dentro;
   - la hoja «Web del Ayuntamiento», privada, con zona horaria de Madrid y configuración regional `es_ES`;
-  - tres formularios: «Publicar un aviso en la web», «Publicar un acto en la agenda» y «Publicar una noticia en la web». Cada pregunta se titula como la columna que lee la web, en el orden de `plantillas-hoja/*.csv`. Las obligatorias son Fecha y Título. Gravedad es de opción única (informativo / programado / urgente); Tema, un desplegable (`TEMAS`, editable arriba); «Título corto» va con validación ≤ 70; Convocatoria y Grabación, con validación de URL; «Tipo», una casilla «pleno». Ninguno recoge correos. Todos permiten «Editar su respuesta» y llevan mensaje de confirmación;
+  - tres formularios: «Publicar un aviso en la web», «Publicar un acto en la agenda» y «Publicar una noticia en la web». Cada pregunta se titula como la columna que lee la web, en el orden de `plantillas-hoja/*.csv`. Las obligatorias son Fecha y Título. Gravedad es de opción única (informativo / programado / urgente); Tema, un desplegable (`TEMAS`, editable arriba); «Título corto» va con validación ≤ 70; Convocatoria y Grabación, con validación de URL; «Tipo», una casilla «pleno». Todos recogen el correo de quien responde (F18 bis) y permiten «Editar su respuesta» y llevan mensaje de confirmación;
   - una pestaña de respuestas por formulario («Respuestas avisos/agenda/noticias»), con «Estado» en la primera columna libre (lleva una nota que lo explica);
   - las pestañas que se publican («Avisos», «Agenda», «Noticias»), cada una con su `QUERY`. Las letras de las columnas se calculan de la cabecera real de las respuestas. Solo copia las columnas de la web más «Estado», nunca la A (marca temporal), y va protegida con aviso;
   - la pestaña «Léame»: el paso manual de publicar y el bloque `hoja` para `municipio.json`;
   - el mismo bloque en el registro de ejecución (`Logger.log`).
 - Opciones arriba del todo:
-  - `AVISAR_POR_CORREO` (de serie, `true`): un activador `onFormSubmit` manda un correo a la cuenta del Ayuntamiento con cada envío. Sirve para enterarse si un enlace se ha escapado;
-  - `SOLO_CUENTAS_DE_LA_ORGANIZACION`: `setRequireLogin`, solo con Workspace; dentro de un try.
+  - `AVISAR_POR_CORREO` (de serie, `true`): un activador `onFormSubmit` manda un correo a la cuenta del Ayuntamiento con cada envío y quién lo mandó;
+  - `OTRAS_PERSONAS` (F18 bis): más correos autorizados desde el principio.
 - **No se ha podido ejecutar en Google** (no hay cuenta en este entorno). Está escrito con la API documentada (SpreadsheetApp, FormApp, DriveApp, ScriptApp, MailApp). Se ha comprobado de tres formas:
   - `node --check` sobre una copia `.js` en `_scratch/`;
   - `vm.Script` en la prueba;
@@ -37,6 +37,37 @@
   - `formularios` en el bloque de `municipio.json`;
   - la fila «Noticias» en la tabla de columnas.
 - `plantillas-hoja/noticias.csv`: la plantilla de la pestaña de noticias (Fecha, Título, Resumen, Texto, Estado).
+
+### F18 bis · Solo publican las personas autorizadas (pedido por el coordinador)
+- **El problema:** un formulario abierto enlazado desde una página pública permitía que cualquiera publicara un aviso «urgente» falso en la franja roja. El correo de aviso llega tarde y casi ningún ayuntamiento pequeño tiene Workspace.
+- **La solución, sin Workspace:**
+  1. Los tres formularios piden el correo (`setCollectEmail(true)`).
+  2. El script crea la pestaña **privada «Personas autorizadas»** (A: correo, B: quién es), con el correo de quien lo ejecuta (`Session.getEffectiveUser().getEmail()`) y los de `OTRAS_PERSONAS`.
+  3. Cada pestaña de respuestas lleva, tras «Estado», la columna **«Autorizada»**: una sola fórmula en la cabecera, `={"Autorizada"; ARRAYFORMULA(IF(B2:B = "", "", IF(ISNUMBER(MATCH(LOWER(TRIM(B2:B)), LOWER(TRIM('Personas autorizadas'!A2:A)), 0)), "sí", "no")))}`. La letra del correo se busca en la cabecera real.
+  4. La `QUERY` de cada pestaña publicada filtra `where <Título> is not null and <Autorizada> = 'sí'` y no copia ni la marca temporal, ni el correo, ni «Autorizada».
+
+  Lo que mande cualquier otra cuenta se queda en las respuestas, privado, y no llega a la web (ni a la tarea diaria, que lee las mismas pestañas publicadas). Quitar a alguien de la lista deja de copiar también lo que ya había mandado.
+- **Qué deja fijar la API y qué no** (consultada la referencia de `Form` en developers.google.com, octubre de 2026):
+  - solo existe `setCollectEmail(collect)`, sin forma de elegir «Verificado» frente a «lo escribe quien responde»;
+  - `setRequireLogin` / `requiresLogin` salen como **obsoletos** y solo restringen a un dominio de Workspace, así que lo he quitado (también la opción `SOLO_CUENTAS_DE_LA_ORGANIZACION`);
+  - hay métodos nuevos de lectores (`addPublishedReader`, `supportsAdvancedResponderPermissions`) cuya documentación no dice cuándo funcionan. No los uso: la lista de la hoja hace de filtro igual en Gmail y en Workspace.
+
+  Por eso, **comprobar en cada formulario «Recopilar direcciones de correo electrónico → Verificado» es un paso a mano**, y está escrito en el «Léame» (paso A), en el registro de ejecución, en PUBLICAR.md (paso 2.A del camino corto, y en el camino manual) y en las casillas de RESPUESTA-CLIENTE.md. Sin «Verificado», cualquiera podría escribir un correo autorizado.
+- **Lo que cambia en los textos:**
+  - **PUBLICAR.md**:
+    - el camino corto dice quién publica, el paso 2.A (correo «Verificado»), dos comprobaciones nuevas (el formulario pide entrar con Google; un envío de una cuenta no autorizada no llega a «Avisos») y «Añadir y quitar personas»;
+    - en el camino manual, el paso 2.4 («no recopilar correos») pasa a «Verificado», hay un recuadro con la pestaña, la fórmula y el filtro, y las letras de la `QUERY` de ejemplo van corridas por la columna del correo;
+    - «Quien tiene el formulario, publica» pasa a «Solo publican las personas autorizadas»;
+    - «borrador» se dice **no privado** en tres sitios.
+  - **publicar.html**:
+    - una línea destacada: «Para publicar hay que entrar con una cuenta de Google autorizada por el Ayuntamiento. Para añadir a alguien, se escribe su correo de Google en la pestaña «Personas autorizadas»…»;
+    - el paso 1, «Entre con su cuenta de Google autorizada»;
+    - «Si no sale», la cuenta no autorizada;
+    - «Borrador»: «no es privado»;
+    - ya no dice que lo que se manda lo lea cualquiera, sino lo que se publica.
+  - **RESPUESTA-CLIENTE.md**: en la corta, «Solo publican las personas que el Ayuntamiento autorice». En la larga, «Quién puede publicar» reescrito (sin lo de «el enlace es una llave»), y una casilla más: comprobar que los formularios piden entrar con Google.
+  - **El mensaje de confirmación** del formulario: «Si su cuenta está autorizada, saldrá en la web en unos minutos».
+- **La hoja impresa** sigue en una A4: lleva la línea de las cuentas autorizadas. Para que quepa, en papel los títulos de ejemplo solo salen en su versión buena e interlineado 1,25.
 
 ### F19 · `publicar.html` «Publicar en la web»
 - Página nueva desde `fuente/publicar.html`, con `css/publicar.css` y `js/publicar.js` (cargados solo ahí, por `estilos`/`scripts` de `PAGINAS`) y el pictograma nuevo `p-publicar` (un móvil con el formulario).
@@ -81,7 +112,7 @@
   - lo que llega solo (abierto ahora, farmacia, fiestas, fechas y el tablón, este «con su autorización por escrito»);
   - lo que se le pide a Álvaro;
   - lo que no va por ahí;
-  - quién puede publicar (el enlace es una llave, el correo de cada envío, Workspace).
+  - quién puede publicar: solo las cuentas de «Personas autorizadas», con cómo añadir y quitar (F18 bis).
 - Al final, dos casillas para antes de mandarlo (que la actualización diaria esté encendida en ese pueblo y que el simulador abra) y lo que **no** conviene prometer: redes o Bandomóvil, fotos por formulario, el tablón sin autorización.
 
 ### F21 · `propuesta.html`
@@ -117,6 +148,7 @@
 **Nuevas**, en `v3cGuia()` (registrada como `['v3cguia', v3cGuia]`), 5 comprobaciones:
 1. publicar.html:
    - `noindex`, fuera del menú y con el enlace del pie en las 27 páginas;
+   - (F18 bis) dice «Para publicar hay que entrar con una cuenta de Google autorizada por el Ayuntamiento.» y nada de «cualquiera con el enlace» o «quien tenga el enlace»;
    - sin `formularios`, ningún `<a class="publicar-boton">` y los tres huecos con «Se activa al montar la hoja…»;
    - **en una copia** con `hoja.id`, las tres URLs e `indexar: true`: los botones van a esas URLs, publicar.html sigue con `noindex` (y la portada ya no lo lleva), y las URLs no aparecen en ninguna otra página;
    - con una URL `http://`, `aplicar.mjs` se niega.
@@ -135,21 +167,24 @@
    - compila;
    - ejecutado contra la imitación de la API, crea los 3 formularios;
    - las preguntas, normalizadas como `js/main.js`, son iguales a la cabecera de `plantillas-hoja/<tipo>.csv` y están en las columnas que lee la web (avisos y agenda: `COLUMNAS` de `comprobar-hoja.mjs`; noticias: fecha, título, resumen, texto);
-   - obligatorias, solo fecha y título; `setCollectEmail(false)`; destino, la hoja;
-   - cada QUERY sale de su pestaña de respuestas y elige, por letra, exactamente las preguntas más «Estado», sin la A, filtrando por la columna «Título»;
+   - obligatorias, solo fecha y título; **`setCollectEmail(true)`** (F18 bis); destino, la hoja;
+   - existe la pestaña **«Personas autorizadas»** con el correo de quien ejecuta (la imitación de `Session` da `ayuntamiento@ejemplo.es`), que no es una de las pestañas que se publican, y el «Léame» explica los autorizados y el «Verificado»;
+   - la columna **«Autorizada»** de cada pestaña de respuestas compara la columna del correo (la de la cabecera) con `'Personas autorizadas'!A2:A`;
+   - cada QUERY sale de su pestaña de respuestas y elige, por letra, exactamente las preguntas más «Estado», sin la A, **sin la columna del correo ni «Autorizada»**, filtrando por «Título» y **por «Autorizada» = 'sí'**;
    - el bloque `hoja` lleva el id, las pestañas de `municipio.json` y las 3 URLs https, también en el registro;
    - el «Léame» lleva el id y el paso de publicar;
    - el orden de las pestañas.
 5. La propuesta: 3 pasos y el enlace a `publicar.html#t-pruebelo`.
 
-**Cambiadas:** ninguna. publicar.html entra sola en las generales (axe en las 6 combinaciones, desborde, estructura, «Ejemplo», banda, noindex, medida…). Para la medida de 75 caracteres, en publicar.html los párrafos van a `32.5em` (con las negritas, uno daba 76).
+**Cambiadas:** de las de antes, ninguna. Dentro de `v3cGuia`, F18 bis cambia la comprobación 4: de `setCollectEmail(false)` a `true`, y la QUERY debe llevar el filtro de «Autorizada». Las mutaciones lo detectan: sin el filtro, la prueba falla, y con `setCollectEmail(false)` el script se para porque no encuentra la columna del correo. publicar.html entra sola en las generales (axe en las 6 combinaciones, desborde, estructura, «Ejemplo», banda, noindex, medida…). Para la medida de 75 caracteres, en publicar.html los párrafos van a `32.5em` (con las negritas, uno daba 76).
 
 ## Lo que no se pudo y por qué
 
 - **Ejecutar crear-hoja.gs en Google**: no hay cuenta. Se ha probado con la imitación (qué llama y en qué orden), pero la imitación la he escrito yo con los nombres de la API documentada: no prueba que Google se comporte así. Lo más delicado, por si falla la primera vez:
   1. que `setDestination` cree la pestaña de respuestas con la cabecera ya escrita. Si no, el script la escribe él con los mismos títulos. Si la pestaña tarda, el error dice que se siga a mano con PUBLICAR.md;
   2. `setFormula` con comas (Apps Script usa la sintaxis en inglés aunque la hoja esté en español);
-  3. `setCollectEmail`, marcado como antiguo en la API; va en un try y de todas formas es lo de serie.
+  3. la fórmula de «Autorizada» (array literal + `ARRAYFORMULA` en la cabecera de una pestaña de respuestas de formulario: es el patrón habitual, pero no lo he podido ver funcionar);
+  4. **que `setCollectEmail(true)` deje el correo en «Verificado»**: la API no lo dice. Por eso es un paso a mano y la prueba de PUBLICAR.md (paso 3) envía desde una cuenta no autorizada.
 - **Publicar las pestañas desde el script**: no hay API para publicar pestañas sueltas. Va paso a paso.
 - **QR en la hoja impresa** para abrir los formularios: haría falta un generador de QR en la web (o una petición a terceros). En papel se escribe la dirección de `publicar.html`.
 
@@ -166,8 +201,8 @@
 
 ## Dudas para Álvaro
 
-1. **La página es pública.** No sale en buscadores ni en el menú, pero quien la abra ve los botones y puede publicar. El script deja de serie el correo de cada envío a la cuenta del Ayuntamiento, y con Workspace se puede exigir iniciar sesión. Si un ayuntamiento no lo quiere a la vista, la alternativa es dejar `hoja.formularios` vacío y darles los enlaces solo en papel o en un marcador del móvil. ¿Lo dejamos así?
-2. **Lo enviado se puede leer** en la pestaña publicada, también lo que quede en `borrador` (la página y PUBLICAR lo dicen: «nada que no pueda ser público»). No filtré `borrador`/`oculto` en la QUERY: así la web y la tarea diaria ven el `oculto` y quitan al momento lo que ya estaba montado.
+1. ~~La página es pública~~ → **resuelta en F18 bis**: solo publican las cuentas de «Personas autorizadas». Lo que queda es que alguien compruebe a mano el «Verificado» de los tres formularios al montarlos (PUBLICAR.md, paso 2.A).
+2. **Lo publicado se puede leer** en la pestaña publicada, también lo que quede en `borrador`, y la guía dice que «borrador» **no es privado** (publicar.html, PUBLICAR.md, el «Léame»). Lo de cuentas no autorizadas ya no llega a esa pestaña. Como pidió el coordinador, `borrador`/`oculto` no se filtran en la QUERY: así la web y la tarea diaria ven el `oculto` y quitan al momento lo que ya estaba montado.
 3. El aviso del **periodo electoral** cita la LOREG, art. 50, sin más detalle. Si prefiere no entrar en eso en la guía, es una viñeta.
 4. Los temas del formulario de avisos (Agua, Obras, Tráfico, Cultura, Deporte, Empleo, Salud, Seguridad, Otros) son los de PUBLICAR más «Seguridad», que usaba la plantilla CSV. Se cambian arriba del script.
-5. La hoja impresa sale a 8,4 pt para caber en una A4. Si se queda pequeña, se puede quitar «Un buen título» del papel o imprimirla a dos caras.
+5. La hoja impresa sale a 8,4 pt para caber en una A4 (y, desde F18 bis, sin los «No:» de los títulos de ejemplo). Si se queda pequeña, se puede quitar «Un buen título» del papel o imprimirla a dos caras.
