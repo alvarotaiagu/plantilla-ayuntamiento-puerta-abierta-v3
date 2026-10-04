@@ -70,6 +70,16 @@ for (const [n, d] of [['municipio.json', M], ['contenido/avisos.json', C.avisos]
 for (const f of ['marca/escudo-160.png', 'marca/escudo-480.png', 'marca/favicon-64.png'])
   if (!existe(f)) errores.push('Falta ' + f + ': ejecuta node scripts/escudo.mjs ruta/al/escudo.svg');
 if (!existe('css/fuentes.css')) errores.push('Falta css/fuentes.css: ejecuta node scripts/fuentes.mjs');
+/* v3c · alta: un municipio.json a medias (el borrador de scripts/nuevo-municipio.mjs, con null en lo
+   que no se encontró) se para AQUÍ, con la lista entera de lo que falta, antes de que lo de abajo
+   tropiece con un null. Ni con --forzar: sin esto no hay web que escribir */
+for (const [c, que] of [['servicios', 'el listín: [{nombre, telefono, grupo…}]'], ['tramites.todos', 'el catálogo de trámites de su sede']])
+  if (!Array.isArray(valor(M, c))) errores.push(`municipio.json: falta «${c}» (${que}; RESKIN.md §3)`);
+if (M._borrador) avisos.push(`municipio.json sigue marcado como borrador ("_borrador": true): repasa ALTA-${M.slug || '<slug>'}.md y quita la marca`);
+if (errores.some(e => e.startsWith('municipio.json: falta'))) {
+  console.error(`\n✗ No se escribe nada: faltan datos obligatorios de municipio.json${M._borrador ? ` (es un borrador de nuevo-municipio.mjs: en ALTA-${M.slug || '<slug>'}.md está cada uno, con sus pistas)` : ''}. Arregla esto:\n  - ` + errores.join('\n  - ') + '\n');
+  process.exit(1);
+}
 
 const TEL = /^(\d{3} \d{3} \d{3}|\d{3})$/;
 const telefonos = [M.contacto.telefono, ...(M.servicios || []).map(s => s.telefono), ...(M.urgencias || []).map(s => s.telefono),
@@ -798,7 +808,10 @@ if (existe('marca/termino.svg') && existe('marca/termino.json')) {
     .map((l, i) => ({ n: i + 1, nombre: l.nombre, ancla: 'lugar-' + slugDe(l.nombre), x: l.x, y: l.y, osm: l.osm, ty: (l.y + 0.5).toFixed(1) }));
   for (const l of meta.lugares || []) if (!anclas.has('lugar-' + slugDe(l.nombre))) avisos.push(`marca/termino.json: «${l.nombre}» ya no está en pueblo.lugares ni en pueblo.patrimonio; su punto no sale`);
   if (s) termino = {
-    svg_cuerpo: s.cuerpo.replace(/\s*\n\s*/g, ''), viewbox: s.vb, puntos, radio: Math.round(Number(s.vb.split(/\s+/)[2]) / 40), letra: Math.round(Number(s.vb.split(/\s+/)[2]) / 40), hay_puntos: puntos.length > 0,
+    svg_cuerpo: s.cuerpo.replace(/\s*\n\s*/g, ''), viewbox: s.vb, puntos, radio: meta.radio_punto || Math.round(Number(s.vb.split(/\s+/)[2]) / 40), letra: meta.radio_punto || Math.round(Number(s.vb.split(/\s+/)[2]) / 40), hay_puntos: puntos.length > 0,
+    /* v3c · F25: el pueblo ampliado y las rayas de los círculos apartados (termino.mjs), en la leyenda */
+    recuadro_texto: meta.recuadro && meta.recuadro.escala_m ? (meta.recuadro.escala_m >= 1000 ? String(meta.recuadro.escala_m / 1000).replace('.', ',') + ' km' : meta.recuadro.escala_m + ' m') : null,
+    hay_guias: (meta.lugares || []).some(l => l.sitio),
     rutas_texto: (meta.rutas || []).length ? meta.rutas.map(r => r.nombre).join(', ').replace(/, ([^,]*)$/, ' y $1') : null, carreteras: (meta.carreteras || []).length ? (meta.carreteras || []).join(', ').replace(/, ([^,]*)$/, ' y $1') : null,
     atribucion: meta.atribucion || '© colaboradores de OpenStreetMap', atribucion_url: meta.atribucion_url || 'https://www.openstreetmap.org/copyright',
     fecha_texto: meta.fecha && ISO.test(meta.fecha) ? fechaTexto(meta.fecha) : null, fecha_iso: meta.fecha && ISO.test(meta.fecha) ? meta.fecha : null, muestra: meta.muestra || null,
@@ -820,6 +833,7 @@ const T_ES = {
   termino_lugares: 'Lugares del mapa', termino_leer: 'Cómo leerlo', clave_limite: 'Límite del término municipal (línea discontinua)',
   clave_casco: 'El pueblo (área sombreada)', clave_carreteras: 'Carreteras (línea gruesa)', clave_rutas: 'Rutas (línea de puntos)',
   clave_puntos: 'Círculo con número: un lugar de la lista', clave_escala: 'Escala: la barra de abajo mide',
+  clave_recuadro: 'Recuadro: el pueblo ampliado; su barra mide', clave_guia: 'Raya fina con un punto: el sitio exacto, cuando el número se ha apartado para que se lea',
   fiesta_mayor: 'Fiesta mayor', sin_fiestas: 'Sin fiestas señaladas',
   /* lo de fuera de «El pueblo» que hay que traducir en su cabecera */
   migas: 'Usted está aquí', inicio: 'Inicio', en_esta_pagina: 'En esta página'

@@ -99,8 +99,9 @@ media/ + creditos.json  fotos con gradación común y su crédito
 fuente/*.html           plantillas (Mustache mínimo, como en plantilla-veterinaria-web)
 js/vivo.js              lo que cambia solo; lo ejecutan aplicar.mjs (Node) y el navegador
 scripts/                aplicar, escudo, marca-desde-escudo, fuentes, medir-letra,
-                        fotos, tablon, verificar, quitar_mandos, servir, og
+                        fotos, tablon, verificar, quitar_mandos, servir, og, nuevo-municipio
 pruebas/segura-de-leon/ el reskin de prueba (otro municipio real)
+pruebas/alta/06124/     respuestas guardadas de nuevo-municipio.mjs para Segura (v3c · alta)
 marca/perfil.*          el perfil del pueblo (perfil.json → scripts/perfil.mjs → perfil.svg)
 marca/plano.*           el plano del pie (scripts/plano.mjs, desde OpenStreetMap)
 marca/termino.*         el mapa del término en «El pueblo» (scripts/termino.mjs, desde OpenStreetMap; sin él, no sale)
@@ -110,7 +111,7 @@ css/imprimir.css        la web en papel y la hoja de teléfonos para la nevera
 ```
 
 La receta completa está en **[RESKIN.md](RESKIN.md)**. En resumen:
-1. rellenar `municipio.json`;
+1. rellenar `municipio.json` (v3c: `node scripts/nuevo-municipio.mjs <código INE>` escribe un borrador desde datos abiertos y la lista de lo que falta, RESKIN.md §0);
 2. `node scripts/escudo.mjs escudo.svg`;
 3. `python scripts/marca-desde-escudo.py`;
 4. `python scripts/fotos.py --lote …`;

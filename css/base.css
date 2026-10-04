@@ -1362,6 +1362,20 @@ a.calendario__dia:focus-visible { outline-offset: 1px; }
 .termino-punto circle, .termino-punto-clave { fill: var(--marca); stroke: var(--superficie); stroke-width: 2; }
 .termino-punto text { font-family: var(--f-texto); font-weight: 700; fill: var(--sobre-marca); pointer-events: none; }
 .termino-punto:hover circle { fill: var(--marca-fuerte); }
+/* ── v3c · F25. El pueblo ampliado en un recuadro, la zona que amplía y las rayas finas de los
+   círculos apartados (scripts/termino.mjs). Con la figura estrecha (un móvil), los círculos y los
+   rótulos de carretera crecen ×1,6 sobre su centro: termino.mjs ya los reparte con ese tamaño para
+   que tampoco entonces se pisen ── */
+.termino__figura { container-type: inline-size; }
+.termino-zona, .termino-marco { fill: none; stroke: var(--tinta); stroke-width: 1.6; }
+.termino-guia { fill: none; stroke: var(--tinta); stroke-width: 1; }
+.termino-sitio { fill: var(--tinta); }
+.termino-recuadro .termino-escala-texto { paint-order: stroke; stroke: var(--superficie); stroke-width: 4px; stroke-linejoin: round; }
+.termino-calle { fill: none; stroke: var(--apagado); stroke-width: .9; stroke-linecap: round; stroke-linejoin: round; }
+@container (max-width: 26rem) {
+  .termino-punto, .termino-ref { transform-box: fill-box; transform-origin: center; transform: scale(1.6); }
+  .termino-escala-texto { font-size: 22px; }
+}
 /* al llegar desde el mapa, la ficha se marca (sin animación) */
 .lugar:target .lugar__nombre, .patrimonio__fila:target .patrimonio__nombre { text-decoration: underline 3px var(--oro); text-underline-offset: .2em; }
 

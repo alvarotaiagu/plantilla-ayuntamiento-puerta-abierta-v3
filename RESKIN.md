@@ -11,6 +11,39 @@ Tiempo orientativo: 1–2 horas con los datos a mano. Lo que más tarda es **reu
 
 Prueba real: `pruebas/segura-de-leon/` es Segura de León completo (otro escudo, otra sede, 3 servicios). `scripts/verificar.mjs` lo aplica sobre una copia y falla si queda cualquier resto del municipio original.
 
+## 0. El camino corto: alta desde datos abiertos (v3c)
+
+```bash
+node scripts/nuevo-municipio.mjs 06124 --salida ../alta-segura      # 1. el borrador (código INE de 5 cifras o "Nombre")
+#                                                                   2. completar ALTA-<slug>.md en el municipio.json del borrador
+node scripts/aplicar.mjs                                            # 3. en la copia de la plantilla (§1), con ese municipio.json y su marca/
+node scripts/verificar.mjs                                          # 4.
+```
+
+1. **`nuevo-municipio.mjs`** escribe en `--salida` (nunca en la raíz de la plantilla ni encima de un `municipio.json` que no sea un borrador suyo):
+   - `municipio.json`, un **borrador** (`"_borrador": true`) con lo que se saca de fuentes abiertas, y en `_fuentes` la fuente, la url y la fecha de cada dato. Lo que no se encuentra va `null`.
+   - `ALTA-<slug>.md`: **lo que falta, por orden de importancia** (con pistas cuando las hay), las **contradicciones entre fuentes** (no elige: si el INE y Wikidata dan habitantes distintos del mismo año, no pone ninguno) y lo que está puesto pero hay que mirar con ojos.
+   - `marca/escudo.svg` y sus PNG (el escudo de Commons, con `escudo.mjs`) y `marca/termino.*` (el mapa del término, con `termino.mjs --raiz`).
+   - `_respuestas/`: todo lo traído, para repetirlo sin red con `--desde <carpeta>`. `--sin-red` usa las de `pruebas/alta/<ine>/` (lo usa `verificar.mjs`); `--sin-mapa`, sin Overpass.
+2. **Completa** el borrador con `ALTA-<slug>.md` delante, apuntando cada dato nuevo con su fuente en `DATOS.md` (§2), y quita `"_borrador"`.
+3. **`aplicar.mjs`**: con el borrador a medias **se niega y lista lo que falta** (los obligatorios de §3, el listín y el catálogo de trámites), sin romperse; mientras quede `"_borrador"`, lo avisa.
+4. **`verificar.mjs`**, como siempre.
+
+Qué da y de dónde (comprobado con Segura de León, Usagre y Fuentes de León el 4-10-2026):
+
+| Dato | Fuente | Nota |
+|---|---|---|
+| Nombre, código INE, provincia, habitantes | INE (API JSON de INEbase: la tabla del padrón de la provincia) | El código se comprueba en el INE: **Segura de León es 06124** (06125 es Siruela) y Usagre 06136 |
+| Superficie, altitud, gentilicio, código postal, web, escudo, comarca | Wikidata, por SPARQL en el espejo QLever (el robots.txt de wikidata.org no deja usar `/sparql` a los robots) | Cada dato enlaza a su elemento. Superficie y altitud van a `cifras` sin año: contrástalas con el IGN |
+| Autor y licencia del escudo, y el archivo | Wikimedia Commons (la ficha y upload.wikimedia.org) | Si tiene varias licencias, la CC |
+| Dirección, CP, teléfono, fax y correo | El pie de su web (las de la Diputación lo llevan) y la sede de Gestiona («¿Tienes algún problema?», en `/info.0`, lo único que deja su robots.txt) | Si no casan, a contradicciones |
+| Sede | El enlace de su web o `<nombre>.sedelectronica.es` (que diga «Sede Electrónica de <nombre>») | En Gestiona, la instancia general y las quejas son los uuid comunes, **por comprobar** en el navegador |
+| Trámites | En Gestiona, el catálogo común de la plantilla (solo los que van por uuid) | **Por comprobar**: cada ayuntamiento activa los suyos |
+| DIR3 y titular | Calculados: `L01` + INE + dígito de control; «Ayuntamiento de …» | El NIF no se calcula: sale como pista (`P` + INE + `00` + letra suele valer, pero hay que copiarlo de la sede) |
+| El término | OpenStreetMap, con `termino.mjs` (la relación, de Wikidata) | |
+
+**Lo que queda a mano** (no hay fuente abierta fiable): el horario, el NIF, la corporación (BOP), el listín de teléfonos, las fotos, «El pueblo» (historia, lugares, fiestas…), los colores del escudo (`marca-desde-escudo.py`), el plano y el perfil del pie, el contenido (avisos, agenda, noticias) y repasar lo marcado «por comprobar». El alcalde que da Wikidata va solo como pista: en Segura estaba desfasado. Es lo que más tarda, igual que antes, pero ya no hay que buscar ni teclear lo de arriba.
+
 ---
 
 ## 1. Duplicar la carpeta
@@ -251,6 +284,8 @@ node scripts/aplicar.mjs
 - **Los lugares se buscan por nombre** entre los de `pueblo.lugares` y `pueblo.patrimonio`, y **solo dentro del término** (así son los de este pueblo, no los de otro con el mismo nombre). Vale si todas las palabras de nuestro nombre están en el de OSM (sin contar «de», «la», «san»…), o al revés si el de OSM no es solo genérico («Ermita», «Pozo»). Si un elemento encaja con dos lugares («Ermita del Cristo» en OSM, con dos ermitas del Cristo en el pueblo) o un lugar con dos elementos, **no se pone** y el script lo dice: búscalo en openstreetmap.org y fíjalo con `--lugar`. Los fijados quedan en `termino.json` (`"fijado": true`) y se respetan la próxima vez.
 - En la página: un punto numerado por lugar que enlaza a su ficha (`#lugar-<nombre>`: la del carril «Qué ver» o la fila del patrimonio, que ahora llevan ancla), la misma lista en texto debajo (para el teclado y el lector de pantalla: el dibujo es `aria-hidden`), la leyenda en palabras (límite discontinuo, casco sombreado, carreteras gruesas, rutas de puntos; no solo color), la escala y «© colaboradores de OpenStreetMap» con su enlace. **ODbL**: `aplicar.mjs` se niega si `termino.json` no trae la atribución, y si el mapa es de otro municipio.
 - **Sin los dos archivos, la sección no sale.** Un lugar que ya no está en `municipio.json` pierde su punto (con aviso).
+- **Los puntos que se pisan** (v3c): con datos reales casi todo está en el pueblo (en Ribera, seis de siete lugares en medio kilómetro). `termino.mjs` lleva el grupo más grande de puntos que se pisan a un **recuadro**: el pueblo ampliado, con sus calles y su propia barra de escala, en el hueco del lienzo que menos término tapa; en el mapa grande, un rectángulo marca la zona y una raya la une al recuadro. Si dentro aún se pisan, el círculo se aparta lo justo y una raya fina lo une a un punto en su sitio exacto. La leyenda lo explica en palabras. Se reparte con los círculos y los rótulos ya agrandados como en el móvil (`css/base.css` los escala ×1,6 cuando la figura es estrecha), así que tampoco ahí se pisan. No hay que hacer nada: sale solo si hace falta; lo usado queda en `termino.json` (`recuadro`, `lugares[].sitio`).
+- `--raiz <carpeta>` lee el `municipio.json` de otra carpeta y escribe en su `marca/` (lo usa `nuevo-municipio.mjs`).
 - `pruebas/termino/muestra-overpass.json` es una muestra **sintética** (contorno, carreteras «XX-1» y posiciones inventados, ids falsos) solo para `verificar.mjs`, que la aplica en una copia. Nunca la pases a `marca/` del pueblo de verdad: sale con la etiqueta «Ejemplo».
 - User-Agent del proyecto, sin datos de nadie; si Overpass está ocupado, prueba otros dos servidores. Si en tu red no se llega a Overpass, ejecuta el script en otra máquina y sube `marca/termino.*`.
 
