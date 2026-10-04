@@ -2,7 +2,7 @@
 
 4 de octubre de 2026. Parte de `v3` (16c5409, 157 de 157). Tres mejoras, cada una en su commit, y un cuarto con las pruebas y la documentación. Los archivos generados por `aplicar.mjs` (también `transparencia.html` y `escribanos.html`) no se suben: al unir, `node scripts/aplicar.mjs`.
 
-**Resultado: `node scripts/verificar.mjs` → ✓ 163 de 163 comprobaciones** en 1015 s: las 157 de antes (una ajustada, ver «Cambiadas») y las 6 nuevas de `v3cTransparencia`. Una primera pasada completa dio 161 de 163: la de la tira «Hoy» (ver abajo) y la de los filtros del tablón con View Transition («Agua» con la transición aún en curso a los 500 ms), que pasó 4 veces seguidas sola y en la segunda pasada completa; la achaco a la carga de la máquina con las otras ramas verificando a la vez. Si vuelve a fallar al unir, mírala.
+**Resultado: `node scripts/verificar.mjs` → ✓ 163 de 163 comprobaciones** en 828 s (tras los ajustes de la revisión; antes, también 163 de 163 en 1015 s): las 157 de antes (una ajustada, ver «Cambiadas») y las 6 nuevas de `v3cTransparencia`. Una primera pasada completa dio 161 de 163: la de la tira «Hoy» (ver abajo) y la de los filtros del tablón con View Transition («Agua» con la transición aún en curso a los 500 ms), que pasó 4 veces seguidas sola y en la segunda pasada completa; la achaco a la carga de la máquina con las otras ramas verificando a la vez. Si vuelve a fallar al unir, mírala.
 
 ## Qué se hizo
 
@@ -29,8 +29,12 @@
 | Contratos | perfil en la sede (2 expedientes) y en la Plataforma (solo) | los contratos menores |
 | Convenios | — (portal) | dónde se publican |
 | Subvenciones | bases de 2026 a asociaciones (BOP 16/07/2026, 2828/2026) | las concedidas, con importe y beneficiario |
-| Sueldos y bienes | dedicación parcial del 2.º teniente de alcalde (BOP 07/10/2025, ya en DATOS.md) | lo que cobra cada cargo y las declaraciones de bienes |
+| Sueldos y bienes | — (portal) | lo que cobra cada cargo y las declaraciones de bienes |
 | Pedir información | la solicitud de acceso del catálogo (solo) | — |
+
+**Pista para «Sueldos y bienes»**: el anuncio del BOP del 07/10/2025 sobre la dedicación parcial del 2.º teniente de alcalde (<https://www.dip-badajoz.es/bop/ventana_anuncio.php?id_anuncio=159296&FechaSolicitada=202510070000>, ya en DATOS.md). No lo he podido abrir, así que no sé si trae la cuantía: no se enlaza; si la trae, va en `transparencia.apartados.retribuciones.enlaces`.
+
+Los huecos «Pendiente» **solo salen en la maqueta** (dentro de la sección `propuesta`, como la banda): con `"propuesta": false`, cada apartado se queda con su explicación y el enlace al portal (o a pedirlo).
 
 Los anuncios del BOP **no se han abierto**: el `robots.txt` de dip-badajoz.es prohíbe `/bop`. Se enlazan tal como los enlaza la web del Ayuntamiento (`riberadelfresno.es/bop.php`, que sí se leyó), con su número y su título. Dentro del portal de la sede no he entrado (su `robots.txt` solo deja `/info`), así que no enlazo sus bloques uno a uno.
 
@@ -58,7 +62,7 @@ Los anuncios del BOP **no se han abierto**: el `robots.txt` de dip-badajoz.es pr
 ## Pruebas
 **Nuevas** (`async function v3cTransparencia()`, registrada como `['v3ctransparencia', v3cTransparencia]`), 6 comprobaciones:
 1. F22, Ribera: los 9 apartados en orden; cada enlace es de la sede (con su patrón), su perfil del contratante, una página de esta web o uno de los enlaces de `municipio.json → transparencia`; los huecos «Pendiente» son exactamente los de los datos; cada apartado cita artículos del BOE con anclas conocidas; «Pedir información» lleva a la solicitud de acceso del catálogo; enlazada desde el pie y la franja de las 28 páginas y no desde el menú; sin desborde y axe 0 a 1280 y 390 px.
-2. F22 sin datos (dos copias): sin `transparencia`, solo enlaces de la sede, el perfil y la web, sin «Pendiente» ni enlaces de Ribera, y el botón al portal; con una sede de la Diputación sin portal, lo dice y manda a pedirlo.
+2. F22 en tres copias: sin `transparencia`, solo enlaces de la sede, el perfil y la web, sin «Pendiente» ni enlaces de Ribera, y el botón al portal; con una sede de la Diputación sin portal, lo dice y manda a pedirlo; y la web oficial (`"propuesta": false`), ni un «Pendiente» en el HTML ni visible en el navegador, y cada apartado con su explicación y su enlace.
 3. F23 en Node: los 20 títulos de `CASOS_EMPLEO` (reales y trampas), una lista de admitidos de una bolsa sigue excluida antes del tema, y el tema manual se conserva al refrescar.
 4. F23, la ficha «Empleo» en Node con fechas fijas: sale con oferta abierta (la que cierra antes, chip, enlace, «Las 2 ofertas…») y no sale con plazo cerrado, sin abrir, sin plazo ni con otro tema; «Ejemplo» si lo es; chip con maletín; «Empleo público» se junta con «Empleo».
 5. F23 en el navegador con el reloj de Playwright: la muestra sale en «Hoy» con «Ejemplo» mientras su plazo está abierto y no después; «Todo el empleo» abre Avisos con el filtro puesto y solo filas de empleo; «Todos» vuelve; axe 0.
@@ -85,6 +89,4 @@ Los anuncios del BOP **no se han abierto**: el `robots.txt` de dip-badajoz.es pr
 
 ## Dudas para Álvaro
 - ¿Vale que «Transparencia» del pie y de la franja lleve a nuestra página y no directamente al portal de la sede? La página tiene el botón al portal arriba del todo, pero es un clic más para quien ya sabe lo que busca.
-- Los huecos «Pendiente» se ven también en la web oficial mientras nadie los rellene: es honesto, pero quizá prefieras que solo salgan en la maqueta (`propuesta`). Hoy salen siempre que estén en los datos.
-- El enlace de «Sueldos de los cargos» es el BOP de la dedicación parcial del 2.º teniente de alcalde (que consta en DATOS.md): no lo he podido abrir para confirmar que trae la cuantía.
-- Cuando haya web oficial, quitar el aviso `empleo-ejemplo` de `avisos.json` (lo dice RESKIN.md).
+- (Resuelto tras la revisión) Los huecos «Pendiente» solo en la maqueta; «Sueldos de los cargos» sin el BOP de la dedicación parcial (queda como pista, arriba); el aviso `empleo-ejemplo` se quita al pasar a la web oficial (RESKIN.md §9).
