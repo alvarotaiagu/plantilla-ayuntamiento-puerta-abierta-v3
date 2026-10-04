@@ -1742,6 +1742,16 @@ html.con-cortina { overflow: hidden; background: var(--cortina); }   /* también
 .hoy__fila--empleo .hoy__nota a { font-weight: 600; }
 /* en una ficha estrecha (móvil, cinco fichas en fila) el chip del plazo y su «Ejemplo» bajan de línea */
 .hoy__fila--empleo .plazo { flex-wrap: wrap; max-width: 100%; white-space: normal; border-radius: .9rem; }
+/* F24 · «Escríbanos»: el formulario usa las piezas de «Avisar de un problema» (.incidencia…); arriba, el
+   aviso de que el correo no es un registro, como el de urgencias pero en la marca (no es una alarma) */
+.escribanos-registro {
+  display: flex; gap: .9rem; align-items: flex-start; max-width: 46rem; padding: 1rem 1.25rem;
+  border: 1px solid var(--marca); border-left-width: 6px; border-radius: var(--radio); background: var(--superficie);
+}
+.escribanos-registro p { margin: .35rem 0 0; }
+.escribanos-registro .lista-enlaces { margin-top: .35rem; }
+.escribanos-registro__icono { flex: none; width: 1.6rem; height: 1.6rem; margin-top: .15rem; color: var(--marca); }
+.escribanos-registro__titulo { margin: 0; font-size: 1.25rem; }
 /* ═══════════════ fin v3c · transparencia ═══════════════ */
 
 /* [MANDO DE MAQUETA] inicio */

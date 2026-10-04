@@ -269,6 +269,21 @@ if (M.incidencias && M.incidencias.correo) {
     sede: enCatalogo ? { href: enCatalogo.href, nombre: enCatalogo.nombre, sr: enCatalogo.sr } : null
   };
 }
+/* ── v3c · transparencia (F24). «Escríbanos» (escribanos.html): consultas, sugerencias y felicitaciones
+   por correo, sin servidor, como «Avisar de un problema». Al correo de `escribanos.correo` o, si no, de
+   `contacto.correo`; sin correo, o con `"escribanos": false`, no hay página ni enlace. Las quejas formales
+   y las solicitudes, al registro de la sede (lo dice la página, con sus enlaces) ── */
+const TIPOS_ESCRIBANOS = [['Consulta', 'Una pregunta sobre un servicio, un horario o un trámite'],
+  ['Sugerencia', 'Una idea para mejorar el pueblo o el Ayuntamiento'], ['Felicitación', 'Algo que se ha hecho bien y quiere que se sepa']];
+let escribanos = null;
+{
+  const correo = M.escribanos === false ? null : (M.escribanos && M.escribanos.correo) || M.contacto.correo || null;
+  if (correo) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) errores.push('escribanos: «' + correo + '» no es un correo');
+    escribanos = { correo, asunto_url: encodeURIComponent('Mensaje desde la web'),
+      tipos: TIPOS_ESCRIBANOS.map(([nombre, ayuda]) => ({ nombre, ayuda, id: 'tipo-' + slugDe(nombre) })) };
+  }
+}
 const mitadTemas = Math.floor(temasDatos.length / 2);
 const temaAncho = temasDatos.length % 2 ? temasDatos[temasDatos.length - 1] : null;
 const tramites = {
@@ -1001,6 +1016,10 @@ const PAGINAS = [
   ...(facil ? [{ archivo: 'facil.html', id: 'facil', titulo: 'Trámites explicados fácil', migas: [{ href: 'tramites.html', texto: 'Trámites' }],
     entradilla: 'Los trámites que más se piden, explicados con palabras fáciles y paso a paso.',
     descripcion: `Trámites del Ayuntamiento de ${N} explicados en lectura fácil.` }] : []),
+  /* v3c · transparencia (F24): solo con un correo (escribanos.correo o contacto.correo) */
+  ...(escribanos ? [{ archivo: 'escribanos.html', id: 'escribanos', titulo: 'Escríbanos', migas: [{ href: 'contacto.html', texto: 'Contacto' }],
+    entradilla: 'Una consulta, una sugerencia o una felicitación para el Ayuntamiento: le preparamos el correo y usted lo envía.',
+    descripcion: `Escriba al Ayuntamiento de ${N}: consultas, sugerencias y felicitaciones.` }] : []),
   /* v3c · transparencia (F22): siempre (sin portal propio, explica lo general y cómo pedirlo); desde el pie y la franja de la sede */
   { archivo: 'transparencia.html', id: 'transparencia', titulo: 'Transparencia',
     entradilla: 'Lo que el Ayuntamiento tiene que publicar por ley, dónde encontrarlo y cómo pedir lo que no esté.',
@@ -1019,7 +1038,7 @@ const PICTO_DE = { 'tramites.html': 'tramites', 'ayuntamiento.html': 'ayuntamien
   'aviso-legal.html': 'balanza', 'privacidad.html': 'candado', 'cookies.html': 'galleta', 'accesibilidad.html': 'accesibilidad',
   'propuesta.html': 'ayuntamiento', 'suscribirse.html': 'megafono',   /* v3b · servicio */
   'incidencia.html': 'farola', 'facil.html': 'facil',
-  'transparencia.html': 'transparencia' };   /* v3c · transparencia */
+  'transparencia.html': 'transparencia', 'escribanos.html': 'mensaje' };   /* v3c · transparencia */
 const pictoDe = p => PICTO_DE[p.archivo] || (p.id === 'noticia' ? 'periodico' : null) || (p.traduccion ? PICTO_DE[p.fuente] : null);
 for (const p of PAGINAS) {
   if (p.id === 'inicio' || p.id === 'error') continue;
@@ -1042,7 +1061,7 @@ function escribir(rel, contenido) {
 for (const f of fs.readdirSync(RAIZ)) if (/^noticia-.*\.html$/.test(f) && !PAGINAS.some(p => p.archivo === f)) fs.rmSync(r(f));
 if (M.propuesta === false && existe('propuesta.html')) fs.rmSync(r('propuesta.html'));   /* v3b: la página de venta no viaja a la web oficial */
 /* v3b: las páginas opcionales (incidencias, lectura fácil) se borran si sus datos ya no están */
-for (const f of ['incidencia.html', 'facil.html']) if (existe(f) && !PAGINAS.some(p => p.archivo === f)) fs.rmSync(r(f));
+for (const f of ['incidencia.html', 'facil.html', 'escribanos.html']) if (existe(f) && !PAGINAS.some(p => p.archivo === f)) fs.rmSync(r(f));
 
 escribir('css/marca.css', cssMarca());
 /* «Añadir a mi calendario»: un .ics por evento de la agenda (también fiestas y plenos).
@@ -1067,7 +1086,8 @@ const huella = rel => existe(rel) ? crypto.createHash('md5').update(fs.readFileS
 const v = { fuentes: huella('css/fuentes.css'), marca: huella('css/marca.css'), base: huella('css/base.css'), main: huella('js/main.js'), vivo: huella('js/vivo.js'), cortina: huella('js/cortina.js'), datos: huella('js/tramites-datos.js') };
 v.movimiento = huella('css/movimiento.css'); v.movimiento_js = huella('js/movimiento.js');   /* animaciones (todo bajo prefers-reduced-motion: no-preference) */
 v.imprimir = huella('css/imprimir.css'); v.identidad = huella('js/identidad.js');
-v.incidencia = huella('js/incidencia.js');                                                     /* v3b · F9: el formulario de incidencias */                /* v3: hoja de impresión; hemiciclo y botón de imprimir */
+v.incidencia = huella('js/incidencia.js');
+v.formulario_correo = huella('js/formulario-correo.js'); v.escribanos = huella('js/escribanos.js');   /* v3c · transparencia: lo común de los formularios de correo y «Escríbanos» */                                                     /* v3b · F9: el formulario de incidencias */                /* v3: hoja de impresión; hemiciclo y botón de imprimir */
 const fuentesDir = existe('fonts') ? fs.readdirSync(r('fonts')) : [];
 const pre = (fam, peso) => fuentesDir.find(f => f.startsWith(slugDe(fam) + '-' + peso + '-latin.'));
 const precargar = [pre(marcaConf.letra.titulares, '700'), pre(marcaConf.letra.texto, '400')].filter(Boolean).map(f => 'fonts/' + f);
@@ -1132,7 +1152,7 @@ const comun = {
   tramites, listin_corto: listinCorto, listin_grupos: gruposListin,
   quien, quien_portada: quien.filter(q => q.portada), fiestas,
   incidencias, facil,
-  transparencia,   /* v3c · transparencia */
+  transparencia, escribanos,   /* v3c · transparencia */
   pleno, quien_ayto: quienAyto, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },
