@@ -71,6 +71,13 @@ function procesar(crudas, origen) {
 }
 
 function escribir(datos) {
+  /* v3c · automatico: si no ha cambiado nada más que la hora, no se toca. Así `actualizado` dice cuándo
+     cambió el tablón y un cambio en tablon.json es «hay anuncios nuevos» para la tarea diaria */
+  const sinHora = d => JSON.stringify({ ...d, actualizado: null });
+  if (fs.existsSync(destino) && sinHora(leerPrevio()) === sinHora(datos)) {
+    console.log(`· ${path.relative(RAIZ, destino)}: sin cambios (${datos.entradas.length} anuncios)`);
+    return;
+  }
   fs.mkdirSync(path.dirname(destino), { recursive: true });
   fs.writeFileSync(destino, JSON.stringify(datos, null, 2) + '\n');
   console.log(`✓ ${path.relative(RAIZ, destino)}: ${datos.entradas.length} anuncios, ${datos.excluidas} fuera por datos personales`);

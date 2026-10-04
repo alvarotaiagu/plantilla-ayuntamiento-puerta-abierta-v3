@@ -607,10 +607,128 @@
     return s ? estadoHtml(s, ahora, 'estado estado--servicio') : '';
   }
 
-  var BLOQUES = { franja: franja, hoy: hoy, tablon: tablon, linea: linea, anio: anio, agenda: agenda, servicio: servicio, lado: lado, plazos: plazos, plazo: plazoAviso };
+  /* ═══ v3c · automatico ═══ */
+  /* ── F16 · «Avisos del Ayuntamiento» (página de avisos), desde los datos vivos ──
+     Antes era una lista fija de la plantilla: un aviso que llegaba de la hoja salía en la franja y en
+     «Hoy», pero no aquí, y su enlace (avisos.html#aviso-<id>) no llevaba a ningún sitio. Ahora la pinta
+     este bloque: aplicar.mjs al montar (es lo que se ve sin JavaScript) y main.js con lo de la hoja.
+     Todos los avisos no ocultos, también los caducados (es el archivo), del más nuevo al más antiguo */
+  function fechaTexto(iso) { var p = partes(iso); return p.d + ' de ' + MESES[p.m - 1] + ' de ' + p.a; }
+  var ENLACE_RARO = /^\s*(javascript|data|vbscript):/i;
+  function avisosLista(D, ahora) {
+    var lista = (D.avisos || []).filter(function (a) { return !a.oculto; }).slice().sort(function (a, b) { return b.fecha.localeCompare(a.fecha); });
+    if (!lista.length) return '';
+    return '<ol class="avisos">' + lista.map(function (a) {
+      var g = gravedad(a), pz = (a.plazo_inicio || a.plazo_fin) ? chipPlazo(a, ahora, a.id) : '';
+      return '<li class="aviso aviso--' + g + (g === 'urgente' ? ' aviso--urgente' : '') + '" id="aviso-' + esc(a.id) + '"' + marcaEjemplo(a, 'aviso:' + a.id) + '>' +
+        '<p class="aviso__meta"><span class="chip">' + esc(a.tema) + '</span><time datetime="' + esc(a.fecha) + '">' + fechaTexto(a.fecha) + '</time>' +
+        (g === 'urgente' ? '<span class="chip chip--urgente">Urgente</span>' : '') + (g === 'programado' ? '<span class="chip chip--programado">Programado</span>' : '') +
+        /* el chip del plazo lleva su propio data-vivo: se repinta con la fecha real aunque la lista no cambie */
+        (pz ? '<span class="aviso__plazo" data-vivo="plazo" data-clave="' + esc(a.id) + '">' + pz + '</span>' : '') + (a.ejemplo ? EJEMPLO : '') + '</p>' +
+        '<h3 class="aviso__titulo">' + esc(a.titulo) + '</h3>' +
+        (a.texto ? '<p class="aviso__texto">' + esc(a.texto) + '</p>' : '') +
+        (a.enlace && !ENLACE_RARO.test(a.enlace) ? '<p><a href="' + esc(a.enlace) + '">Más información<span class="sr"> sobre ' + esc(a.titulo) + '</span></a></p>' : '') +
+        '</li>';
+    }).join('') + '</ol>';
+  }
+
+  /* ── F15 · la hoja de Google publicada (endpoint gviz) ──
+     El MISMO código en los dos lados: js/main.js → leerHoja (el navegador, al abrir la página) y
+     scripts/lib/hoja.mjs (Node, al montar la web: así lo de la hoja entra también en feed.xml, en
+     agenda.ics, en los ics/<id>.ics, en la lista de avisos y cada noticia tiene su página).
+     - filasHoja(txt): la respuesta de gviz → filas. Las columnas, sin tildes ni mayúsculas y con «_»
+       por los espacios («Título corto» → titulo_corto); Date(…) → AAAA-MM-DD; una celda de solo hora
+       (Date(1899,11,30,20,30,0)) → «20:30»; TRUE/sí → true; `estado` oculto o borrador → oculto; el
+       `id` como en una dirección y, sin él, la fecha y el título.
+     - sanearHoja(tipo, filas): fuera lo que no se puede enseñar (sin título o sin fecha que exista);
+       lo dudoso se corrige o se quita (una gravedad mal escrita, una hora rara, un enlace que no es
+       http/https), con un aviso por cada cosa. Nunca rompe: la hoja la rellena la secretaría.
+     - fusionarHoja(lista, filas, agenda): la hoja manda por `id`; una fila oculta solo oculta lo que
+       ya había (no se añade nada que no se va a ver). En la agenda, el .ics escrito se queda si el
+       acto no ha cambiado; si cambió o es nuevo, se genera al pulsar */
+  function filasHoja(txt) {
+    var j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}') + 1));
+    if (!j || !j.table || !j.table.cols) throw new Error(j && j.status === 'error' ? 'la hoja contesta con un error (¿publicada? ¿la pestaña existe?)' : 'no es una respuesta de gviz');
+    var cols = j.table.cols.map(function (c) { return normalTexto(c.label || c.id).replace(/\s+/g, '_'); });
+    return (j.table.rows || []).map(function (fila) {
+      var o = {};
+      (fila.c || []).forEach(function (c, i) {
+        if (!cols[i]) return;
+        var v = c ? c.v : null;
+        var m = typeof v === 'string' && v.match(/^Date\((\d+),(\d+),(\d+)(?:,(\d+),(\d+))?/);
+        if (m && m[1] === '1899' && m[4] != null) v = String(m[4]).padStart(2, '0') + ':' + String(m[5]).padStart(2, '0');
+        else if (m) v = m[1] + '-' + String(Number(m[2]) + 1).padStart(2, '0') + '-' + String(m[3]).padStart(2, '0');
+        if (v === 'TRUE' || v === 'sí' || v === 'si') v = true;
+        if (v === 'FALSE' || v === 'no') v = false;
+        o[cols[i]] = v;
+      });
+      if (o.estado && /oculto|borrador/i.test(o.estado)) o.oculto = true;
+      if (o.id != null && o.id !== '') o.id = normalTexto(o.id).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || null;
+      if (!o.id && o.titulo && o.fecha) o.id = normalTexto(o.fecha + '-' + o.titulo).replace(/[^a-z0-9]+/g, '-').slice(0, 60);
+      return o;
+    });
+  }
+  function fechaExiste(s) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s || '')) return false;
+    var p = partes(s), d = new Date(Date.UTC(p.a, p.m - 1, p.d));
+    return d.getUTCMonth() === p.m - 1 && d.getUTCDate() === p.d;
+  }
+  function textoHoja(v) { return v == null || typeof v === 'boolean' ? null : (String(v).trim() || null); }
+  function sanearHoja(tipo, filas) {
+    var avisos = [], buenas = [];
+    (filas || []).forEach(function (o, i) {
+      var donde = tipo + ', fila ' + (i + 2) + (textoHoja(o.titulo) ? ' («' + textoHoja(o.titulo) + '»)' : '') + ': ';
+      var corrige = function (campo, valor, que) { if (textoHoja(o[campo]) && !valor) avisos.push(donde + '«' + campo + '» ' + que + '; se quita'); return valor; };
+      var fechaO = function (campo) { return corrige(campo, fechaExiste(o[campo]) ? o[campo] : null, 'no es una fecha'); };
+      var enlaceO = function (campo) { var t = textoHoja(o[campo]); return corrige(campo, t && /^https?:\/\/\S+$/i.test(t) ? t : null, 'no empieza por https://'); };
+      var horaO = function (campo) { var t = textoHoja(o[campo]), m = t && /^(\d{1,2})[:.](\d{2})$/.exec(t); return corrige(campo, m && Number(m[1]) < 24 && Number(m[2]) < 60 ? (m[1].length < 2 ? '0' : '') + m[1] + ':' + m[2] : null, 'no es una hora («20:30»)'); };
+      if (o.oculto) { if (o.id) buenas.push({ id: String(o.id), oculto: true }); return; }
+      if (!textoHoja(o.titulo)) { avisos.push(donde + 'sin título; no se publica'); return; }
+      if (!fechaExiste(o.fecha)) { avisos.push(donde + 'la fecha «' + (o.fecha == null ? '' : o.fecha) + '» no existe o no está escrita como fecha; no se publica'); return; }
+      var x = { id: String(o.id), fecha: o.fecha, titulo: textoHoja(o.titulo), ejemplo: o.ejemplo === true, oculto: false };
+      if (tipo === 'avisos') {
+        var g = normalTexto(o.gravedad), gOk = Object.prototype.hasOwnProperty.call(GRAVEDAD, g);
+        if (g && !gOk) avisos.push(donde + 'la gravedad «' + o.gravedad + '» no es urgente, programado ni informativo; queda como informativo');
+        var ini = fechaO('plazo_inicio'), fin = fechaO('plazo_fin');
+        if (ini && fin && ini > fin) { avisos.push(donde + 'el plazo empieza después de acabar; se quita'); ini = fin = null; }
+        x.tema = textoHoja(o.tema) || 'Otros'; x.texto = textoHoja(o.texto); x.titulo_corto = textoHoja(o.titulo_corto); x.enlace = enlaceO('enlace');
+        x.gravedad = gOk ? g : null; x.urgente = o.urgente === true; x.caduca = fechaO('caduca');
+        x.plazo_inicio = ini; x.plazo_fin = fin; x.plazo_ejemplo = o.plazo_ejemplo === true && !!(ini || fin);
+      } else if (tipo === 'agenda') {
+        x.hora = horaO('hora'); x.hora_fin = x.hora ? horaO('hora_fin') : null; x.lugar = textoHoja(o.lugar); x.nota = textoHoja(o.nota);
+        x.tipo = textoHoja(o.tipo) ? normalTexto(o.tipo) : null; x.convocatoria = enlaceO('convocatoria'); x.grabacion = enlaceO('grabacion');
+      } else if (tipo === 'noticias') {
+        /* el cuerpo: la columna «texto» (o «cuerpo»), un párrafo por línea. La foto no viene de la hoja:
+           cada foto de la web lleva su autor y su licencia (media/creditos.json) */
+        x.resumen = textoHoja(o.resumen);
+        x.cuerpo = (Array.isArray(o.cuerpo) ? o.cuerpo : String(textoHoja(o.cuerpo) || textoHoja(o.texto) || '').split(/\r?\n/))
+          .map(function (p) { return String(p).trim(); }).filter(Boolean);
+      }
+      buenas.push(x);
+    });
+    return { filas: buenas, avisos: avisos };
+  }
+  var CAMPOS_ICS = ['fecha', 'hora', 'hora_fin', 'titulo', 'lugar', 'nota', 'convocatoria'];
+  function fusionarHoja(lista, filas, agenda) {
+    var out = (lista || []).slice(), porId = Object.create(null);
+    out.forEach(function (x, i) { porId[x.id] = i; });
+    (filas || []).forEach(function (n) {
+      var i = porId[n.id];
+      if (n.oculto) { if (i != null) out[i] = Object.assign({}, out[i], { oculto: true }); return; }
+      if (i == null) { porId[n.id] = out.length; out.push(agenda ? Object.assign({}, n, { ics: null }) : n); return; }
+      var viejo = out[i], nuevo = Object.assign({}, viejo, n);
+      if (agenda && CAMPOS_ICS.some(function (k) { return (viejo[k] || null) !== (n[k] || null); })) nuevo.ics = null;
+      out[i] = nuevo;
+    });
+    return out;
+  }
+
+  var BLOQUES = { franja: franja, hoy: hoy, tablon: tablon, linea: linea, anio: anio, agenda: agenda, servicio: servicio, lado: lado, plazos: plazos, plazo: plazoAviso,
+    avisos: avisosLista };   /* v3c · automatico */
 
   raiz.Vivo = {
     plazo: plazo, plazosAbiertos: plazosAbiertos, esNuevo: esNuevo,
+    filasHoja: filasHoja, sanearHoja: sanearHoja, fusionarHoja: fusionarHoja,   /* v3c · automatico */
     ahoraEn: ahoraEn, estado: estado, fechaLarga: fechaLarga, fechaCorta: fechaCorta, siguienteFiesta: siguienteFiesta,
     urgentes: urgentes, destacados: destacados, gravedad: gravedad, proximos: proximos, ultimos: ultimos,
     farmaciaDeGuardia: farmaciaDeGuardia, proximaRecogida: proximaRecogida, proximoPleno: proximoPleno, ics: ics, archivoIcs: archivoIcs,

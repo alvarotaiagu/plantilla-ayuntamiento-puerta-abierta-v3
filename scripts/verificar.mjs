@@ -3526,6 +3526,344 @@ async function v3bPueblo() {
   }
 }
 
+/* ═════════════ v3c · automatico: la tarea diaria, la hoja al montar, la lista viva de avisos y «Actualizada» ═════════════
+   F14 el workflow de GitHub Actions (comprobación textual, sin librerías, y el paso de publicar
+   ejecutado con bash en un repositorio de prueba); F15 el lector de la hoja en Node con las respuestas
+   gviz de pruebas/hoja/ (un servidor local hace de Google) y el montaje en una copia; F16 la lista de
+   avisos.html en el navegador con la hoja simulada; F17 la línea «Web actualizada el …» del pie. */
+async function v3cAutomatico() {
+  const http = await import('node:http');
+  const { spawn } = await import('node:child_process');
+  const { leerHojaAlMontar, CACHE } = await import('./lib/hoja.mjs');
+  const MUESTRA = n => leer(RAIZ, 'pruebas', 'hoja', 'gviz-' + n + '.txt');
+  /* el servidor que hace de Google: ?sheet=<pestaña> → pruebas/hoja/gviz-<pestaña>.txt; `modo` cambia lo que contesta */
+  let modo = 'contesta';
+  const google = http.createServer((q, r) => {
+    const hoja = (new URL(q.url, 'http://x').searchParams.get('sheet') || '').toLowerCase();
+    const f = path.join(RAIZ, 'pruebas', 'hoja', 'gviz-' + hoja + '.txt');
+    if (modo === 'html') { r.writeHead(200, { 'content-type': 'text/html' }); return r.end('<!doctype html><title>Iniciar sesión: Cuentas de Google</title>'); }
+    if (modo === '500' || !fs.existsSync(f)) { r.writeHead(modo === '500' ? 500 : 404); return r.end(); }
+    r.writeHead(200, { 'content-type': 'text/plain' }); r.end(fs.readFileSync(f));
+  });
+  await new Promise(r => google.listen(0, '127.0.0.1', r));
+  const GOOGLE = 'http://127.0.0.1:' + google.address().port + '/', CAIDA = 'http://127.0.0.1:9/';
+  const correr = (cmd, argv, op = {}) => new Promise(res => {
+    const p = spawn(cmd, argv, { ...op, env: { ...process.env, ...(op.env || {}) } });
+    let salida = ''; p.stdout.on('data', d => { salida += d; }); p.stderr.on('data', d => { salida += d; });
+    p.on('close', c => res({ c, salida }));
+  });
+  const ID_AVISO = '2026-10-05-aviso-de-muestra-publicado-desde-la-hoja', ID_NOTICIA = '2026-10-05-noticia-de-muestra-publicada-desde-la-hoja';
+  try {
+    /* ── 1. F14 · el workflow ── */
+    {
+      const malos = [];
+      const rel = '.github/workflows/actualizar.yml';
+      const yml = fs.existsSync(path.join(RAIZ, rel)) ? leer(RAIZ, rel) : '';
+      if (!yml) malos.push('falta ' + rel);
+      const lineas = yml.split(/\r?\n/);
+      /* YAML mínimo: sin tabuladores, sangría de 2 en 2 y las claves de primer nivel que hacen falta */
+      if (/\t/.test(yml)) malos.push('lleva tabuladores');
+      const malSangria = lineas.filter(l => l.trim() && !/^\s*#/.test(l) && (l.match(/^ */)[0].length % 2));
+      if (malSangria.length) malos.push('sangría impar: ' + malSangria[0].trim());
+      const raices = lineas.filter(l => /^[a-z][\w-]*:/.test(l)).map(l => l.split(':')[0]);
+      for (const k of ['name', 'on', 'permissions', 'concurrency', 'jobs']) if (!raices.includes(k)) malos.push('sin «' + k + ':» de primer nivel');
+      /* bloque de primer nivel → sus líneas */
+      const bloque = k => { const i = lineas.findIndex(l => l.startsWith(k + ':')); if (i < 0) return []; const out = []; for (let j = i + 1; j < lineas.length && (!lineas[j].trim() || /^\s/.test(lineas[j])); j++) out.push(lineas[j]); return out; };
+      const on = bloque('on').join('\n'), perm = bloque('permissions').join('\n'), conc = bloque('concurrency').join('\n');
+      const crons = [...on.matchAll(/^\s+- cron: '([^']+)'/gm)].map(m => m[1]);
+      const horas = [];
+      for (const c of crons) {
+        const f = c.split(' ');
+        if (f.length !== 5 || !/^\d{1,2}$/.test(f[0]) || !/^\d{1,2}$/.test(f[1]) || f.slice(2).join(' ') !== '* * *' || Number(f[0]) > 59) { malos.push('cron raro: ' + c); continue; }
+        /* hora de Madrid en invierno (UTC+1) y en verano (UTC+2): las dos, de 6 a 21 */
+        const h = Number(f[1]);
+        if (h + 1 < 6 || h + 2 > 21) malos.push(`cron ${c}: a las ${h + 1}/${h + 2} en Madrid no es una hora razonable`);
+        horas.push(h);
+      }
+      if (crons.length < 2 || new Set(horas).size < 2) malos.push('hacen falta dos horas al día (hay ' + crons.length + ' cron)');
+      if (!/^\s+workflow_dispatch:/m.test(on)) malos.push('sin workflow_dispatch (lanzarla a mano)');
+      if (!/^\s+contents: write\s*(#.*)?$/m.test(perm)) malos.push('sin permissions → contents: write');
+      if (!/^\s+group: \S+/m.test(conc) || !/^\s+cancel-in-progress: false\s*(#.*)?$/m.test(conc)) malos.push('concurrency sin group o cancelando la que está en marcha');
+      if (/secrets\./.test(yml)) malos.push('usa secretos');
+      if (/npm (install|ci)|playwright install|npx /.test(yml)) malos.push('instala paquetes (no hace falta)');
+      const scripts = [...yml.matchAll(/node (scripts\/[\w./-]+\.mjs)([^\n]*)/g)].map(m => ({ rel: m[1], args: m[2].trim(), at: m.index }));
+      for (const s of scripts) if (!fs.existsSync(path.join(RAIZ, s.rel))) malos.push('llama a ' + s.rel + ', que no existe');
+      const tab = scripts.find(s => s.rel === 'scripts/tablon.mjs'), apl = scripts.find(s => s.rel === 'scripts/aplicar.mjs'), push = yml.indexOf('git push');
+      if (!tab || !apl || push < 0 || !(tab.at < apl.at && apl.at < push)) malos.push('el orden tiene que ser tablon.mjs → aplicar.mjs → git push');
+      if (apl && !/--sin-capturas/.test(apl.args)) malos.push('aplicar.mjs sin --sin-capturas (pediría Chromium)');
+      if (!/--sin-capturas/.test(leer(RAIZ, 'scripts/aplicar.mjs'))) malos.push('aplicar.mjs no conoce --sin-capturas');
+      if (!/tablon_autorizado/.test(leer(RAIZ, 'scripts/tablon.mjs'))) malos.push('tablon.mjs ya no mira tablon_autorizado');
+      if (!/git status --porcelain -- contenido/.test(yml)) malos.push('no mira si cambió contenido/ antes de publicar');
+      comprobar(!malos.length, `v3c F14 · workflow: YAML bien sangrado, ${crons.length} horas al día (${crons.map(c => c.split(' ').slice(0, 2).reverse().join(':') + ' UTC').join(', ')}), a mano, contents: write, concurrency sin cancelar, sin secretos ni npm; tablon.mjs → aplicar.mjs --sin-capturas → git push, y los scripts existen` + (malos.length ? ' → ' + malos.join(' | ') : ''));
+
+      /* el paso «Publicar si hay algo nuevo», ejecutado con bash en un repositorio de prueba con su remoto */
+      const malosP = [];
+      const iniPaso = lineas.findIndex(l => /- name: Publicar si hay algo nuevo/.test(l));
+      const iniRun = lineas.findIndex((l, i) => i > iniPaso && /^\s+run: \|\s*$/.test(l));
+      const cuerpo = [];
+      if (iniPaso >= 0 && iniRun > 0) {
+        const sang = lineas[iniRun + 1].match(/^ */)[0].length;
+        for (let j = iniRun + 1; j < lineas.length && (!lineas[j].trim() || lineas[j].match(/^ */)[0].length >= sang); j++) cuerpo.push(lineas[j].slice(sang));
+      }
+      let bash = 'bash';
+      if (process.platform === 'win32') {
+        try { const b = path.join(execFileSync('git', ['--exec-path'], { encoding: 'utf8' }).trim(), '..', '..', '..', 'bin', 'bash.exe'); bash = fs.existsSync(b) ? b : null; } catch (e) { bash = null; }
+      }
+      if (!cuerpo.length) malosP.push('no encuentro el run del paso «Publicar si hay algo nuevo»');
+      else if (!bash) malosP.push('no hay bash para probar el paso (Git for Windows)');
+      else {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'v3c-publicar-'));
+        const git = (cwd, ...a) => execFileSync('git', a, { cwd, encoding: 'utf8', env: { ...process.env, ...gitEnv } }).trim();
+        let gitEnv = {};
+        try {
+          const remoto = path.join(dir, 'remoto.git'), repo = path.join(dir, 'repo');
+          execFileSync('git', ['init', '-q', '--bare', remoto]);
+          execFileSync('git', ['clone', '-q', remoto, repo]);
+          git(repo, 'config', 'user.name', 'Alguien'); git(repo, 'config', 'user.email', 'alguien@example.org'); git(repo, 'config', 'core.autocrlf', 'false');
+          fs.mkdirSync(path.join(repo, 'contenido'));
+          const escribirR = (rel, t) => fs.writeFileSync(path.join(repo, rel), t);
+          const commitComo = (autor, haceDias) => {
+            const fecha = new Date(Date.now() - haceDias * 864e5).toISOString();
+            gitEnv = { GIT_AUTHOR_NAME: autor, GIT_COMMITTER_NAME: autor, GIT_AUTHOR_DATE: fecha, GIT_COMMITTER_DATE: fecha };
+            git(repo, 'add', '-A'); git(repo, 'commit', '-q', '--allow-empty', '-m', 'base'); git(repo, 'push', '-q', 'origin', 'HEAD'); gitEnv = {};
+          };
+          const script = path.join(dir, 'paso.sh'), salidaGH = path.join(dir, 'salida.txt');
+          const paso = async (evento) => {
+            fs.writeFileSync(script, cuerpo.join('\n').replace(/\$\{\{\s*github\.event_name\s*\}\}/g, evento) + '\n');
+            fs.writeFileSync(salidaGH, '');
+            const r = await correr(bash, [script], { cwd: repo, env: { TZ: 'Europe/Madrid', RUNNER_TEMP: dir.replace(/\\/g, '/'), GITHUB_OUTPUT: salidaGH.replace(/\\/g, '/') } });
+            return { ...r, publicado: /publicado=si/.test(fs.readFileSync(salidaGH, 'utf8')), remotos: Number(git(remoto, 'rev-list', '--count', 'HEAD')), mensaje: git(remoto, 'log', '-1', '--format=%B'), limpio: !git(repo, 'status', '--porcelain') };
+          };
+          escribirR('index.html', 'actualizada 7:23\n'); escribirR('contenido/hoja.json', '{}\n');
+          commitComo('github-actions[bot]', 0);
+          const casos = [];
+          /* a) solo cambia la hora del pie y ya se publicó hoy: nada */
+          escribirR('index.html', 'actualizada 15:23\n');
+          let r = await paso('schedule'); casos.push(['solo la hora', r]);
+          if (r.c !== 0 || r.publicado || r.remotos !== 1 || !r.limpio) malosP.push('con solo la hora del pie y ya publicada hoy, publica o deja sucio (' + r.salida.trim().split('\n').pop() + ')');
+          /* b) cambia contenido/: publica, con el motivo y lo que cambió */
+          escribirR('index.html', 'actualizada 15:23\n'); escribirR('contenido/hoja.json', '{"nuevo":1}\n');
+          r = await paso('schedule');
+          if (r.c !== 0 || !r.publicado || r.remotos !== 2 || !/^Web actualizada sola: avisos, agenda, noticias o tablón nuevos/.test(r.mensaje) || !/contenido\/hoja\.json/.test(r.mensaje)) malosP.push('con contenido/ nuevo no publica bien (' + r.c + ', ' + r.mensaje.split('\n')[0] + ')');
+          /* c) primera vez del día (lo último es de ayer): repaso del día */
+          commitComo('github-actions[bot]', 2);
+          escribirR('index.html', 'actualizada 7:23 de hoy\n');
+          r = await paso('schedule');
+          if (!r.publicado || !/repaso del día/.test(r.mensaje)) malosP.push('el primer montaje del día no publica el repaso (' + r.mensaje.split('\n')[0] + ')');
+          /* d) alguien subió algo a mano hoy: se publica lo regenerado */
+          commitComo('Alguien', 0);
+          escribirR('index.html', 'regenerada\n');
+          r = await paso('schedule');
+          if (!r.publicado || !/cambios subidos a mano/.test(r.mensaje)) malosP.push('tras un cambio a mano no publica (' + r.mensaje.split('\n')[0] + ')');
+          /* e) a mano (workflow_dispatch), aunque ya se publicó hoy */
+          escribirR('index.html', 'otra vez\n');
+          r = await paso('workflow_dispatch');
+          if (!r.publicado || !/lanzada a mano/.test(r.mensaje)) malosP.push('lanzada a mano no publica (' + r.mensaje.split('\n')[0] + ')');
+          /* f) sin ningún cambio: nada */
+          r = await paso('schedule');
+          if (r.c !== 0 || r.publicado) malosP.push('sin cambios, publica');
+        } catch (e) { malosP.push('el paso se rompió: ' + String(e.message).split('\n')[0]); }
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+      comprobar(!malosP.length, 'v3c F14 · el paso «Publicar» (bash, repo de prueba con remoto): solo la hora del pie → no sube nada y deja limpio; contenido/ nuevo → commit «Web actualizada sola: …» con lo que cambió y push; primer montaje del día → «repaso del día»; tras un cambio a mano → lo publica; a mano → publica; sin cambios → nada' + (malosP.length ? ' → ' + malosP.join(' | ') : ''));
+    }
+
+    /* ── 2. F15 · el lector de la hoja en Node ── */
+    {
+      const malos = [];
+      const ctxV = { window: {}, Intl, Date }; vm.runInNewContext(leer(RAIZ, 'js', 'vivo.js'), ctxV); const V = ctxV.window.Vivo;
+      const plano = x => JSON.parse(JSON.stringify(x));
+      /* normalización (la misma que el navegador: js/vivo.js → filasHoja) */
+      const filasA = plano(V.filasHoja(MUESTRA('avisos'))), filasG = plano(V.filasHoja(MUESTRA('agenda')));
+      const a0 = filasA[0];
+      if (!a0 || a0.fecha !== '2026-10-05' || a0.titulo_corto !== 'Aviso de muestra desde la hoja' || a0.ejemplo !== true || a0.caduca !== '2026-10-20' || a0.id !== ID_AVISO) malos.push('columnas o valores mal normalizados: ' + JSON.stringify(a0));
+      if (!filasA[2].oculto || !filasA[3].oculto || filasA[1].id !== 'muestra-enlace-raro') malos.push('estado oculto/borrador o id escrito a mano mal leídos');
+      if (filasG[0].hora !== '19:00' || filasG[0].hora_fin !== '21.30') malos.push('la celda de solo hora no da «19:00»');
+      /* saneado: lo que no se puede enseñar fuera, lo dudoso corregido, con un aviso por cosa */
+      const sA = plano(V.sanearHoja('avisos', filasA)), sG = plano(V.sanearHoja('agenda', filasG)), sN = plano(V.sanearHoja('noticias', V.filasHoja(MUESTRA('noticias'))));
+      const vis = sA.filas.filter(f => !f.oculto);
+      if (vis.length !== 2 || sA.filas.filter(f => f.oculto).length !== 2 || sA.avisos.length !== 4) malos.push(`avisos saneados: ${vis.length} visibles, ${sA.filas.length - vis.length} ocultos, ${sA.avisos.length} avisos (esperados 2, 2 y 4)`);
+      const raro = vis.find(f => f.id === 'muestra-enlace-raro') || {};
+      if (raro.enlace !== null || raro.gravedad !== null || raro.tema !== 'Otros') malos.push('el aviso raro no se corrige: ' + JSON.stringify(raro));
+      if (sA.filas.some(f => f.oculto && Object.keys(f).join() !== 'id,oculto')) malos.push('un oculto guarda más que su id');
+      if (sG.filas[0].hora_fin !== '21:30' || sG.filas[2].hora !== null || sG.filas[2].convocatoria !== null || sG.filas[2].tipo !== 'pleno' || sG.avisos.length !== 2) malos.push('agenda saneada: ' + JSON.stringify(sG));
+      if (sN.filas[0].cuerpo.length !== 2 || sN.filas[0].id !== ID_NOTICIA) malos.push('noticia: un párrafo por línea y su id');
+      /* fusión: la hoja manda por id, lo oculto oculta lo que había y no añade nada; el .ics se queda si el acto no cambia */
+      const base = [{ id: 'reunion-feria-comercio', titulo: 'Viejo', fecha: '2026-10-02' }, { id: 'otro', titulo: 'Sigue', fecha: '2026-10-01' }];
+      const f1 = plano(V.fusionarHoja(base, sA.filas));
+      if (!f1.find(x => x.id === 'reunion-feria-comercio').oculto || f1.length !== 4 || f1.some(x => /borrador/.test(x.id))) malos.push('fusión de avisos: ' + f1.map(x => x.id + (x.oculto ? '(oculto)' : '')).join(', '));
+      const ag = [{ id: 'feavir-2026', fecha: '2026-11-12', titulo: 'FEAVIR, Feria Avícola', lugar: 'Segunda semana de noviembre', nota: 'Fecha exacta por confirmar.', ics: 'ics/feavir-2026.ics' }];
+      const f2 = plano(V.fusionarHoja(ag, sG.filas, true));
+      if (f2[0].ics !== 'ics/feavir-2026.ics' || f2.find(x => x.id === 'acto-muestra-hoja').ics !== null) malos.push('ics tras la fusión: ' + f2.map(x => x.id + '=' + x.ics).join(', '));
+      const f3 = plano(V.fusionarHoja(ag, [{ ...sG.filas[1], fecha: '2026-11-13' }], true));
+      if (f3[0].ics !== null) malos.push('un acto que cambia de fecha conserva su .ics viejo');
+
+      /* leerHojaAlMontar: sin hoja.id nada; contesta; no cambia; cae; contesta HTML; sin copia */
+      const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'v3c-hoja-'));
+      const hoja = { id: 'HOJA-DE-PRUEBA', pestanas: { avisos: 'Avisos', agenda: 'Agenda', noticias: 'Noticias' } };
+      const cache = path.join(raiz, CACHE);
+      try {
+        if ((await leerHojaAlMontar({ hoja: { id: '', pestanas: hoja.pestanas }, Vivo: V, raiz, base: GOOGLE })) !== null || fs.existsSync(cache)) malos.push('sin hoja.id hace algo');
+        modo = 'contesta';
+        const r1 = await leerHojaAlMontar({ hoja, Vivo: V, raiz, base: GOOGLE });
+        if (!r1.escrita || Object.values(r1.origen).some(o => o !== 'hoja') || r1.avisos.filter(f => !f.oculto).length !== 2 || r1.agenda.length !== 3 || r1.noticias.length !== 1) malos.push('contesta: ' + JSON.stringify(r1.origen));
+        const guardada = fs.existsSync(cache) ? fs.readFileSync(cache, 'utf8') : '';
+        if (/Borrador de muestra|Un borrador no sale|31\/02/.test(guardada)) malos.push('la copia guarda borradores o filas que no se publican');
+        const r2 = await leerHojaAlMontar({ hoja, Vivo: V, raiz, base: GOOGLE });
+        if (r2.escrita || fs.readFileSync(cache, 'utf8') !== guardada) malos.push('sin cambios en la hoja, reescribe la copia');
+        for (const [m, b] of [['cae', CAIDA], ['html', GOOGLE], ['500', GOOGLE]]) {
+          modo = m;
+          const r = await leerHojaAlMontar({ hoja, Vivo: V, raiz, base: b, ms: 4000 });
+          if (Object.values(r.origen).some(o => o !== 'copia') || JSON.stringify(r.avisos) !== JSON.stringify(r1.avisos) || r.escrita || fs.readFileSync(cache, 'utf8') !== guardada || r.avisos_montaje.filter(a => /no contesta/.test(a)).length !== 3)
+            malos.push(`si la hoja ${m}, no usa la copia: ` + JSON.stringify(r.origen));
+        }
+        modo = 'contesta';
+        fs.rmSync(cache);
+        const r3 = await leerHojaAlMontar({ hoja, Vivo: V, raiz, base: CAIDA, ms: 4000 });
+        if (r3.avisos.length || r3.agenda.length || Object.values(r3.origen).some(Boolean) || fs.existsSync(cache)) malos.push('sin copia y con la hoja caída no sale vacío');
+        fs.writeFileSync(cache, guardada.replace('HOJA-DE-PRUEBA', 'OTRA-HOJA'));
+        const r4 = await leerHojaAlMontar({ hoja, Vivo: V, raiz, base: CAIDA, ms: 4000 });
+        if (r4.avisos.length) malos.push('usa la copia de otra hoja');
+        const r5 = await leerHojaAlMontar({ hoja, Vivo: V, raiz, base: GOOGLE, sinRed: true });
+        if (r5.avisos.length) malos.push('--sin-hoja pide la hoja');
+      } finally { fs.rmSync(raiz, { recursive: true, force: true }); modo = 'contesta'; }
+      comprobar(!malos.length, 'v3c F15 · la hoja en Node (pruebas/hoja/gviz-*.txt): columnas normalizadas como en el navegador, oculto y borrador fuera, lo malo quitado con su aviso, la hoja manda por id, el .ics se queda si el acto no cambia; copia en contenido/hoja.json solo si cambia; si la hoja cae, da un 500 o contesta HTML, sale la copia; sin copia, nada; sin hoja.id, nada' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+    }
+
+    /* ── 3. F15/F17 · montar una copia con la hoja de muestra: avisos.html, feed.xml, agenda.ics, ics/ y la página de la noticia ── */
+    {
+      const malos = [];
+      const dest = copiar();
+      try {
+        const Mc = JSON.parse(fs.readFileSync(path.join(dest, 'municipio.json'), 'utf8'));
+        Mc.hoja = { id: 'HOJA-DE-PRUEBA', pestanas: { avisos: 'Avisos', agenda: 'Agenda', noticias: 'Noticias' } };
+        fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(Mc, null, 2));
+        fs.rmSync(path.join(dest, CACHE), { force: true });
+        const montar = base => correr('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-capturas', '--silencio', '--fecha', '2026-10-06T10:00:00+02:00', '--hoja-url', base], { cwd: dest });
+        const revisar = (cuando) => {
+          const lee = rel => fs.readFileSync(path.join(dest, rel), 'utf8');
+          const av = lee('avisos.html'), feed = lee('feed.xml'), agenda = lee('agenda.ics');
+          const li = (av.match(new RegExp('<li class="aviso[^"]*" id="aviso-' + ID_AVISO + '"[\\s\\S]*?</li>')) || [''])[0];
+          if (!li || !/<span class="ejemplo">Ejemplo<\/span>/.test(li) || !/Texto de muestra/.test(li) || !/href="https:\/\/example\.org\/aviso-de-muestra"/.test(li)) malos.push(cuando + ': el aviso de la hoja no sale entero en avisos.html (con «Ejemplo», texto y enlace)');
+          if (/id="aviso-reunion-feria-comercio"/.test(av)) malos.push(cuando + ': el aviso ocultado en la hoja sigue en avisos.html');
+          if (/javascript:|Borrador de muestra|31\/02\/2026/.test(av + feed + agenda + lee('index.html'))) malos.push(cuando + ': sale un borrador, una fila mala o un enlace javascript:');
+          if (!feed.includes('<title>EJEMPLO: Aviso de muestra publicado desde la hoja</title>') || !feed.includes('<title>EJEMPLO: Noticia de muestra publicada desde la hoja</title>') || !feed.includes('avisos.html#aviso-' + ID_AVISO)) malos.push(cuando + ': el aviso o la noticia de la hoja no están en feed.xml');
+          const uid = 'UID:acto-muestra-hoja@' + SLUG + '.agenda';
+          if (!agenda.replace(/\r\n /g, '').includes(uid) || !/SUMMARY:EJEMPLO: Acto de muestra publicado desde la hoja/.test(agenda.replace(/\r\n /g, ''))) malos.push(cuando + ': el acto de la hoja no está en agenda.ics');
+          const suelto = path.join(dest, 'ics', 'acto-muestra-hoja.ics');
+          const v = fs.existsSync(suelto) ? icsValido(fs.readFileSync(suelto, 'utf8')) : { ok: false, mal: ['no existe'] };
+          if (!v.ok || v.uid !== uid || !v.desplegado.includes('DTSTART;TZID=Europe/Madrid:20261024T190000') || !v.desplegado.includes('DTEND;TZID=Europe/Madrid:20261024T213000')) malos.push(cuando + ': ics/acto-muestra-hoja.ics → ' + (v.mal || []).join(', '));
+          const pag = path.join(dest, 'noticia-' + ID_NOTICIA + '.html');
+          const np = fs.existsSync(pag) ? fs.readFileSync(pag, 'utf8') : '';
+          if (!/<h1[^>]*>[\s\S]*?Noticia de muestra publicada desde la hoja/.test(np) || (np.match(/<div class="articulo__cuerpo">[\s\S]*?<\/div>/) || [''])[0].split('<p>').length - 1 !== 2 || !/<span class="ejemplo">Ejemplo<\/span>/.test(np)) malos.push(cuando + ': la noticia de la hoja no tiene su página (h1, dos párrafos y «Ejemplo»)');
+          if (!lee('noticias.html').includes('href="noticia-' + ID_NOTICIA + '.html"')) malos.push(cuando + ': noticias.html no enlaza la noticia de la hoja');
+          if (!/<p class="pie__actualizada">Web actualizada el <time datetime="2026-10-06T10:00\+02:00">6 de octubre de 2026 a las 10:00<\/time>\.<\/p>/.test(np)) malos.push(cuando + ': «Web actualizada el …» no dice la fecha y hora del montaje');
+        };
+        modo = 'contesta';
+        let r = await montar(GOOGLE);
+        if (r.c !== 0) malos.push('aplicar.mjs con la hoja falla → ' + r.salida.slice(-300));
+        else revisar('con la hoja');
+        const copiaHoja = fs.existsSync(path.join(dest, CACHE)) ? fs.readFileSync(path.join(dest, CACHE), 'utf8') : '';
+        if (!copiaHoja) malos.push('no guarda contenido/hoja.json');
+        r = await montar(CAIDA);
+        if (r.c !== 0) malos.push('aplicar.mjs con la hoja caída falla → ' + r.salida.slice(-300));
+        else revisar('con la hoja caída (copia)');
+        if (copiaHoja && fs.readFileSync(path.join(dest, CACHE), 'utf8') !== copiaHoja) malos.push('con la hoja caída, cambia la copia');
+        /* tablon.mjs: si el tablón no cambia, no se toca (ni la hora): así un cambio en contenido/ es «algo nuevo» */
+        const salida = path.join(dest, 'tablon-prueba.json');
+        const desde = ['scripts/tablon.mjs', '--desde', path.join(RAIZ, 'pruebas/tablon/board-ribera.html'), '--salida', salida];
+        if (M.sede.tipo === 'gestiona') {
+          await correr('node', [path.join(dest, desde[0]), ...desde.slice(1)], { cwd: dest });
+          const t1 = fs.existsSync(salida) ? fs.readFileSync(salida, 'utf8') : '';
+          await espera(1100);
+          const r2 = await correr('node', [path.join(dest, desde[0]), ...desde.slice(1)], { cwd: dest });
+          if (!t1 || fs.readFileSync(salida, 'utf8') !== t1 || !/sin cambios/.test(r2.salida)) malos.push('tablon.mjs reescribe tablon.json sin cambios');
+        }
+      } finally { fs.rmSync(dest, { recursive: true, force: true }); }
+      /* sin hoja.id (Ribera, hoy), nada de la hoja */
+      if (!(M.hoja && M.hoja.id) && fs.existsSync(path.join(RAIZ, CACHE))) malos.push('hay contenido/hoja.json sin hoja.id');
+      comprobar(!malos.length, 'v3c F15 · montaje con la hoja de muestra: el aviso (con «Ejemplo», texto y enlace) en avisos.html y feed.xml, el oculto fuera, el acto en agenda.ics y en ics/acto-muestra-hoja.ics (válido, 19:00–21:30), la noticia con su noticia-<id>.html y en noticias.html; con la hoja caída, igual desde contenido/hoja.json; tablon.mjs no reescribe sin cambios' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+    }
+
+    /* ── 4. F16 · la lista de avisos.html, viva en el navegador (con la hoja simulada) y sin JavaScript ── */
+    {
+      const malos = [];
+      const propios = contenido('avisos').avisos.filter(a => !a.oculto);
+      /* sin JavaScript: la lista pintada al montar (el respaldo de siempre) */
+      const ctxSin = await navegador.newContext({ javaScriptEnabled: false, viewport: { width: 1280, height: 900 } });
+      const pSin = await ctxSin.newPage();
+      await pSin.goto(BASE + 'avisos.html');
+      const sinJs = await pSin.evaluate(() => [...document.querySelectorAll('[data-vivo="avisos"] .aviso')].map(li => li.id));
+      const pie = await pSin.evaluate(() => { const p = document.querySelector('.pie__actualizada'); return p ? { texto: p.textContent, alto: p.getBoundingClientRect().height, dt: p.querySelector('time').getAttribute('datetime') } : null; });
+      await ctxSin.close();
+      if (sinJs.join() !== propios.slice().sort((a, b) => b.fecha.localeCompare(a.fecha)).map(a => 'aviso-' + a.id).join()) malos.push('sin JavaScript, la lista no es la de contenido/avisos.json: ' + sinJs.join(', '));
+      /* con la hoja: se repinta, sale el de la hoja con su texto y «Ejemplo», el ocultado se va y #aviso-<id> baja a él */
+      const conHoja = async (pag, cambiar) => {
+        const x = await nueva({ viewport: { width: 1280, height: 800 } });
+        await x.page.route('**/' + pag, async r => {
+          const resp = await r.fetch(); let cuerpo = await resp.text();
+          cuerpo = cuerpo.replace(/(<script type="application\/json" id="datos-vivos">)([\s\S]*?)(<\/script>)/, (m, a, j, b) => {
+            const D = JSON.parse(j); D.hoja = { id: 'HOJA-DE-PRUEBA', pestanas: { avisos: 'Avisos' } }; if (cambiar) cambiar(D);
+            return a + JSON.stringify(D).replace(/</g, '\\u003c') + b;
+          });
+          r.fulfill({ response: resp, body: cuerpo });
+        });
+        await x.page.route('https://docs.google.com/**', r => r.fulfill({ contentType: 'text/plain', body: MUESTRA('avisos') }));
+        return x;
+      };
+      {
+        const x = await conHoja('avisos.html');
+        await x.page.goto(BASE + 'avisos.html#aviso-' + ID_AVISO, { waitUntil: 'networkidle' });
+        await espera(400);
+        const r = await x.page.evaluate(id => {
+          const li = document.getElementById('aviso-' + id), caja = li && li.getBoundingClientRect();
+          return { hay: !!li && !!li.closest('[data-vivo="avisos"]'), texto: li ? li.textContent : '', ejemplo: !!(li && li.querySelector('.ejemplo')), arriba: caja ? Math.round(caja.top) : null,
+            oculto: !!document.getElementById('aviso-reunion-feria-comercio'), raros: document.querySelectorAll('a[href^="javascript:"]').length, seccion: !document.querySelector('[data-vivo="avisos"]').closest('section').hidden };
+        }, ID_AVISO);
+        const ax = await new AxeBuilder({ page: x.page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
+        if (!r.hay || !/Texto de muestra/.test(r.texto) || !r.ejemplo) malos.push('el aviso de la hoja no sale en la lista con su texto y «Ejemplo»');
+        if (r.arriba === null || r.arriba < -2 || r.arriba > 200) malos.push('avisos.html#aviso-<id> no baja al aviso que llega de la hoja (top ' + r.arriba + ')');
+        if (r.oculto) malos.push('el aviso ocultado en la hoja sigue en la lista');
+        if (r.raros) malos.push('hay enlaces javascript:');
+        if (ax.violations.length) malos.push('axe: ' + ax.violations.map(v => v.id).join(', '));
+        if (x.errores.length) malos.push('consola: ' + x.errores.slice(0, 2).join(' | '));
+        await x.ctx.close();
+      }
+      {
+        /* sin ningún aviso propio, la sección no sale; si la hoja trae uno, aparece */
+        const sin = await nueva();
+        await conDatosV3c(sin.page, 'avisos.html', D => { D.avisos = []; });
+        await ir(sin.page, 'avisos.html');
+        const oculta = await sin.page.evaluate(() => { const s = document.querySelector('[data-vivo="avisos"]').closest('section'); return s.hidden && s.getBoundingClientRect().height === 0; });
+        await sin.ctx.close();
+        const x = await conHoja('avisos.html', D => { D.avisos = []; });
+        await ir(x.page, 'avisos.html');
+        await espera(300);
+        const sale = await x.page.evaluate(() => { const s = document.querySelector('[data-vivo="avisos"]').closest('section'); return !s.hidden && s.querySelectorAll('.aviso').length; });
+        await x.ctx.close();
+        if (!oculta) malos.push('sin avisos, la sección «Avisos del Ayuntamiento» sale vacía');
+        if (sale !== 2) malos.push('sin avisos propios, los 2 de la hoja no hacen salir la sección (' + sale + ')');
+      }
+      /* F17 · «Web actualizada el …»: en todas las páginas, igual en todas, sin JavaScript y a la vista */
+      const sellos = new Set(), sinSello = [];
+      for (const p of PAGINAS) { const m = leer(RAIZ, p).match(/<p class="pie__actualizada">Web actualizada el <time datetime="(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}[+-]\d{2}:\d{2})">(\d{1,2} de [a-z]+ de \d{4} a las \d{1,2}:\d{2})<\/time>\.<\/p>/); if (m) sellos.add(m[1] + ' ' + m[2]); else sinSello.push(p); }
+      if (sinSello.length) malos.push('sin «Web actualizada el …»: ' + sinSello.join(', '));
+      if (sellos.size !== 1) malos.push('el sello no es el mismo en todas las páginas');
+      const [dt] = [...sellos][0] ? [...sellos][0].split(' ') : [];
+      if (dt && !(new Date(dt) <= new Date())) malos.push('el sello es del futuro: ' + dt);
+      if (!pie || !pie.alto || !/Web actualizada el \d/.test(pie.texto)) malos.push('el sello no se ve sin JavaScript');
+      comprobar(!malos.length, `v3c F16/F17 · «Avisos del Ayuntamiento»: sin JavaScript, los ${propios.length} de contenido/avisos.json; con la hoja simulada, el de la hoja con su texto y «Ejemplo», el ocultado fuera, sin javascript:, #aviso-<id> baja a él, axe 0; sin avisos la sección no sale y con la hoja aparece · «Web actualizada el ${[...sellos][0] ? [...sellos][0].split(' ').slice(1).join(' ') : '?'}» en las ${PAGINAS.length} páginas, sin JavaScript` + (malos.length ? ' → ' + malos.join(' | ') : ''));
+    }
+  } finally { google.close(); }
+}
+/* reescribe los datos vivos de una página antes de que main.js los pinte (v3c · automatico) */
+async function conDatosV3c(page, pag, cambiar) {
+  await page.route('**/' + pag, async r => {
+    const resp = await r.fetch(); const cuerpo = await resp.text();
+    r.fulfill({ response: resp, body: cuerpo.replace(/(<script type="application\/json" id="datos-vivos">)([\s\S]*?)(<\/script>)/, (m, a, j, b) => { const D = JSON.parse(j); cambiar(D); return a + JSON.stringify(D).replace(/</g, '\\u003c') + b; }) });
+  });
+}
+
 /* ═════════════ orden ═════════════ */
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
@@ -3540,6 +3878,7 @@ for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', pa
   ['v3bservicio', v3bServicio],
   ['v3bpueblo', v3bPueblo],
   ['v3binteriores', v3bInteriores],
+  ['v3cautomatico', v3cAutomatico],
   ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();

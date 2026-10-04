@@ -77,7 +77,7 @@ En `municipio.json`:
 "hoja": { "id": "1AbC…xyz", "pestanas": { "avisos": "Avisos", "agenda": "Agenda" } }
 ```
 
-y `node scripts/aplicar.mjs`. Ya está: la web lee la hoja cada vez que alguien la abre.
+y `node scripts/aplicar.mjs`. Ya está: la web lee la hoja cada vez que alguien la abre, y la tarea diaria (ver «La tarea diaria», abajo) la mete también en el feed, la agenda para el móvil y las páginas de noticia.
 
 **Compruebe que las respuestas no se ven:** abra en una ventana privada `https://docs.google.com/spreadsheets/d/<id>/gviz/tq?sheet=Respuestas%20avisos`. Tiene que dar error o pedir acceso. Si devuelve datos, la hoja está compartida de más (paso 1.2).
 
@@ -108,4 +108,34 @@ Sin `id`, la web se lo inventa con la fecha y el título: si se corrige el títu
 - **Tarda unos minutos.** Google vuelve a publicar la hoja cada pocos minutos; la web la lee al abrirse.
 - **Quien tiene el formulario, publica.** El enlace del formulario es como una llave: solo a quien deba publicar. Si se escapa, se hace una copia del formulario y se borra el viejo.
 - **La hoja manda sobre lo que viene en la página** cuando un aviso tiene el mismo `id`.
-- Lo publicado desde la hoja **no** entra en `feed.xml` ni en `agenda.ics` hasta que se vuelve a montar la web (`node scripts/aplicar.mjs`), porque esos archivos se escriben al montarla. Ver INFORME-v3b-servicio.md.
+- Lo publicado desde la hoja sale **al momento** en la portada, la franja, la agenda y la lista de «Avisos» (la web la lee al abrirse), y **en la siguiente pasada de la tarea diaria** (por la mañana o por la tarde) en `feed.xml`, `agenda.ics`, el `.ics` de cada acto y la página propia de cada noticia. Nadie tiene que regenerar nada.
+- **Noticias desde la hoja:** pestaña `Noticias` con `fecha`, `titulo`, `resumen` y `texto` (un párrafo por línea de la celda); `estado` y `id` como en las otras. Cada noticia tiene su página (`noticia-<id>.html`) desde la siguiente pasada. La foto no se pone desde la hoja: cada foto de la web lleva autor y licencia.
+
+## La tarea diaria (para Álvaro): la web se actualiza sola
+
+`.github/workflows/actualizar.yml` es una tarea de **GitHub Actions** que mantiene la web al día sin que nadie ejecute nada. Dos veces al día (a las 7:23 y a las 15:23 en verano; a las 6:23 y a las 14:23 en invierno, porque GitHub cuenta en hora UTC):
+
+1. `node scripts/tablon.mjs`: el tablón de la sede, **solo** con `"tablon_autorizado": true` en `municipio.json` (si la sede no responde, se queda el que había);
+2. `node scripts/aplicar.mjs --sin-capturas`: lee la hoja (si no contesta, usa la última copia buena, `contenido/hoja.json`) y vuelve a montar la web. Sin Chromium: la imagen para compartir y la captura de «La propuesta» se quedan como están;
+3. si hay algo que publicar, hace un commit en la rama de Pages («Web actualizada sola: …», con lo que ha cambiado) y lo sube. GitHub Pages lo publica en uno o dos minutos.
+
+Publica cuando cambia algo en `contenido/` (anuncios del tablón o algo nuevo en la hoja), la primera vez de cada día aunque no haya nada nuevo (para que «Web actualizada el …» del pie y la agenda de hoy sean del día), después de que alguien suba cambios a mano y siempre que se lance a mano. Si solo cambiaría la hora del pie, no sube nada.
+
+**Activarla** (una vez por repositorio; el de cada Ayuntamiento lleva ya el archivo):
+1. En GitHub, el repositorio → **Settings → Actions → General**: «Allow all actions and reusable workflows» (o al menos las de GitHub: `actions/checkout` y `actions/setup-node`).
+2. En la misma página, **Workflow permissions**: si la tarea falla al subir con un error 403, marque «Read and write permissions» y guarde. (El archivo ya pide `contents: write`, que normalmente basta.)
+3. **Settings → Pages**: «Deploy from a branch», la rama `master` y la carpeta `/ (root)`, como hasta ahora.
+4. Pestaña **Actions** → «Actualizar la web» → **Run workflow** para la primera pasada. Las siguientes van solas.
+
+No hay secretos que configurar: usa el permiso que GitHub da a cada ejecución.
+
+**Ver si ha fallado:** pestaña **Actions** del repositorio. Cada pasada sale con un círculo verde (bien) o una cruz roja (falló); al pulsarla se ve en qué paso y por qué. Si falla una pasada programada, GitHub manda un correo a la cuenta que hizo el último cambio en el archivo de la tarea. Lo normal cuando falla:
+- `aplicar.mjs` se niega (un dato mal en `municipio.json` o en `contenido/*.json`, un `[PENDIENTE]`…): el mensaje dice qué. No se publica nada a medias; se arregla, se sube y se lanza a mano.
+- Un problema de la hoja **no** hace fallar la tarea: lo que no se puede enseñar se queda fuera y se avisa en el paso «Montar la web» (abra el paso y busque «hoja»). Para revisar la hoja con calma, `node scripts/comprobar-hoja.mjs` (arriba, §6).
+- Error 403 al subir: el permiso de escritura (paso 2 de «Activarla»).
+
+**Lanzarla a mano** (por ejemplo, justo después de publicar algo importante en la hoja): **Actions → Actualizar la web → Run workflow → Run workflow**. Tarda un par de minutos.
+
+**Apagarla:** **Actions → Actualizar la web → «⋯» → Disable workflow**. Ojo: en un repositorio público, si no hay ningún cambio en 60 días GitHub la apaga solo; como publica una vez al día, no debería pasar, pero si un día está apagada, se enciende ahí mismo («Enable workflow»).
+
+Si alguien trabaja a mano en el mismo repositorio, la tarea puede haber subido algo entre medias: antes de subir, `git pull --rebase`. Si hay conflicto solo en archivos generados, se quedan los de cualquiera de los dos y se vuelve a montar.

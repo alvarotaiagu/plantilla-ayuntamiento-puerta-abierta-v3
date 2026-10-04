@@ -1714,6 +1714,11 @@ html.con-cortina { overflow: hidden; background: var(--cortina); }   /* también
 .resultados .resultados__todos a { display: inline; padding: 0; border: 0; color: var(--marca); text-decoration: underline; }
 /* ═══════════════ fin v3b ═══════════════ */
 
+/* ═══════════════ v3c · automatico ═══════════════ */
+/* F17: la fecha del último montaje en el pie, discreta (como los créditos) */
+.pie__actualizada { color: var(--apagado); font-size: .9375rem; }
+/* ═══════════════ fin v3c · automatico ═══════════════ */
+
 /* [MANDO DE MAQUETA] inicio */
 /* Mando de la reunión (?revision). Lo borra scripts/quitar_mandos.py. */
 html:not(.en-revision) .cookies__revision { display: none; }

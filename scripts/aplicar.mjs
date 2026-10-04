@@ -12,6 +12,10 @@
 
      node scripts/aplicar.mjs                  todo
      node scripts/aplicar.mjs --sin-og         sin la imagen para compartir
+     node scripts/aplicar.mjs --sin-capturas   sin og.jpg ni propuesta-portada.jpg (se quedan las que hay;
+                                               sin Chromium: lo usa la tarea diaria de GitHub Actions)
+     node scripts/aplicar.mjs --sin-hoja       sin pedir la hoja de Google: solo contenido/hoja.json
+     node scripts/aplicar.mjs --hoja-url <base>   otra dirección en vez de docs.google.com (pruebas)
      node scripts/aplicar.mjs --fecha 2026-10-06T10:00:00+02:00   «hoy» fijo (pruebas)
      node scripts/aplicar.mjs --fijar-paleta b   la paleta B del mando pasa a ser la real
      node scripts/aplicar.mjs --forzar         escribe aunque falle algo (no lo uses)
@@ -27,12 +31,13 @@ import vm from 'node:vm';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { renderizar } from './lib/plantilla.mjs';
 import { derivarTokens, paletaGirada, contraste, nombreMatiz, oscurecerHasta, hexARgb } from './lib/color.mjs';
-import { feedAtom, agendaIcs, organizacion, eventoLd, noticiaLd, migasLd, jsonLd, swCodigo, recursosDe } from './lib/servicio.mjs';   /* v3b · servicio */
+import { feedAtom, agendaIcs, organizacion, eventoLd, noticiaLd, migasLd, jsonLd, swCodigo, recursosDe, desfase } from './lib/servicio.mjs';   /* v3b · servicio */
+import { leerHojaAlMontar } from './lib/hoja.mjs';   /* v3c · automatico */
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 const arg = n => (args.includes(n) ? args[args.indexOf(n) + 1] : null);
-const SIN_OG = args.includes('--sin-og');
+const SIN_OG = args.includes('--sin-og') || args.includes('--sin-capturas');   /* v3c: --sin-capturas, el de la tarea diaria */
 const FORZAR = args.includes('--forzar');
 const SILENCIO = args.includes('--silencio');
 
@@ -173,6 +178,23 @@ vm.runInNewContext(leer('js/vivo.js'), ctx);
 const Vivo = ctx.window.Vivo;
 const fechaBuild = arg('--fecha') ? new Date(arg('--fecha')) : new Date();
 const ahora = Vivo.ahoraEn('Europe/Madrid', fechaBuild);
+
+/* ───────────────────────── v3c · automatico: la hoja de Google, también al montar (F15) ─────────────────────────
+   Con municipio.json → hoja.id, lo publicado en la hoja se fusiona aquí con contenido/*.json (la hoja
+   manda por id; lo oculto oculta) ANTES de pintar: así entra en feed.xml, agenda.ics, ics/<id>.ics, la
+   lista de avisos.html, y cada noticia de la hoja tiene su noticia-<id>.html. Se lee y se sanea con el
+   mismo código que en el navegador (js/vivo.js). Si la hoja no contesta, lo último bueno
+   (contenido/hoja.json). Sin hoja.id, nada cambia. Lo raro de la hoja se avisa; nunca para el montaje */
+const hojaLeida = await leerHojaAlMontar({ hoja: M.hoja, Vivo, raiz: RAIZ, base: arg('--hoja-url'), sinRed: args.includes('--sin-hoja') });
+if (hojaLeida) {
+  const fusion = (lista, filas, agenda) => JSON.parse(JSON.stringify(Vivo.fusionarHoja(lista, filas, agenda)));
+  C.avisos = fusion(C.avisos, hojaLeida.avisos);
+  C.agenda = fusion(C.agenda, hojaLeida.agenda, true);
+  C.noticias = fusion(C.noticias, hojaLeida.noticias);
+  avisos.push(...hojaLeida.avisos_montaje);
+  log('✓ hoja: ' + Object.entries(hojaLeida.origen).filter(([, o]) => o).map(([t, o]) => `${t} ${hojaLeida[t].filter(f => !f.oculto).length} (${o === 'hoja' ? 'leída ahora' : 'copia'})`).join(', ') +
+    (hojaLeida.escrita ? ' · contenido/hoja.json al día' : ''));
+}
 
 /* ───────────────────────── utilidades ───────────────────────── */
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -559,7 +581,8 @@ const conIcs = e => ({ ...e, ics: 'ics/' + Vivo.archivoIcs(e) });
 const D = {
   slug: marcaConf.slug, nombre: M.nombre, nombre_corto: M.nombre_corto, zona: 'Europe/Madrid',
   horario: { texto: M.horario.texto, tramos: M.horario.tramos || [], ejemplo: !!M.horario.ejemplo },
-  avisos: C.avisos.map(a => ({ id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, titulo_corto: a.titulo_corto || null, urgente: !!a.urgente, gravedad: a.gravedad ? String(a.gravedad).toLowerCase().trim() : null, caduca: a.caduca || null, ejemplo: !!a.ejemplo, oculto: !!a.oculto, ...conPlazo(a) })),
+  /* v3c · F16: con texto y enlace, la lista de avisos.html se pinta desde aquí (también lo que llega de la hoja) */
+  avisos: C.avisos.map(a => ({ id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, texto: a.texto || null, enlace: a.enlace || null, titulo_corto: a.titulo_corto || null, urgente: !!a.urgente, gravedad: a.gravedad ? String(a.gravedad).toLowerCase().trim() : null, caduca: a.caduca || null, ejemplo: !!a.ejemplo, oculto: !!a.oculto, ...conPlazo(a) })),
   agenda: [...C.agenda.map(e => ({ id: e.id, fecha: e.fecha, hora: e.hora || null, hora_fin: e.hora_fin || null, titulo: e.titulo, lugar: e.lugar || null, nota: e.nota || null, ejemplo: !!e.ejemplo, oculto: !!e.oculto,
     tipo: e.tipo ? String(e.tipo).toLowerCase() : null, convocatoria: e.convocatoria || null, convocatoria_sr: e.convocatoria ? srDe(e.convocatoria) : null,
     grabacion: e.grabacion || null, grabacion_sr: e.grabacion ? srDe(e.grabacion) : null })), ...agendaFiestas, ...plenosAgenda].map(conIcs),
@@ -578,7 +601,8 @@ const pintar = (b, op) => Vivo.pintar(b, D, ahora, op);
 const vivo = {
   franja: pintar('franja'), hoy: pintar('hoy'), tablon_portada: pintar('tablon', { limite: 6 }), tablon_todo: pintar('tablon'),
   linea: pintar('linea'), anio: pintar('anio'), lado: pintar('lado'), agenda: pintar('agenda'), estado_ayto: pintar('servicio', { clave: 'ayuntamiento' }),
-  plazos: pintar('plazos')
+  plazos: pintar('plazos'),
+  avisos: pintar('avisos')   /* v3c · F16 */
 };
 /* v3b · el chip del plazo de cada aviso en «Avisos» (lo repinta vivo.js con la fecha real) */
 for (const a of avisosOrden) a.plazo_html = a.plazo_inicio || a.plazo_fin ? pintar('plazo', { clave: a.id }) : null;
@@ -1026,7 +1050,17 @@ function jsonLdDe(p) {
   return jsonLd(g);
 }
 
+/* v3c · F17: «Web actualizada el …» en el pie de todas las páginas: la fecha y la hora de este montaje,
+   en hora peninsular (Madrid). Va pintado (sin JavaScript): la tarea diaria lo renueva cada mañana */
+const actualizada = (() => {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+    .formatToParts(fechaBuild).map(x => [x.type, x.value]));
+  const dia = `${p.year}-${p.month}-${p.day}`, hm = `${p.hour}:${p.minute}`;
+  return { iso: `${dia}T${hm}${desfase(dia, hm)}`, texto: `${fechaTexto(dia)} a las ${Number(p.hour)}:${p.minute}` };
+})();
+
 const comun = {
+  actualizada,   /* v3c · F17 */
   ...M, aviso_generado: 'GENERADO por scripts/aplicar.mjs desde fuente/ y los datos. No editar a mano.',
   raiz: '', base_404: null, url: M.url || null, robots_no: !M.indexar, propuesta: M.propuesta !== false,
   marca: { slug: marcaConf.slug, densidad: marcaConf.densidad === 'sobria' ? 'sobria' : 'puerta' },
@@ -1162,7 +1196,9 @@ escribir('agenda.ics', agendaIcs({ Vivo, D, sello: fechaBuild }));
   const faltan = recursos.filter(u => !existe(u.split('?')[0]));
   if (faltan.length) avisos.push('sw.js: no existen ' + faltan.join(', ') + ' (no se precargan)');
   const lista = recursos.filter(u => existe(u.split('?')[0]));
-  const version = crypto.createHash('md5').update(lista.map(u => u + ':' + huella(u.split('?')[0])).join('|')).digest('hex').slice(0, 10);
+  /* v3c: la línea «Web actualizada el …» del pie no cuenta (si no, sw.js cambiaría en cada montaje) */
+  const huellaSw = rel => (/\.html$/.test(rel) ? crypto.createHash('md5').update(leer(rel).replace(/<p class="pie__actualizada">.*?<\/p>/, '')).digest('hex').slice(0, 8) : huella(rel));
+  const version = crypto.createHash('md5').update(lista.map(u => u + ':' + huellaSw(u.split('?')[0])).join('|')).digest('hex').slice(0, 10);
   escribir('sw.js', swCodigo({ slug: marcaConf.slug, version, rutas: lista }));
 }
 

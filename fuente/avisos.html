@@ -9,22 +9,15 @@
     <ul class="lista-enlaces">{{#otros}}<li><a href="{{url}}">{{nombre}}<span class="sr">, se abre otra web</span></a></li>{{/otros}}</ul>{{/otros.length}}
   </div>
 </section>{{/canal_avisos}}
-{{#avisos.length}}<section class="seccion{{^canal_avisos}} seccion--primera{{/canal_avisos}}" aria-labelledby="t-avisos">
+{{! v3c · F16: la lista la pinta js/vivo.js (bloque «avisos»): aplicar.mjs al montar (lo que se ve sin
+     JavaScript) y main.js con lo que llegue de la hoja. Sin ningún aviso, la sección va oculta y sale
+     sola si la hoja trae uno }}
+<section class="seccion{{^canal_avisos}} seccion--primera{{/canal_avisos}}" aria-labelledby="t-avisos"{{^vivo.avisos}} hidden{{/vivo.avisos}}>
   <div class="contenedor">
     <h2 class="seccion__titulo" id="t-avisos">Avisos del Ayuntamiento</h2>
-    <ol class="avisos">
-      <!-- v3b: la franja de la izquierda con la gravedad (rojo, solo lo urgente) y el chip del plazo,
-           que vivo.js repinta con la fecha real (data-vivo="plazo") -->
-      {{#avisos}}<li class="aviso aviso--{{gravedad}}{{#urgente}} aviso--urgente{{/urgente}}" id="aviso-{{id}}"{{#ejemplo}} data-dato-ejemplo="aviso:{{id}}"{{/ejemplo}}>
-        <p class="aviso__meta"><span class="chip">{{tema}}</span><time datetime="{{fecha}}">{{fecha_texto}}</time>{{#urgente}}<span class="chip chip--urgente">Urgente</span>{{/urgente}}{{#programado}}<span class="chip chip--programado">Programado</span>{{/programado}}{{#plazo_html}}<span class="aviso__plazo" data-vivo="plazo" data-clave="{{id}}">{{{plazo_html}}}</span>{{/plazo_html}}{{#ejemplo}}<span class="ejemplo">Ejemplo</span>{{/ejemplo}}</p>
-        <h3 class="aviso__titulo">{{titulo}}</h3>
-        <p class="aviso__texto">{{texto}}</p>
-        {{#enlace}}<p><a href="{{enlace}}">Más información<span class="sr"> sobre {{titulo}}</span></a></p>{{/enlace}}
-      </li>
-      {{/avisos}}
-    </ol>
+    <div class="avisos-lista" data-vivo="avisos">{{{vivo.avisos}}}</div>
   </div>
-</section>{{/avisos.length}}
+</section>
 
 <section class="seccion" aria-labelledby="t-tablon-todo">
   <div class="contenedor">
