@@ -1,16 +1,63 @@
 # Publicar desde el móvil: Formulario de Google → Hoja → web
 
-Para que la secretaría (o quien el Ayuntamiento diga) publique **un aviso o un acto de la agenda desde el móvil**, sin entrar en ningún programa ni tocar la web. Se monta una vez (media hora) y después publicar es rellenar un formulario.
+Para que la secretaría (o quien el Ayuntamiento diga) publique **un aviso, un acto de la agenda o una noticia desde el móvil**, sin entrar en ningún programa ni tocar la web. Se monta una vez y después publicar es rellenar un formulario. Lo que ve quien publica está en **`publicar.html`** («Publicar en la web», enlazada abajo en el pie: «Personal del Ayuntamiento: publicar»): los botones a los formularios, qué sale dónde, un simulador y cómo corregir. Impresa, es la hoja para la mesa.
 
 ```
- Formulario «Publicar un aviso»  ─┐                         ┌─ pestaña «Avisos»  (publicada) ─┐
-                                  ├─► hoja «Web del Ayto.» ─┤                                  ├─► la web la lee al cargar
- Formulario «Publicar un acto»   ─┘   (respuestas, privadas) └─ pestaña «Agenda»  (publicada) ─┘
+ «Publicar un aviso»    ─┐                            ┌─ pestaña «Avisos»    (publicada) ─┐
+ «Publicar un acto»     ─┼─► hoja «Web del Ayto.»  ───┼─ pestaña «Agenda»    (publicada) ─┼─► la web la lee al abrirse
+ «Publicar una noticia» ─┘   (respuestas, privadas)   └─ pestaña «Noticias»  (publicada) ─┘   y al montarse
 ```
 
-La web ya sabe leer la hoja (README, «La hoja de cálculo»; `js/main.js → leerHoja`): primero pinta lo que trae la página y luego **fusiona** lo de la hoja. Si la hoja no contesta en 7 segundos, se queda lo de la página. Lo que se publica sale en la portada (panel «Hoy», tablón, «Lo que viene»), en la agenda y, si es un aviso urgente o programado con fecha de fin, en la franja de arriba de todas las páginas.
+La web ya sabe leer la hoja (README, «La hoja de cálculo»; `js/main.js → leerHoja`): primero pinta lo que trae la página y luego **fusiona** lo de la hoja. Si la hoja no contesta en 7 segundos, se queda lo de la página. Lo que se publica sale en la portada (panel «Hoy», tablón, «Lo que viene», «Lo que pasó»), en la agenda y, si es un aviso urgente o programado con fecha de fin, en la franja de arriba de todas las páginas.
 
 ---
+
+## El camino corto: `plantillas-hoja/crear-hoja.gs` (unos diez minutos)
+
+Un Google Apps Script que lo crea todo de una vez: la hoja «Web del Ayuntamiento», los tres formularios con las preguntas que lee la web, las pestañas de respuestas (con la columna «Estado») y las tres pestañas que se publican, con su `QUERY` (solo las columnas de la web: ni la marca temporal ni correos). Lo pone todo en una carpeta «Web del Ayuntamiento» de su Drive.
+
+> **No se ha podido ejecutar en Google al escribirlo** (no hay cuenta en este entorno). Está hecho con la API documentada de Apps Script y `verificar.mjs → v3cguia` lo ejecuta contra una imitación de esa API y comprueba que las preguntas se llaman como las columnas que lee la web. La primera vez de verdad, haga la comprobación del paso 3.
+
+**1. Ejecutar el script** (con la cuenta de Google **del Ayuntamiento**: los formularios y la hoja quedan a su nombre).
+1. Abra <https://script.google.com> → **Nuevo proyecto**. Borre lo que haya, pegue `plantillas-hoja/crear-hoja.gs` entero y guarde.
+2. Arriba del todo puede cambiar `TEMAS` (los temas del tablón), `AVISAR_POR_CORREO` (de serie, `true`: un correo a la cuenta del Ayuntamiento con cada envío, para enterarse si alguien que no debe tiene un formulario) y `SOLO_CUENTAS_DE_LA_ORGANIZACION` (solo con Google Workspace: los formularios piden entrar con una cuenta del Ayuntamiento).
+3. En el desplegable de funciones elija **`crearHojaDeLaWeb`** → **Ejecutar**. Google pide permiso (Drive, Formularios, Hojas y, con el aviso por correo, enviar correo y activadores). Si sale «Google no ha verificado esta aplicación»: **Configuración avanzada → Ir a … (no seguro)**; el script es suyo.
+4. Al acabar, el **Registro de ejecución** enseña el bloque para `municipio.json` (y queda escrito en la pestaña «Léame» de la hoja):
+   ```json
+   "hoja": { "id": "1AbC…xyz", "pestanas": { "avisos": "Avisos", "agenda": "Agenda", "noticias": "Noticias" },
+             "formularios": { "avisos": "https://docs.google.com/forms/d/e/…/viewform", "agenda": "…", "noticias": "…" } }
+   ```
+
+**2. Publicar las pestañas (a mano: un script no puede).** Abra la hoja (está en la carpeta «Web del Ayuntamiento»):
+1. **Archivo → Compartir → Publicar en la web**.
+2. Pestaña «Enlace». En el **primer desplegable** quite «Documento completo» y marque **solo** «Avisos», «Agenda» y «Noticias» (nunca «Léame» ni las «Respuestas …»).
+3. En el segundo desplegable deje «Página web».
+4. Despliegue **«Contenido publicado y configuración»** y marque **«Volver a publicar automáticamente cuando se hagan cambios»**.
+5. **Publicar** → Aceptar. El enlace que sale no hace falta.
+6. **No** toque «Compartir» (el botón verde): la hoja sigue en «Restringido».
+
+**3. Comprobar** (dos minutos, en una ventana privada del navegador):
+- `https://docs.google.com/spreadsheets/d/<id>/gviz/tq?sheet=Avisos` **tiene que devolver datos** (un texto que empieza por `/*O_o*/`). Si pide entrar, falta el paso 2.
+- `https://docs.google.com/spreadsheets/d/<id>/gviz/tq?sheet=Respuestas%20avisos` **tiene que dar error o pedir acceso**. Si devuelve datos, se ha publicado de más (paso 2.2) o la hoja está compartida con «Cualquier persona con el enlace».
+- Envíe un aviso de prueba desde el formulario, mire que sale en la pestaña «Avisos» y retírelo escribiendo `oculto` en su «Estado» (en «Respuestas avisos»).
+
+**4. Decírselo a la web:** pegue el bloque en `municipio.json → hoja` y `node scripts/aplicar.mjs`. Desde ese momento:
+- la web lee la hoja cada vez que alguien la abre (lo nuevo sale en unos minutos);
+- `publicar.html` enseña los tres botones a los formularios (sin `formularios`, cada botón dice «Se activa al montar la hoja (lo hace quien mantiene la web)»: no se inventan enlaces).
+
+**5. Dárselo al Ayuntamiento:** la dirección de `publicar.html` (o el enlace del pie) a quien vaya a publicar, para que la guarde en la pantalla de inicio del móvil, y la página impresa para la mesa. En una demo sin hoja, el simulador «Pruébelo» de esa página enseña lo que pasaría (no envía nada).
+
+**Lo que conviene saber de este camino:**
+- **`publicar.html` no sale en buscadores ni en el menú, pero no es secreta**: quien la abra ve los botones. Si eso no basta, `SOLO_CUENTAS_DE_LA_ORGANIZACION` (con Workspace), el correo de cada envío (`AVISAR_POR_CORREO`) y, si un enlace se escapa, una copia nueva del formulario (el viejo se borra o deja de aceptar respuestas).
+- Lo que llega por los formularios lo puede leer cualquiera en las pestañas publicadas, también lo que se deja en `borrador`: nada que no pueda ser público.
+- No cambie los títulos de las preguntas ni su orden: son los nombres de las columnas y la `QUERY` los busca por su letra. Si hace falta, se borra todo y se vuelve a ejecutar el script.
+- Tras enviar, el formulario ofrece «Editar su respuesta» (para una errata); un cambio de título hace que la web lo tome como otro aviso y quite el anterior.
+
+---
+
+## El camino manual (si no se puede usar el script)
+
+Lo mismo, a mano: unos treinta minutos de clics. Al terminar, `hoja.formularios` (las direcciones de «Enviar → enlace» de cada formulario) va en `municipio.json` como en el paso 4 de arriba.
 
 ## 1. La hoja
 
@@ -33,7 +80,7 @@ La web ya sabe leer la hoja (README, «La hoja de cálculo»; `js/main.js → le
 | `Caduca` | Fecha | no | Último día que se enseña en la franja. **Sin esta fecha, un aviso urgente o programado no sale en la franja** |
 | `Título corto` | Respuesta corta, validación «Longitud máxima: 70» | no | Solo si el título pasa de 70 caracteres: es lo que sale en la franja del móvil |
 
-4. Configuración del formulario: **no** recopilar direcciones de correo (la pestaña publicada no debe llevar datos de nadie). Mensaje de confirmación: «Publicado. Saldrá en la web en unos minutos».
+4. Configuración del formulario: **no** recopilar direcciones de correo (la pestaña publicada no debe llevar datos de nadie). Mensaje de confirmación: «Publicado. Saldrá en la web en unos minutos». Active **«Permitir editar después de enviar»** (para corregir una errata al momento).
 
 *Captura descrita:* el formulario en el móvil tiene, de arriba abajo, un calendario para «Fecha», una línea para «Título», un desplegable «Tema», una caja grande «Texto», tres botones redondos «informativo / programado / urgente», otro calendario «Caduca» y una línea «Título corto». Abajo, el botón «Enviar».
 
@@ -53,6 +100,19 @@ Igual, desde la misma hoja (**Herramientas → Crear un formulario** otra vez). 
 | `Convocatoria` | Respuesta corta (validación: URL) | no | Solo plenos: enlace a la convocatoria en la sede |
 | `Grabación` | Respuesta corta (validación: URL) | no | Solo plenos: enlace al vídeo cuando ya se ha celebrado |
 
+## 3 bis. El formulario de noticias (v3c)
+
+Igual, otra vez desde la misma hoja. Renombre su pestaña a **«Respuestas noticias»**. Las fotos no van por el formulario (cada foto de la web lleva su autor y su licencia): se mandan a quien mantiene la web.
+
+| Pregunta (título exacto) | Tipo | Obligatoria | Qué es |
+|---|---|---|---|
+| `Fecha` | Fecha | sí | El día de la noticia |
+| `Título` | Respuesta corta | sí | Lo que ha pasado, en una línea |
+| `Resumen` | Respuesta corta | no | Una frase que sale debajo del título en la portada |
+| `Texto` | Párrafo | no | La noticia entera, un párrafo por línea |
+
+Plantilla con las columnas: [`plantillas-hoja/noticias.csv`](plantillas-hoja/noticias.csv).
+
 ## 4. Las pestañas que se publican
 
 Las respuestas tienen la «Marca temporal» y lo que se haya escrito tal cual. Se publica **otra** pestaña que copia solo las columnas que lee la web:
@@ -62,19 +122,20 @@ Las respuestas tienen la «Marca temporal» y lo que se haya escrito tal cual. S
    =QUERY('Respuestas avisos'!A:Z; "select B, C, D, E, F, G, H, I where C is not null"; 1)
    ```
    (B…H son Fecha, Título, Tema, Texto, Gravedad, Caduca y Título corto, en el orden del formulario; I es «Estado», ver abajo. Si cambia el orden de las preguntas, cambie las letras.)
-2. Pestaña nueva **«Agenda»**, igual con `'Respuestas agenda'!A:Z` y sus columnas.
+2. Pestaña nueva **«Agenda»**, igual con `'Respuestas agenda'!A:Z` y sus columnas; y **«Noticias»** con `'Respuestas noticias'!A:Z` (B…E y la de «Estado»).
 3. **Estado (para retirar algo sin borrarlo):** en cada pestaña de respuestas, escriba a mano «Estado» en la primera celda libre de la fila 1. Para quitar un aviso de la web, ponga `oculto` en su fila; para guardarlo sin publicar, `borrador`.
-4. **Archivo → Compartir → Publicar en la web** → en «Enlace», elija **solo** las pestañas «Avisos» y «Agenda» (no «Documento entero») → Publicar. Marque «Volver a publicar automáticamente cuando se hagan cambios».
+4. **Archivo → Compartir → Publicar en la web** → en «Enlace», elija **solo** las pestañas «Avisos», «Agenda» y «Noticias» (no «Documento entero») → Publicar. Marque «Volver a publicar automáticamente cuando se hagan cambios».
 5. Copie el identificador de la hoja: es lo que hay entre `/d/` y `/edit` en la dirección (`https://docs.google.com/spreadsheets/d/`**`1AbC…xyz`**`/edit`).
 
-*Captura descrita:* el diálogo «Publicar en la web» tiene dos desplegables: el de la izquierda dice «Avisos, Agenda» (marcadas con una casilla) y el de la derecha «Página web»; debajo, el botón verde «Publicar» y la casilla «Volver a publicar automáticamente».
+*Captura descrita:* el diálogo «Publicar en la web» tiene dos desplegables: el de la izquierda dice «Avisos, Agenda, Noticias» (marcadas con una casilla) y el de la derecha «Página web»; debajo, el botón verde «Publicar» y la casilla «Volver a publicar automáticamente».
 
 ## 5. Decírselo a la web
 
 En `municipio.json`:
 
 ```json
-"hoja": { "id": "1AbC…xyz", "pestanas": { "avisos": "Avisos", "agenda": "Agenda" } }
+"hoja": { "id": "1AbC…xyz", "pestanas": { "avisos": "Avisos", "agenda": "Agenda", "noticias": "Noticias" },
+          "formularios": { "avisos": "https://docs.google.com/forms/d/e/…/viewform", "agenda": "…", "noticias": "…" } }
 ```
 
 y `node scripts/aplicar.mjs`. Ya está: la web lee la hoja cada vez que alguien la abre.
@@ -100,6 +161,7 @@ Plantillas de ejemplo, con las columnas exactas: [`plantillas-hoja/avisos.csv`](
 |---|---|---|
 | Avisos | `fecha`, `titulo` | `id`, `tema`, `texto`, `gravedad` (urgente / programado / informativo), `caduca`, `titulo_corto`, `urgente` (de antes: sí/no), `enlace`, `estado` (oculto / borrador) |
 | Agenda | `fecha`, `titulo` | `id`, `hora`, `hora_fin`, `lugar`, `nota`, `tipo` (pleno), `convocatoria`, `grabacion`, `estado` |
+| Noticias (v3c) | `fecha`, `titulo` | `id`, `resumen`, `texto` (un párrafo por línea), `estado` |
 
 Sin `id`, la web se lo inventa con la fecha y el título: si se corrige el título de un aviso ya publicado, es otro aviso (el viejo desaparece de la hoja, así que también de la web). La «Marca temporal» del formulario no se lee.
 
