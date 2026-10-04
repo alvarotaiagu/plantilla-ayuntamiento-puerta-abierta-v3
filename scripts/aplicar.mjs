@@ -29,7 +29,7 @@ import vm from 'node:vm';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { renderizar } from './lib/plantilla.mjs';
 import { derivarTokens, paletaGirada, contraste, nombreMatiz, oscurecerHasta, hexARgb } from './lib/color.mjs';
-import { feedAtom, agendaIcs, organizacion, eventoLd, noticiaLd, migasLd, jsonLd, swCodigo, recursosDe } from './lib/servicio.mjs';   /* v3b · servicio */
+import { feedAtom, agendaIcs, organizacion, eventoLd, noticiaLd, migasLd, jsonLd, swCodigo, recursosDe, desfase } from './lib/servicio.mjs';   /* v3b · servicio */
 import { leerHojaAlMontar } from './lib/hoja.mjs';   /* v3c · automatico */
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -1048,7 +1048,17 @@ function jsonLdDe(p) {
   return jsonLd(g);
 }
 
+/* v3c · F17: «Web actualizada el …» en el pie de todas las páginas: la fecha y la hora de este montaje,
+   en hora peninsular (Madrid). Va pintado (sin JavaScript): la tarea diaria lo renueva cada mañana */
+const actualizada = (() => {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+    .formatToParts(fechaBuild).map(x => [x.type, x.value]));
+  const dia = `${p.year}-${p.month}-${p.day}`, hm = `${p.hour}:${p.minute}`;
+  return { iso: `${dia}T${hm}${desfase(dia, hm)}`, texto: `${fechaTexto(dia)} a las ${Number(p.hour)}:${p.minute}` };
+})();
+
 const comun = {
+  actualizada,   /* v3c · F17 */
   ...M, aviso_generado: 'GENERADO por scripts/aplicar.mjs desde fuente/ y los datos. No editar a mano.',
   raiz: '', base_404: null, url: M.url || null, robots_no: !M.indexar, propuesta: M.propuesta !== false,
   marca: { slug: marcaConf.slug, densidad: marcaConf.densidad === 'sobria' ? 'sobria' : 'puerta' },
@@ -1184,7 +1194,9 @@ escribir('agenda.ics', agendaIcs({ Vivo, D, sello: fechaBuild }));
   const faltan = recursos.filter(u => !existe(u.split('?')[0]));
   if (faltan.length) avisos.push('sw.js: no existen ' + faltan.join(', ') + ' (no se precargan)');
   const lista = recursos.filter(u => existe(u.split('?')[0]));
-  const version = crypto.createHash('md5').update(lista.map(u => u + ':' + huella(u.split('?')[0])).join('|')).digest('hex').slice(0, 10);
+  /* v3c: la línea «Web actualizada el …» del pie no cuenta (si no, sw.js cambiaría en cada montaje) */
+  const huellaSw = rel => (/\.html$/.test(rel) ? crypto.createHash('md5').update(leer(rel).replace(/<p class="pie__actualizada">.*?<\/p>/, '')).digest('hex').slice(0, 8) : huella(rel));
+  const version = crypto.createHash('md5').update(lista.map(u => u + ':' + huellaSw(u.split('?')[0])).join('|')).digest('hex').slice(0, 10);
   escribir('sw.js', swCodigo({ slug: marcaConf.slug, version, rutas: lista }));
 }
 
