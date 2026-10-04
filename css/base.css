@@ -1125,6 +1125,9 @@ main > .banda--oscura:last-child { margin-bottom: var(--seccion); }
 .noticia__resumen { color: var(--apagado); font-size: 1rem; }
 .articulo { max-width: calc(46rem + 2 * var(--margen)); margin-inline: 0; }
 .articulo__meta { color: var(--apagado); font-size: 1rem; }
+.articulo__lectura { white-space: nowrap; }
+/* v3b · M10: la barra de progreso de lectura solo existe en css/movimiento.css (con soporte y con movimiento) */
+.lectura-progreso { display: none; }
 .articulo__foto { margin: 0 0 1.5rem; aspect-ratio: 3 / 2; overflow: hidden; }
 .articulo__foto img { width: 100%; height: 100%; object-fit: cover; }
 .articulo__fuente { color: var(--apagado); font-size: 1rem; border-top: 1px solid var(--linea); padding-top: 1rem; margin-top: 1.5rem; }
@@ -1469,6 +1472,126 @@ body {
 .densidad-puerta .hoy__mas,
 .densidad-sobria .solo-puerta,
 .densidad-sobria .linea__arquito { display: none; }
+
+/* ═══════════════ v3b · INTERIORES: incidencias (F9) ═══════════════
+   «Avisar de un problema»: el aviso de urgencias arriba, el formulario por pasos (fieldset con su
+   pregunta numerada), los errores en texto de tinta con una barra de alerta (el rojo solo como
+   decoración: el texto rojo no tiene pareja medida) y el «listo» con el enlace y el texto para copiar */
+.incidencia-urgente {
+  display: flex; gap: 1rem; align-items: flex-start; max-width: 46rem;
+  padding: 1rem 1.25rem; background: var(--superficie); border: 1px solid var(--linea); border-left: 6px solid var(--alerta); border-radius: var(--radio);
+}
+.incidencia-urgente p { margin: .35rem 0 0; }
+.incidencia-urgente__icono { width: 1.6rem; height: 1.6rem; color: var(--alerta); margin-top: .15rem; }
+.incidencia-urgente__titulo { font-size: 1.25rem; margin: 0; }
+.incidencia-urgente__tel { font-weight: 700; white-space: nowrap; }
+.incidencia { display: grid; gap: 1.75rem; max-width: 46rem; margin-top: 1.5rem; }
+.incidencia__grupo { margin: 0; padding: 0; border: 0; min-width: 0; display: grid; gap: .9rem; }
+.incidencia__pregunta { padding: 0; margin-bottom: .6rem; font: 700 1.3rem/var(--interlineado-titulos) var(--f-titulo); color: var(--tinta); }
+.incidencia__opcional { font: 400 1rem var(--f-texto); color: var(--apagado); }
+.incidencia__opciones { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); }
+.incidencia__opcion {
+  display: flex; gap: .7rem; align-items: flex-start; min-height: 48px; padding: .75rem .9rem; cursor: pointer;
+  background: var(--superficie); border: 2px solid var(--linea-fuerte); border-radius: var(--radio);
+}
+.incidencia__opcion:hover { border-color: var(--marca); }
+.incidencia__opcion:has(input:checked) { border-color: var(--marca); background: var(--marca-tenue); box-shadow: inset 4px 0 0 var(--marca); }
+/* la zona táctil es la tarjeta entera (≥ 44 px): el control nativo la cubre, sin aspecto propio (y con
+   el foco alrededor de la tarjeta); el círculo o la casilla que se ven son .incidencia__marca */
+.incidencia__opcion, .incidencia__casilla { position: relative; }
+.incidencia__opcion input, .incidencia__casilla input {
+  appearance: none; position: absolute; inset: -2px; width: auto; height: auto; margin: 0;
+  background: none; border: 0; border-radius: var(--radio); cursor: pointer;
+}
+.incidencia__marca {
+  flex: none; display: grid; place-items: center; width: 1.4rem; height: 1.4rem; margin-top: .1rem;
+  background: var(--superficie); border: 2px solid var(--linea-fuerte); border-radius: 50%;
+}
+.incidencia__marca--casilla { border-radius: 4px; }
+input:checked + .incidencia__marca { border-color: var(--marca); }
+input:checked + .incidencia__marca::after { content: ""; width: .7rem; height: .7rem; border-radius: 50%; background: var(--marca); }
+input:checked + .incidencia__marca--casilla { background: var(--marca); }
+input:checked + .incidencia__marca--casilla::after {
+  width: .4rem; height: .75rem; margin-top: -.15rem; border-radius: 0; background: none;
+  border: solid var(--sobre-marca); border-width: 0 3px 3px 0; transform: rotate(45deg);
+}
+.incidencia__casilla { display: flex; gap: .7rem; align-items: flex-start; min-height: 48px; padding: .75rem .9rem; font-weight: 600; background: var(--superficie); border: 2px solid var(--linea-fuerte); border-radius: var(--radio); cursor: pointer; }
+.incidencia__casilla:hover { border-color: var(--marca); }
+.incidencia__casilla:has(input:checked) { border-color: var(--marca); background: var(--marca-tenue); }
+.incidencia__ayuda { display: block; color: var(--apagado); font-size: .9375rem; line-height: 1.35; }
+.incidencia__opcion:has(input:checked) .incidencia__ayuda { color: var(--tinta); }
+.incidencia textarea.campo__entrada { min-height: 6rem; resize: vertical; line-height: 1.5; }
+.incidencia textarea.incidencia__texto--corto { min-height: 3.5rem; }
+.campo__ayuda--arriba { margin: 0; }
+.incidencia__ubicacion { display: grid; gap: .5rem; justify-items: start; }
+.incidencia__ubicacion .campo__ayuda { margin: 0; }
+.incidencia__estado { margin: 0; min-height: 1.6em; font-size: 1rem; }
+.incidencia__foto { display: grid; gap: .5rem; justify-items: start; }
+.incidencia__foto .campo__ayuda { margin: 0; }
+.incidencia__datos { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); }
+.incidencia__enviar .campo__ayuda { margin-top: .75rem; }
+.campo__error { margin: 0; padding-left: .75rem; border-left: 4px solid var(--alerta); font-weight: 600; color: var(--tinta); }
+.campo__entrada[aria-invalid="true"], fieldset[aria-invalid="true"] .incidencia__opcion { border-color: var(--alerta); }
+.incidencia-errores, .incidencia-listo {
+  max-width: 46rem; margin-top: 1.5rem; padding: 1.1rem 1.25rem;
+  background: var(--superficie); border: 2px solid var(--linea-fuerte); border-radius: var(--radio);
+}
+.incidencia-errores { border-color: var(--alerta); border-left-width: 6px; }
+.incidencia-listo { border-color: var(--marca); border-left-width: 6px; }
+.incidencia-errores__titulo, .incidencia-listo__titulo { font-size: 1.25rem; margin: 0 0 .5rem; }
+.incidencia-errores__lista { margin: 0; padding-left: 1.25rem; }
+.incidencia-errores__lista li + li { margin-top: .35rem; }
+.incidencia-listo__foto { font-weight: 600; }
+.incidencia-listo__texto { font-size: 1rem; line-height: 1.45; min-height: 12rem; white-space: pre-wrap; }
+.incidencia-listo__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; }
+/* «Por momentos» → «Ha pasado algo en mi calle»: el enlace al formulario */
+.momento__accion { margin: .25rem 0 .9rem; display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; }
+
+/* ═══════════════ v3b · INTERIORES: lectura fácil (F10) ═══════════════
+   Pautas de Lectura Fácil (UNE 153101 EX): letra grande (1,25 rem, más que el texto base),
+   interlineado amplio, una frase por línea, alineado a la izquierda, sin cursivas ni mayúsculas
+   seguidas, pasos numerados con su número grande y su pictograma, y mucho aire entre bloques */
+.facil { max-width: calc(44rem + 2 * var(--margen)); margin-inline: 0; font-size: 1.25rem; line-height: 1.65; }
+.facil__frase { margin: 0 0 .7rem; max-width: 40rem; }
+.facil-lista { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: .75rem; }
+.facil-lista__enlace {
+  display: flex; align-items: center; gap: 1rem; min-height: 64px; padding: .7rem 1rem;
+  background: var(--superficie); border: 2px solid var(--linea-fuerte); border-radius: var(--radio);
+  font-weight: 600; text-decoration: none; color: var(--marca);
+}
+.facil-lista__enlace:hover { border-color: var(--marca); background: var(--marca-tenue); text-decoration: underline; }
+.facil-lista__picto { width: 2.25rem; height: 2.25rem; color: var(--marca); }
+.facil-tramite { border-top: 1px solid var(--linea); }
+.facil__titulo { display: flex; align-items: center; gap: 1rem; font-size: clamp(1.6rem, 1.3rem + 1.5vw, 2.1rem); margin: 0 0 1.25rem; }
+.facil__picto-grande { width: 3.5rem; height: 3.5rem; flex: none; padding: .55rem; color: var(--marca); background: var(--marca-tenue); border-radius: 50%; stroke-width: 1.5; }
+.facil__subtitulo { font-size: 1.4rem; margin: 2rem 0 .8rem; }
+.facil__pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; }
+.facil__paso {
+  display: grid; grid-template-columns: auto auto minmax(0, 1fr); gap: 1rem; align-items: center;
+  padding: .9rem 1rem; background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--radio);
+}
+.facil__pasos--sin .facil__paso { grid-template-columns: auto minmax(0, 1fr); }
+.facil__paso .facil__frase { margin: 0; }
+.facil__linea { display: block; }
+.facil__numero {
+  display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 50%;
+  background: var(--marca); color: var(--sobre-marca); font: 700 1.4rem/1 var(--f-titulo);
+}
+.facil__picto { width: 2.75rem; height: 2.75rem; color: var(--tinta); stroke-width: 1.5; }
+@media (max-width: 30em) {
+  .facil__paso { grid-template-columns: auto minmax(0, 1fr); }
+  .facil__paso .facil__picto { grid-row: 1; grid-column: 2; justify-self: start; }
+  .facil__paso .facil__frase { grid-column: 1 / -1; }
+  .facil__pasos--sin .facil__paso .facil__picto { grid-column: 1; }
+}
+.facil__accion { margin: 1.5rem 0 0; }
+.facil__boton { font-size: 1.15rem; min-height: 56px; }
+.facil__arriba { margin: 1.5rem 0 0; font-size: 1.0625rem; }
+.facil__nota { margin: 0; padding: 1rem 1.25rem; border-left: 4px solid var(--oro); background: var(--superficie); font-size: 1.125rem; }
+/* «Los más pedidos» en Trámites: bajo cada atajo, su «Explicado fácil» */
+.atajos--facil > li { display: grid; grid-template-rows: 1fr auto; gap: .35rem; }
+.atajo__facil { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; padding: .2rem .25rem; font-weight: 600; }
+.atajo__facil .icono { width: 1.2rem; height: 1.2rem; }
 
 /* ═══════════════ CORTINA (solo portada) ═══════════════
    La capa no tiene fondo. El velo es un div provisional hasta que cortina.js

@@ -434,6 +434,17 @@
       "telefono": "112"
     }
   ],
+  "incidencias": {
+    "correo": "ayuntamiento@riberadelfresno.es",
+    "categorias": [
+      { "nombre": "Alumbrado", "ayuda": "Una farola apagada, rota o que se queda encendida de día" },
+      { "nombre": "Agua", "ayuda": "Una fuga, una tapa de alcantarilla movida o falta de agua" },
+      { "nombre": "Limpieza", "ayuda": "Basura en la calle, un contenedor lleno o roto" },
+      { "nombre": "Vía pública", "ayuda": "Un bache, una acera rota, una señal caída" },
+      { "nombre": "Ruidos", "ayuda": "Ruidos que molestan de forma repetida" },
+      { "nombre": "Otro", "ayuda": "Cualquier otra cosa de la calle" }
+    ]
+  },
   "horizonte_agenda_dias": 60,
   "listin_corto": [
     "Emergencias",
@@ -660,6 +671,7 @@
       {
         "nombre": "Ha pasado algo en mi calle",
         "nota": "Un bache, una farola, un contenedor.",
+        "incidencia": true,
         "pasos": [
           {
             "texto": "Avisar de la incidencia",

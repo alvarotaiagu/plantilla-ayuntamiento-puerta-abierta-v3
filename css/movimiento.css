@@ -363,9 +363,27 @@
     to { stroke-dasharray: 1 1; stroke-dashoffset: 0; }
   }
 
+  /* ═══ v3b · M10. La línea de oro de la lectura (noticias) ═══
+     Bajo la cabecera y pegada arriba mientras se lee, avanza con el artículo: 0 cuando su principio
+     llega arriba de la pantalla y 100 % cuando su final llega abajo (rango «contain» de la línea de
+     tiempo de vista del propio artículo). Solo con animation-timeline: sin soporte (Firefox) o con
+     movimiento reducido no sale (display: none en base.css). Decorativa: aria-hidden en la plantilla */
+  @supports (animation-timeline: scroll()) {
+    .pagina-noticia article { view-timeline: --lectura block; }
+    .lectura-progreso {
+      display: block; position: sticky; top: 0; z-index: 5; height: 3px; margin-top: -3px;
+      background: var(--oro); transform-origin: 0 50%;
+      animation: mov-lectura linear both; animation-timeline: --lectura; animation-range: contain 0% contain 100%;
+    }
+    @keyframes mov-lectura { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  }
+
   /* ═══ v3. Hemiciclo: los escaños de los demás grupos se atenúan en 180 ms ═══
      (con movimiento reducido el resaltado sigue, sin transición: es información) */
-  .hemiciclo circle { transition: opacity .18s ease-out; }
+  .hemiciclo circle { transition: opacity .18s ease-out, translate .24s var(--curva-salida); }
+  /* v3b · M11: los escaños del grupo pulsado saltan 7 unidades hacia el centro (js/identidad.js pone
+     el vector) y vuelven al soltarlo. Con movimiento reducido no hay salto: solo el atenuado */
+  .hemiciclo circle.es-saltado { translate: var(--salto-x, 0) var(--salto-y, 0); }
   .pleno__boton { transition: background-color .15s, border-color .15s, box-shadow .15s; }
 
   /* ═══ v3b · M8. Del hero a la página de trámites: el campo de búsqueda viaja ═══

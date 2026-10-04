@@ -246,6 +246,29 @@ const temasDatos = (M.tramites.temas || []).map(tm => ({ ...tm, tramites: tm.tra
 /* temas en dos columnas que se apilan (sin huecos al abrir un desplegable): la primera mitad a
    la izquierda, así el orden de lectura y de tabulación baja por cada columna */
 /* v3: con un número impar, el último va debajo a todo el ancho (sin hueco al final de una columna) */
+/* ── v3b · F9. «Avisar de un problema» (incidencia.html): un formulario que prepara un correo al
+   Ayuntamiento, sin servidor. Opcional: municipio.json → incidencias {correo, categorias}. Sin
+   `correo` no hay página (y el enlace de «Por momentos» no sale). Las categorías, en texto o
+   {nombre, ayuda}; sin ellas, las de siempre. El teléfono de la Policía Local sale de `servicios` */
+const CATEGORIAS_INCIDENCIA = [['Alumbrado', 'Una farola apagada o rota'], ['Agua', 'Una fuga o una tapa de alcantarilla movida'],
+  ['Limpieza', 'Basura en la calle o un contenedor roto'], ['Vía pública', 'Un bache, una acera rota, una señal caída'],
+  ['Ruidos', 'Ruidos que molestan de forma repetida'], ['Otro', null]].map(([nombre, ayuda]) => ({ nombre, ayuda }));
+let incidencias = null;
+if (M.incidencias && M.incidencias.correo) {
+  const I = M.incidencias;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(I.correo)) errores.push('incidencias.correo: «' + I.correo + '» no es un correo');
+  const cats = ((I.categorias || []).length ? I.categorias : CATEGORIAS_INCIDENCIA).map(c => (typeof c === 'string' ? { nombre: c, ayuda: null } : { nombre: c.nombre, ayuda: c.ayuda || null }));
+  if (cats.some(c => !c.nombre)) errores.push('incidencias.categorias: cada categoría lleva «nombre»');
+  const usadasCat = new Set();
+  const policia = (M.servicios || []).find(x => /polic[ií]a local/i.test(x.nombre) && x.telefono);
+  const enCatalogo = lista.find(t => /incidencia/i.test(t.nombre) && enSede(t.href));
+  incidencias = {
+    correo: I.correo, asunto_url: encodeURIComponent('Aviso de un problema'),
+    categorias: cats.map(c => { let id = 'cat-' + slugDe(c.nombre), n = 2; while (usadasCat.has(id)) id = 'cat-' + slugDe(c.nombre) + '-' + n++; usadasCat.add(id); return { ...c, id }; }),
+    policia: policia ? { nombre: policia.nombre, telefono: policia.telefono, tel_href: telHref(policia.telefono) } : null,
+    sede: enCatalogo ? { href: enCatalogo.href, nombre: enCatalogo.nombre, sr: enCatalogo.sr } : null
+  };
+}
 const mitadTemas = Math.floor(temasDatos.length / 2);
 const temaAncho = temasDatos.length % 2 ? temasDatos[temasDatos.length - 1] : null;
 const tramites = {
@@ -262,10 +285,54 @@ const tramites = {
   temas: temasDatos,
   temas_columnas: [...[temasDatos.slice(0, mitadTemas), temasDatos.slice(mitadTemas, mitadTemas * 2)].filter(c => c.length).map(temas => ({ temas, ancha: false })),
     ...(temaAncho ? [{ temas: [temaAncho], ancha: true }] : [])],
-  momentos: (M.tramites.momentos || []).map(m => ({ ...m, pasos: m.pasos.map(p => (p.id || p.url ? conHref(p) : { ...p, href: null, sr: '' })) })),
+  /* v3b · F9: el momento con `incidencia: true` enlaza «Avisar de un problema» (si hay página) */
+  momentos: (M.tramites.momentos || []).map(m => ({ ...m, incidencia: !!(m.incidencia && incidencias), pasos: m.pasos.map(p => (p.id || p.url ? conHref(p) : { ...p, href: null, sr: '' })) })),
   lista, total: lista.length, en_sede: tramitesSede, impresos: lista.filter(t => t.formato).length,
   letras: letrasTramites, az: indiceAZ
 };
+/* ── v3b · F10. Lectura fácil (facil.html): los trámites más pedidos explicados fácil, desde
+   contenido/facil.json (opcional; sin él no hay página). Cada uno va con un atajo (`atajo`, el nombre
+   exacto) o con «Avisar de un problema» (`pagina: "incidencia"`, solo si hay incidencias). Los
+   marcadores {telefono}, {direccion} y {nombre} salen de municipio.json; la dirección, sin
+   abreviaturas («C/» → «la calle»), y el teléfono, enlazado. Un pictograma por paso, de
+   fuente/_pictos_facil.html ── */
+const FACIL = leerJSON('contenido/facil.json', null);
+const PICTOS_FACIL = new Set([...leer('fuente/_pictos_facil.html').matchAll(/id="f-([\w-]+)"/g)].map(m => m[1]));
+const escHtml = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const direccionFacil = String(M.contacto.direccion).replace(/^C\/\s*/i, 'la calle ').replace(/^Avda?\.\s*/i, 'la avenida ').replace(/^Pza?\.\s*/i, 'la plaza ')
+  .replace(/\s*n\.?\s*º\s*/gi, ' ').replace(/,\s*(\d+)\b/, ', número $1');
+/* una idea por línea: las frases de un mismo paso van cada una en su línea */
+const lineasFacil = h => h.split(/(?<=[.!?:])\s+(?=[A-ZÁÉÍÓÚÑ¿¡])/).map(f => '<span class="facil__linea">' + f + '</span>').join(' ');
+const textoFacil = t => escHtml(String(t).replace(/\{direccion\}/g, direccionFacil).replace(/\{nombre\}/g, M.nombre))
+  .replace(/\{telefono\}/g, `<a href="${telHref(M.contacto.telefono)}">${M.contacto.telefono}</a>`);
+let facil = null;
+if (FACIL && (FACIL.tramites || []).length) {
+  const pictoOk = (pk, donde) => { if (!PICTOS_FACIL.has(pk)) errores.push('contenido/facil.json «' + donde + '»: no hay pictograma «' + pk + '» en fuente/_pictos_facil.html'); return pk; };
+  const items = FACIL.tramites.map(t => {
+    let href = null, sr = '', clave = t.atajo || t.pagina;
+    if (t.atajo) {
+      const a = tramites.atajos.find(x => x.nombre === t.atajo);
+      if (!a) { errores.push('contenido/facil.json: «' + t.atajo + '» no es un atajo de tramites.atajos'); return null; }
+      href = a.href; sr = (a.sr || '') + (a.destino ? '. ' + a.destino : '');
+    } else if (t.pagina === 'incidencia') {
+      if (!incidencias) return null;
+      href = 'incidencia.html';
+    } else { errores.push('contenido/facil.json: cada trámite lleva «atajo» o «pagina»: "incidencia"'); return null; }
+    if (!t.titulo || !(t.pasos || []).length) errores.push('contenido/facil.json «' + clave + '»: lleva «titulo» y «pasos»');
+    return {
+      id: 'facil-' + slugDe(clave), clave, titulo: t.titulo, picto: pictoOk(t.picto || 'documento', clave), href, sr, boton: t.boton || 'Ir al trámite',
+      que_es: (t.que_es || []).map(x => ({ html: textoFacil(x) })),
+      pasos: (t.pasos || []).map((x, i) => ({ n: i + 1, html: lineasFacil(textoFacil(x.texto)), picto: pictoOk(x.picto || 'documento', clave) })),
+      sin_internet: (t.sin_internet || []).map(x => ({ html: lineasFacil(textoFacil(x.texto)), picto: pictoOk(x.picto || 'documento', clave) }))
+    };
+  }).filter(Boolean);
+  if (items.length) facil = { items, n: items.length, nota: FACIL.nota || 'Texto adaptado a lectura fácil. Pendiente de validar con personas usuarias.' };
+}
+/* cada atajo (y el momento de la incidencia) enlaza su «Explicado fácil»; null explícito si no hay */
+const facilDe = clave => { const it = facil && facil.items.find(x => x.clave === clave); return it ? 'facil.html#' + it.id : null; };
+tramites.atajos.forEach(a => { a.facil = facilDe(a.nombre); });
+tramites.momentos.forEach(m => { m.facil = m.incidencia ? facilDe('incidencia') : null; });
+
 /* nombres en lenguaje claro para el buscador: los de atajos, temas y momentos */
 const claros = new Map();
 const anotar = (href, n) => { if (!href) return; if (!claros.has(href)) claros.set(href, new Set()); claros.get(href).add(n); };
@@ -327,7 +394,7 @@ function hemiciclo() {
   const cuenta = g => miembros.filter(m => m.grupo === g.sigla).length;
   const enumerar = gs => gs.map(g => `${g.sigla} (${cuenta(g)})`).join(', ').replace(/, ([^,]*)$/, ' y $1');
   const descripcion = `Pleno de ${N} concejales. ` + (gob.length ? `Gobierno: ${enumerar(gob)}. ` : '') + (opo.length ? `Oposición: ${enumerar(opo)}.` : '');
-  const svg = `<svg class="hemiciclo" viewBox="28 28 244 140" role="img" aria-labelledby="hemiciclo-t hemiciclo-d"><title id="hemiciclo-t">Reparto del pleno</title><desc id="hemiciclo-d">${descripcion}</desc>` +
+  const svg = `<svg class="hemiciclo" viewBox="28 28 244 140" data-centro="150 150" role="img" aria-labelledby="hemiciclo-t hemiciclo-d"><title id="hemiciclo-t">Reparto del pleno</title><desc id="hemiciclo-d">${descripcion}</desc>` +
     `<defs>${grupos.map(trama).join('')}</defs>` +
     /* data-grupo: js/identidad.js resalta los escaños de un grupo al pasar por su leyenda */
     puntos.map((p, i) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${rAs}" fill="url(#trama-${slugDe(asientos[i].sigla)})" stroke="${asientos[i].color}" stroke-width="1.5" data-grupo="${slugDe(asientos[i].sigla)}"/>`).join('') +
@@ -395,11 +462,15 @@ for (const a of C.avisos) {
   if (a.gravedad != null && !['urgente', 'programado', 'informativo'].includes(String(a.gravedad).toLowerCase().trim())) errores.push('avisos «' + a.id + '»: «gravedad» es "urgente", "programado" o "informativo"');
   if (a.caduca && Vivo.gravedad(a) !== 'informativo' && !a.titulo_corto && String(a.titulo).length > 70) avisos.push('aviso «' + a.id + '»: el título pasa de 70 caracteres; en la franja del móvil no cabe en dos líneas. Ponle «titulo_corto»');
 }
+const PALABRAS_MINUTO = 200;
+const contarPalabras = t => String(t).split(/\s+/).filter(w => /[\p{L}\p{N}]/u.test(w)).length;
 const noticias = C.noticias.filter(n => !n.oculto).slice().sort((a, b) => b.fecha.localeCompare(a.fecha)).map(n => {
   const f = n.imagen ? foto(n.imagen, n.imagen_alt, 'noticia: ' + n.titulo) : null;
   /* v3 · sin foto, la tarjeta lleva la fecha grande en un arco (dibujo: la fecha la lee el <time>) */
   const [fa, fm, fd] = n.fecha.split('-').map(Number);
-  return { ...n, fecha_texto: fechaTexto(n.fecha), fecha_dia: fd, fecha_mes: MESES[fm - 1].slice(0, 3), fecha_anio: fa,
+  /* v3b · M10: el tiempo de lectura del cuerpo, a 200 palabras por minuto (1 min como poco) */
+  const palabras = contarPalabras((n.cuerpo || []).join(' '));
+  return { ...n, fecha_texto: fechaTexto(n.fecha), palabras, lectura_min: Math.max(1, Math.round(palabras / PALABRAS_MINUTO)), fecha_dia: fd, fecha_mes: MESES[fm - 1].slice(0, 3), fecha_anio: fa,
     imagen: f ? n.imagen : null, imagen_ancho: f ? f.ancho : null, imagen_alto: f ? f.alto : null,
     imagen_alt: n.imagen_alt || '', resumen: n.resumen || null, ejemplo: !!n.ejemplo, fecha_aproximada: !!n.fecha_aproximada, fuente: n.fuente || null, relacionado: n.relacionado || null };
 });
@@ -841,6 +912,14 @@ const PAGINAS = [
   { archivo: 'suscribirse.html', id: 'suscribirse', titulo: 'Avisos y agenda en su móvil', estilos: ['propuesta.css'],
     entradilla: 'La agenda del Ayuntamiento en el calendario de su móvil y los avisos en un lector de noticias, sin redes sociales.',
     descripcion: `Cómo recibir la agenda y los avisos del Ayuntamiento de ${N} sin redes sociales.` },
+  /* v3b · F9: solo con municipio.json → incidencias.correo */
+  ...(incidencias ? [{ archivo: 'incidencia.html', id: 'incidencia', titulo: 'Avisar de un problema', migas: [{ href: 'tramites.html', texto: 'Trámites' }],
+    entradilla: 'Una farola apagada, una fuga de agua, un bache… Cuéntenos qué pasa y le preparamos el correo para el Ayuntamiento.',
+    descripcion: `Avise al Ayuntamiento de ${N} de un problema en la calle: alumbrado, agua, limpieza, baches o ruidos.` }] : []),
+  /* v3b · F10: solo con contenido/facil.json */
+  ...(facil ? [{ archivo: 'facil.html', id: 'facil', titulo: 'Trámites explicados fácil', migas: [{ href: 'tramites.html', texto: 'Trámites' }],
+    entradilla: 'Los trámites que más se piden, explicados con palabras fáciles y paso a paso.',
+    descripcion: `Trámites del Ayuntamiento de ${N} explicados en lectura fácil.` }] : []),
   ...noticias.map(n => ({ archivo: `noticia-${n.id}.html`, fuente: '_noticia.html', id: 'noticia', nav: 'noticias', titulo: n.titulo,
     migas: [{ href: 'noticias.html', texto: 'Noticias' }], descripcion: n.resumen || n.titulo, noticia: n }))
 ];
@@ -853,7 +932,8 @@ for (const x of traducciones) PAGINAS.push({ archivo: x.archivo, fuente: 'pueblo
 const PICTO_DE = { 'tramites.html': 'tramites', 'ayuntamiento.html': 'ayuntamiento', 'avisos.html': 'megafono', 'noticias.html': 'periodico',
   'agenda.html': 'calendario', 'telefonos.html': 'telefono', 'pueblo.html': 'pueblo', 'contacto.html': 'sobre',
   'aviso-legal.html': 'balanza', 'privacidad.html': 'candado', 'cookies.html': 'galleta', 'accesibilidad.html': 'accesibilidad',
-  'propuesta.html': 'ayuntamiento', 'suscribirse.html': 'megafono' };   /* v3b · servicio */
+  'propuesta.html': 'ayuntamiento', 'suscribirse.html': 'megafono',   /* v3b · servicio */
+  'incidencia.html': 'farola', 'facil.html': 'facil' };
 const pictoDe = p => PICTO_DE[p.archivo] || (p.id === 'noticia' ? 'periodico' : null) || (p.traduccion ? PICTO_DE[p.fuente] : null);
 for (const p of PAGINAS) {
   if (p.id === 'inicio' || p.id === 'error') continue;
@@ -875,6 +955,8 @@ function escribir(rel, contenido) {
 /* limpia las noticias generadas que ya no existen */
 for (const f of fs.readdirSync(RAIZ)) if (/^noticia-.*\.html$/.test(f) && !PAGINAS.some(p => p.archivo === f)) fs.rmSync(r(f));
 if (M.propuesta === false && existe('propuesta.html')) fs.rmSync(r('propuesta.html'));   /* v3b: la página de venta no viaja a la web oficial */
+/* v3b: las páginas opcionales (incidencias, lectura fácil) se borran si sus datos ya no están */
+for (const f of ['incidencia.html', 'facil.html']) if (existe(f) && !PAGINAS.some(p => p.archivo === f)) fs.rmSync(r(f));
 
 escribir('css/marca.css', cssMarca());
 /* «Añadir a mi calendario»: un .ics por evento de la agenda (también fiestas y plenos).
@@ -898,7 +980,8 @@ escribir('js/tramites-datos.js', '/* GENERADO por scripts/aplicar.mjs desde muni
 const huella = rel => existe(rel) ? crypto.createHash('md5').update(fs.readFileSync(r(rel))).digest('hex').slice(0, 8) : '0';
 const v = { fuentes: huella('css/fuentes.css'), marca: huella('css/marca.css'), base: huella('css/base.css'), main: huella('js/main.js'), vivo: huella('js/vivo.js'), cortina: huella('js/cortina.js'), datos: huella('js/tramites-datos.js') };
 v.movimiento = huella('css/movimiento.css'); v.movimiento_js = huella('js/movimiento.js');   /* animaciones (todo bajo prefers-reduced-motion: no-preference) */
-v.imprimir = huella('css/imprimir.css'); v.identidad = huella('js/identidad.js');                /* v3: hoja de impresión; hemiciclo y botón de imprimir */
+v.imprimir = huella('css/imprimir.css'); v.identidad = huella('js/identidad.js');
+v.incidencia = huella('js/incidencia.js');                                                     /* v3b · F9: el formulario de incidencias */                /* v3: hoja de impresión; hemiciclo y botón de imprimir */
 const fuentesDir = existe('fonts') ? fs.readdirSync(r('fonts')) : [];
 const pre = (fam, peso) => fuentesDir.find(f => f.startsWith(slugDe(fam) + '-' + peso + '-latin.'));
 const precargar = [pre(marcaConf.letra.titulares, '700'), pre(marcaConf.letra.texto, '400')].filter(Boolean).map(f => 'fonts/' + f);
@@ -962,6 +1045,7 @@ const comun = {
   paletas: paletas.map((p, i) => ({ clave: p.clave, nombre: nombreMatiz(p.col.marca), pulsado: i === 0 ? 'true' : 'false' })),
   tramites, listin_corto: listinCorto, listin_grupos: gruposListin,
   quien, quien_portada: quien.filter(q => q.portada), fiestas,
+  incidencias, facil,
   pleno, quien_ayto: quienAyto, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },
@@ -984,7 +1068,7 @@ const conParciales = (src, n = 0) => {
 /* v3 · índice lateral de las páginas largas. Fuera: la portada, la 404, Trámites (tiene su índice
    A–Z y su buscador), Noticias (sus h2 son las tarjetas) y las páginas de otras zonas de la v3
    (El Ayuntamiento y Teléfonos): para dárselo, quitarlas de aquí */
-const SIN_INDICE = new Set(['inicio', 'error', 'tramites', 'noticias', 'ayuntamiento', 'telefonos']);
+const SIN_INDICE = new Set(['inicio', 'error', 'tramites', 'noticias', 'ayuntamiento', 'telefonos', 'facil']);   /* v3b: «Explicado fácil» lleva su propia lista con pictogramas */
 const textoPlano = h => h.replace(/<span class="sr">[\s\S]*?<\/span>/g, '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim()
   .replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 const cuerpoMain = html => { const i = html.indexOf('<main'), f = html.lastIndexOf('</main>'); return i < 0 || f < 0 ? null : [i, f]; };

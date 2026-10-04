@@ -8,6 +8,10 @@
        cuántos son de ese grupo. Cada grupo de la leyenda es un botón con aria-pressed: pulsado,
        el resaltado se queda (para el móvil, que no tiene «pasar el ratón», y para comparar).
        Esc lo suelta. Vale para cualquier número de grupos: los escaños llevan data-grupo.
+     · v3b · M11. Los escaños del grupo PULSADO llevan .es-saltado: con movimiento, dan un salto
+       pequeño hacia el centro del hemiciclo (css/movimiento.css, translate ≤ 300 ms) y vuelven a su
+       sitio al soltarlo. Cada escaño sabe hacia dónde: --salto-x/--salto-y, calculados aquí desde su
+       centro y el del hemiciclo (data-centro). El texto del centro no se mueve nunca.
      · F1. Teléfonos: el botón «Imprimir los teléfonos» (window.print) y la fecha de impresión
        de la hoja. Al imprimir cualquier página se abren los desplegables y luego se cierran. */
 (function () {
@@ -25,6 +29,13 @@
     var total = svg.querySelector('.hemiciclo__total'), rotulo = svg.querySelector('.hemiciclo__rotulo');
     var original = total && rotulo ? [total.textContent, rotulo.textContent] : null;
     var fijo = null, vista = null;
+    /* M11: el vector de cada escaño hacia el centro, de SALTO unidades del dibujo */
+    var SALTO = 7, centro = (svg.getAttribute('data-centro') || '150 150').split(' ').map(Number);
+    escanos.forEach(function (c) {
+      var dx = centro[0] - Number(c.getAttribute('cx')), dy = centro[1] - Number(c.getAttribute('cy')), d = Math.sqrt(dx * dx + dy * dy) || 1;
+      c.style.setProperty('--salto-x', (dx / d * SALTO).toFixed(2) + 'px');
+      c.style.setProperty('--salto-y', (dy / d * SALTO).toFixed(2) + 'px');
+    });
     var ayuda = seccion.querySelector('[data-pleno-ayuda]');
     if (ayuda) ayuda.hidden = false;
 
@@ -32,7 +43,10 @@
       var g = vista || fijo;
       if (g) pleno.setAttribute('data-resalta', g); else pleno.removeAttribute('data-resalta');
       var n = 0;
-      escanos.forEach(function (c) { var si = c.getAttribute('data-grupo') === g; c.classList.toggle('es-resaltado', si); if (si) n++; });
+      escanos.forEach(function (c) {
+        var si = c.getAttribute('data-grupo') === g; c.classList.toggle('es-resaltado', si); if (si) n++;
+        c.classList.toggle('es-saltado', !!fijo && g === fijo && si);
+      });
       items.forEach(function (li) {
         var clave = li.getAttribute('data-grupo');
         li.classList.toggle('es-resaltado', clave === g);
