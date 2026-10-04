@@ -904,7 +904,8 @@ if (!privacidad.tramites.length) privacidad.tramites.push(instancia);
    {<id>: {enlaces: [{texto, url, nota}], pendiente}}}. Sin datos solo se enlaza lo que es real en
    cualquier municipio: el portal de la sede, el perfil del contratante, «El Ayuntamiento» y la
    solicitud de acceso del catálogo (o la instancia general). Sin el campo, la página explica lo
-   general y no inventa nada; con él, lo que no consta sale como hueco «Pendiente: …» */
+   general y no inventa nada; con él, lo que no consta sale como hueco «Pendiente: …», solo en la maqueta
+   (fuente/transparencia.html lo envuelve en {{#propuesta}}, como la banda: en la web oficial no sale) */
 const BOE_LEY19 = 'https://www.boe.es/buscar/act.php?id=BOE-A-2013-12887', BOE_LEY4 = 'https://www.boe.es/buscar/act.php?id=BOE-A-2013-6050';
 const ley19 = (art, ancla) => ({ texto: 'art. ' + art + ' de la Ley 19/2013', url: BOE_LEY19 + '#' + ancla });
 const ley4 = (art, ancla) => ({ texto: 'art. ' + art + ' de la Ley 4/2013 de Extremadura', url: BOE_LEY4 + '#' + ancla });

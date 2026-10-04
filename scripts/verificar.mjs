@@ -3568,7 +3568,7 @@ async function v3cTransparencia() {
       const raros = a.enlaces.filter(x => !ok(x));
       if (raros.length) malos.push(a.id + ': enlace que no es del municipio ni de los datos: ' + raros.join(' '));
       if (!a.leyes.length || a.leyes.some(x => !LEYES.test(x))) malos.push(a.id + ': las leyes ' + JSON.stringify(a.leyes));
-      const quiere = datos[a.id] && datos[a.id].pendiente;
+      const quiere = M.propuesta !== false && datos[a.id] && datos[a.id].pendiente;
       if ((quiere || null) !== (a.pendiente ? a.pendiente.replace(/&#39;/g, "'").replace(/&quot;/g, '"') : null)) malos.push(a.id + ': pendiente ' + JSON.stringify(a.pendiente) + ' (en los datos: ' + JSON.stringify(quiere) + ')');
       /* nunca un apartado mudo: o un enlace, o el portal, o pedirlo (y el hueco si no consta) */
       if (!a.enlaces.length && !a.sin && !a.pendiente) malos.push(a.id + ': ni enlace ni hueco');
@@ -3587,7 +3587,7 @@ async function v3cTransparencia() {
       const r = await page.evaluate(() => ({ pendientes: [...document.querySelectorAll('.pendiente')].filter(e => e.checkVisibility()).length, desborda: document.documentElement.scrollWidth > document.documentElement.clientWidth,
         indice: !!document.querySelector('.indice') }));
       if (r.desborda) malos.push('desborda a ' + ancho);
-      if (r.pendientes !== Object.values(datos).filter(d => d.pendiente).length) malos.push('huecos «Pendiente» visibles: ' + r.pendientes);
+      if (r.pendientes !== (M.propuesta !== false ? Object.values(datos).filter(d => d.pendiente).length : 0)) malos.push('huecos «Pendiente» visibles: ' + r.pendientes);
       await axeEn(page, 'transparencia a ' + ancho, viol);
       if (errores.length) malos.push('consola: ' + errores.slice(0, 2).join(' | '));
       if (CAPTURAS) await page.screenshot({ path: captura('v3c-transparencia-' + ancho + '.png'), fullPage: true });
@@ -3596,14 +3596,15 @@ async function v3cTransparencia() {
     comprobar(!malos.length && !viol.length, `v3c F22 · transparencia.html: los ${APARTADOS.length} apartados de la ley en su orden, cada enlace es del municipio (sede, perfil del contratante, esta web o los ${Object.values(datos).reduce((n, d) => n + (d.enlaces || []).length, 0)} comprobados en municipio.json), lo que no consta es un hueco «Pendiente» (${Object.values(datos).filter(d => d.pendiente).length}), cada apartado cita sus artículos del BOE, «Pedir información» lleva a la solicitud de acceso del catálogo, enlazada desde el pie y la franja de la sede de las ${PAGINAS.length} páginas y no desde el menú, sin desborde y 0 violaciones de axe a 1280 y 390 px` + (malos.length ? ' → ' + malos.slice(0, 5).join(' | ') : '') + (viol.length ? ' → axe: ' + viol.slice(0, 3).join(' | ') : ''));
   }
 
-  /* ── F22 · 2. sin `transparencia` en municipio.json (y sin portal en la sede): lo general, sin inventar ── */
+  /* ── F22 · 2. sin `transparencia` en municipio.json (y sin portal en la sede): lo general, sin inventar.
+     Y la web oficial ("propuesta": false): ningún hueco «Pendiente», cada apartado con su explicación y su enlace ── */
   {
     const malos = [];
-    for (const caso of ['sin datos', 'sin portal']) {
+    for (const caso of ['sin datos', 'sin portal', 'web oficial']) {
       const dest = copiar();
       try {
         const m = JSON.parse(fs.readFileSync(path.join(dest, 'municipio.json'), 'utf8'));
-        delete m.transparencia;
+        if (caso === 'web oficial') m.propuesta = false; else delete m.transparencia;
         /* una sede de la Diputación sin portal de transparencia (como Monesterio) */
         if (caso === 'sin portal') m.sede = { tipo: 'diputacion', base: 'https://sede.ejemplo.es', ent_id: 1, opc: { tablon: 175 }, instancia_general: 'https://sede.ejemplo.es/sede/fichaInformativa.do?asu_cod=1&codVerif=x' };
         fs.writeFileSync(path.join(dest, 'municipio.json'), JSON.stringify(m, null, 2));
@@ -3614,6 +3615,19 @@ async function v3cTransparencia() {
         const aps = leerApartados(h);
         const raros = aps.flatMap(a => a.enlaces.filter(x => !ok(x)).map(x => a.id + ': ' + x));
         if (raros.length) malos.push(caso + ': enlaces inventados ' + raros.slice(0, 3).join(' '));
+        if (caso === 'web oficial') {
+          const srv = crearServidor(dest, null);
+          await new Promise(r => srv.listen(0, '127.0.0.1', r));
+          const ctx = await navegador.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+          const pg = await ctx.newPage();
+          await pg.goto('http://127.0.0.1:' + srv.address().port + '/transparencia.html', { waitUntil: 'networkidle' });
+          const vis = await pg.evaluate(() => ({ pendientes: [...document.querySelectorAll('.pendiente, .pendiente__marca')].filter(e => e.checkVisibility()).length,
+            texto: /Pendiente:/.test(document.body.innerText) }));
+          await ctx.close(); srv.close();
+          if (vis.pendientes || vis.texto || /Pendiente:/.test(h)) malos.push('web oficial: se ve un «Pendiente»');
+          if (aps.some(a => a.id !== 'acceso' && !a.enlaces.length && !a.sin)) malos.push('web oficial: algún apartado sin explicación ni enlace');
+          continue;
+        }
         const deRibera = Object.values((M.transparencia && M.transparencia.apartados) || {}).flatMap(d => (d.enlaces || []).map(e => e.url)).filter(u => h.includes(u.replace(/&/g, '&amp;')));
         if (deRibera.length) malos.push(caso + ': quedan enlaces de los datos de ' + M.nombre);
         if (/class="pendiente"/.test(h)) malos.push(caso + ': sale un hueco «Pendiente» sin datos');
@@ -3622,7 +3636,7 @@ async function v3cTransparencia() {
         if (caso === 'sin datos' && !/class="boton boton--marca" href="[^"]*\/transparency"/.test(h)) malos.push('sin datos: no lleva al portal de la sede');
       } finally { fs.rmSync(dest, { recursive: true, force: true }); }
     }
-    comprobar(!malos.length, 'v3c F22 · sin «transparencia» en municipio.json, transparencia.html explica lo general, enlaza solo la sede, el perfil del contratante y esta web, sin huecos «Pendiente» ni enlaces de otro municipio; con una sede de la Diputación sin portal, lo dice y manda a pedirlo' + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
+    comprobar(!malos.length, 'v3c F22 · sin «transparencia» en municipio.json, transparencia.html explica lo general, enlaza solo la sede, el perfil del contratante y esta web, sin huecos «Pendiente» ni enlaces de otro municipio; con una sede de la Diputación sin portal, lo dice y manda a pedirlo; en la web oficial ("propuesta": false), ni un «Pendiente» visible y cada apartado con su explicación y su enlace' + (malos.length ? ' → ' + malos.slice(0, 4).join(' | ') : ''));
   }
 
   /* ── F23 · 1. la detección del empleo en Node: títulos reales y trampas ── */

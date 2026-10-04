@@ -1,8 +1,10 @@
 {{> documento_arriba}}
 <!-- v3c · transparencia (F22). Lo que la ley obliga a publicar, ordenado como la Ley 19/2013 (arts. 6, 7 y 8)
      y dicho en una frase, y DÓNDE está en este municipio (municipio.json → transparencia; sin el campo, solo
-     lo que es real en cualquier sede). Lo que no consta: un hueco «Pendiente: …», nunca un enlace inventado.
-     Los apartados y sus artículos los pone scripts/aplicar.mjs (APARTADOS_TRANSPARENCIA) -->
+     lo que es real en cualquier sede). Lo que no consta: un hueco marcado como pendiente, nunca un enlace inventado.
+     Los apartados y sus artículos los pone scripts/aplicar.mjs (APARTADOS_TRANSPARENCIA). Los huecos «Pendiente»
+     solo viajan en la maqueta, como la banda de propuesta (dentro de la sección «propuesta»): en la web oficial ("propuesta": false)
+     el apartado se queda con su explicación y, si lo hay, el enlace general al portal o a pedirlo -->
 <section class="seccion seccion--primera" aria-labelledby="t-transparencia-que">
   <div class="contenedor texto-largo">
     <h2 class="seccion__titulo" id="t-transparencia-que">Qué tiene que publicar el Ayuntamiento</h2>
@@ -28,7 +30,7 @@
         </ul>{{/enlaces.length}}
         {{#sin_portal}}<p class="transparencia__sin">Búsquelo en el <a href="{{transparencia.portal.url}}">{{transparencia.portal.nombre}}<span class="sr">{{transparencia.portal.sr}}</span></a>.</p>{{/sin_portal}}
         {{#sin_pedir}}<p class="transparencia__sin">Si no lo encuentra publicado, <a href="#t-transparencia-pedir">puede pedirlo</a>.</p>{{/sin_pedir}}
-        {{#pendiente}}<p class="pendiente" data-pendiente="{{id}}"><b class="pendiente__marca">Pendiente:</b> {{pendiente}}</p>{{/pendiente}}
+        {{#propuesta}}{{#pendiente}}<p class="pendiente" data-pendiente="{{id}}"><b class="pendiente__marca">Pendiente:</b> {{pendiente}}</p>{{/pendiente}}{{/propuesta}}
         <p class="transparencia__ley">Lo pide el {{#normas}}{{sep}}<a href="{{url}}">{{texto}}<span class="sr">, se abre otra web</span></a>{{/normas}}.</p>
       </li>
       {{/apartados}}
@@ -49,7 +51,7 @@
     </ol>
     {{#enlaces.length}}<p class="transparencia__boton">{{#enlaces}}<a class="boton boton--marca" href="{{href}}"><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg>{{texto}}{{#sr}}<span class="sr">{{sr}}</span>{{/sr}}</a> {{/enlaces}}</p>{{/enlaces.length}}
     <p>Con certificado digital o Cl@ve, en la sede electrónica: queda registrada con fecha y número. Sin ellos, en el registro del Ayuntamiento{{#legal.direccion_registro}}, en {{legal.direccion_registro}}{{/legal.direccion_registro}}.</p>
-    {{#pendiente}}<p class="pendiente" data-pendiente="{{id}}"><b class="pendiente__marca">Pendiente:</b> {{pendiente}}</p>{{/pendiente}}
+    {{#propuesta}}{{#pendiente}}<p class="pendiente" data-pendiente="{{id}}"><b class="pendiente__marca">Pendiente:</b> {{pendiente}}</p>{{/pendiente}}{{/propuesta}}
     <p class="transparencia__ley">Lo dicen el {{#normas}}{{sep}}<a href="{{url}}">{{texto}}<span class="sr">, se abre otra web</span></a>{{/normas}}.</p>
   </div>
 </section>{{/transparencia.acceso}}
