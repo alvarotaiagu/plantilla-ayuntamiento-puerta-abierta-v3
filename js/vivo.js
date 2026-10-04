@@ -332,15 +332,70 @@
     return h + '</ul>' + pieHoy(D, ahora);
   }
 
-  /* avisos propios + anuncios del tablón oficial, lo más nuevo primero */
+  /* ── v3b · plazos con cuenta atrás (avisos y anuncios del tablón) ──
+     `plazo_inicio` y `plazo_fin` (AAAA-MM-DD, opcionales) se cuentan con la fecha de Madrid: el
+     día de cierre entero es «Último día» y al día siguiente, «Plazo cerrado». Antes del inicio,
+     «Abre mañana» o «Abre el …». La palabra dice el estado (no solo el color), y el lector de
+     pantalla oye además la fecha exacta. `plazo_ejemplo: true` pone la etiqueta «Ejemplo» */
+  function plazo(x, ahora) {
+    if (!x || (!x.plazo_fin && !x.plazo_inicio)) return null;
+    var hoyIso = ahora.iso, ini = x.plazo_inicio || null, fin = x.plazo_fin || null;
+    if (ini && ini > hoyIso) {
+      return { estado: 'abre', dias: diasEntre(hoyIso, ini), texto: ini === sumarDias(hoyIso, 1) ? 'Abre mañana' : 'Abre el ' + fechaLarga(ini, ahora), fecha: ini };
+    }
+    if (!fin) return { estado: 'abierto', dias: null, texto: 'Plazo abierto', fecha: null };
+    if (fin < hoyIso) return { estado: 'cerrado', dias: diasEntre(fin, hoyIso), texto: 'Plazo cerrado', fecha: fin };
+    var n = diasEntre(hoyIso, fin);
+    return { estado: n === 0 ? 'ultimo' : 'abierto', dias: n, texto: n === 0 ? 'Último día' : n === 1 ? 'Queda 1 día' : 'Quedan ' + n + ' días', fecha: fin };
+  }
+  function plazoAbierto(p) { return !!p && (p.estado === 'abierto' || p.estado === 'ultimo'); }
+  function chipPlazo(x, ahora, clave) {
+    var p = plazo(x, ahora);
+    if (!p) return '';
+    var sr = p.estado === 'abre' ? '' : p.estado === 'cerrado' ? ': terminó el ' + fechaLarga(p.fecha, ahora) : p.fecha ? ', hasta el ' + fechaLarga(p.fecha, ahora) + ' incluido' : '';
+    return '<span class="plazo plazo--' + p.estado + '" data-plazo="' + p.estado + '"' + (x.plazo_ejemplo ? ' data-dato-ejemplo="plazo:' + esc(clave) + '"' : '') + '>' +
+      '<svg class="icono plazo__icono" aria-hidden="true"><use href="#i-reloj"/></svg><span class="plazo__texto">' + esc(p.texto) + (sr ? '<span class="sr">' + esc(sr) + '</span>' : '') + '</span>' +
+      (x.plazo_ejemplo ? EJEMPLO : '') + '</span>';
+  }
+  /* lo publicado en las últimas 48 horas: hoy o ayer (la fecha no lleva hora) */
+  function esNuevo(fecha, ahora) { var n = diasEntre(fecha, ahora.iso); return n >= 0 && n <= 1; }
+  var NUEVO = '<span class="nuevo"><span class="nuevo__punto" aria-hidden="true"></span>Nuevo<span class="sr">, publicado en las últimas 48 horas</span></span>';
+
+  /* avisos propios + anuncios del tablón oficial, lo más nuevo primero. v3b: lo que tiene el plazo
+     cerrado baja de prioridad (va detrás de todo lo demás, también en el límite de la portada) */
   function ultimos(D, ahora) {
     var propios = avisosVigentes(D, ahora).map(function (a) {
-      return { id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, href: enlaceAviso(a, D), ejemplo: a.ejemplo, oficial: false, gravedad: gravedad(a) };
+      return { id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, href: enlaceAviso(a, D), ejemplo: a.ejemplo, oficial: false, gravedad: gravedad(a),
+        plazo_inicio: a.plazo_inicio || null, plazo_fin: a.plazo_fin || null, plazo_ejemplo: !!a.plazo_ejemplo, clave: a.id };
     });
     var oficiales = ((D.tablon && D.tablon.entradas) || []).filter(function (t) { return !t.oculto; }).map(function (t, i) {
-      return { id: 'tablon-' + i, fecha: t.fecha, tema: t.tema, titulo: t.titulo_claro || t.titulo, href: t.url, oficial: true };
+      return { id: 'tablon-' + i, fecha: t.fecha, tema: t.tema, titulo: t.titulo_claro || t.titulo, href: t.url, oficial: true,
+        plazo_inicio: t.plazo_inicio || null, plazo_fin: t.plazo_fin || null, plazo_ejemplo: !!t.plazo_ejemplo, clave: 'tablon-' + (t.expediente || i) };
     });
-    return propios.concat(oficiales).sort(function (a, b) { return b.fecha.localeCompare(a.fecha) || (a.oficial - b.oficial); });
+    var cerrado = function (f) { var p = plazo(f, ahora); return p && p.estado === 'cerrado' ? 1 : 0; };
+    return propios.concat(oficiales).sort(function (a, b) { return cerrado(a) - cerrado(b) || b.fecha.localeCompare(a.fecha) || (a.oficial - b.oficial); });
+  }
+
+  /* ── v3b · «Plazos abiertos» (portada): lo que tiene el plazo abierto, lo que cierra antes
+     primero (sin fecha de cierre, al final). Sin ninguno devuelve '' y la sección no sale ── */
+  function plazosAbiertos(D, ahora) {
+    return ultimos(D, ahora).map(function (f) { return { f: f, p: plazo(f, ahora) }; }).filter(function (x) { return plazoAbierto(x.p); })
+      .sort(function (a, b) { return (a.p.dias == null) - (b.p.dias == null) || (a.p.dias || 0) - (b.p.dias || 0) || b.f.fecha.localeCompare(a.f.fecha); });
+  }
+  function plazos(D, ahora, op) {
+    var lista = plazosAbiertos(D, ahora).slice(0, (op && op.limite) || 4);
+    if (!lista.length) return '';
+    return '<h2 class="plazos__titulo" id="t-plazos">Plazos abiertos</h2><ul class="plazos__lista">' + lista.map(function (x) {
+      var f = x.f;
+      return '<li class="plazos__item plazos__item--' + x.p.estado + '">' + chipPlazo(f, ahora, f.clave) +
+        '<p class="plazos__nombre"><a class="plazos__enlace" href="' + esc(f.href) + '">' + esc(f.titulo) + (f.oficial ? SEDE : '') + '</a></p>' +
+        '<p class="plazos__nota">' + (x.p.fecha ? 'Hasta el ' + esc(fechaLarga(x.p.fecha, ahora)) + ' · ' : '') + (f.oficial ? 'Tablón oficial' : 'Ayuntamiento') + '</p></li>';
+    }).join('') + '</ul>';
+  }
+  /* el chip de un aviso propio (página de avisos): se repinta con la fecha real */
+  function plazoAviso(D, ahora, op) {
+    var a = (D.avisos || []).filter(function (x) { return x.id === op.clave; })[0];
+    return a ? chipPlazo(a, ahora, a.id) : '';
   }
 
   /* ── tablón con filtros ── */
@@ -361,9 +416,13 @@
       var p = partes(f.fecha);
       var bloque = '<span class="tablon__dia" aria-hidden="true"><b>' + (p.d < 10 ? '0' : '') + p.d + '</b><span>' + MESES_C[p.m - 1] + '</span>' +
         (p.a !== ahora.anio ? '<span class="tablon__anio">' + p.a + '</span>' : '') + '</span>';
-      return '<li class="tablon__fila" data-tema="' + esc(f.tema) + '"' + (i >= limite ? ' hidden' : '') + marcaEjemplo(f, 'aviso:' + f.id) + '>' +
+      /* v3b: la franja de la izquierda dice la gravedad de un aviso propio (rojo, solo lo urgente; el
+         texto «Urgente» va en la meta, así no depende del color); el punto «Nuevo» y el chip del plazo */
+      var g = f.oficial ? null : f.gravedad, pz = plazo(f, ahora);
+      return '<li class="tablon__fila' + (g && g !== 'informativo' ? ' es-' + g : '') + (pz && pz.estado === 'cerrado' ? ' es-cerrado' : '') + '" data-tema="' + esc(f.tema) + '"' + (i >= limite ? ' hidden' : '') + marcaEjemplo(f, 'aviso:' + f.id) + '>' +
         '<a class="tablon__enlace" href="' + esc(f.href) + '">' + bloque +
-        '<span class="tablon__meta"><span class="chip">' + esc(f.tema) + '</span><time class="sr" datetime="' + f.fecha + '">' + fechaCorta(f.fecha) + '</time>' +
+        '<span class="tablon__meta">' + (esNuevo(f.fecha, ahora) ? NUEVO : '') + '<span class="chip">' + esc(f.tema) + '</span><time class="sr" datetime="' + f.fecha + '">' + fechaCorta(f.fecha) + '</time>' +
+        (g && g !== 'informativo' ? '<span class="chip chip--' + g + '">' + GRAVEDAD[g] + '</span>' : '') + chipPlazo(f, ahora, f.clave) +
         (f.oficial ? '<span class="tablon__origen">Tablón oficial</span>' : '<span class="tablon__origen">Ayuntamiento</span>') + '</span>' +
         '<span class="tablon__titulo">' + esc(f.titulo) + '</span>' + (f.oficial ? SEDE : '') +
         '<svg class="icono tablon__flecha" aria-hidden="true"><use href="#' + (f.oficial ? 'i-salida' : 'i-flecha') + '"/></svg></a>' +
@@ -548,9 +607,10 @@
     return s ? estadoHtml(s, ahora, 'estado estado--servicio') : '';
   }
 
-  var BLOQUES = { franja: franja, hoy: hoy, tablon: tablon, linea: linea, anio: anio, agenda: agenda, servicio: servicio, lado: lado };
+  var BLOQUES = { franja: franja, hoy: hoy, tablon: tablon, linea: linea, anio: anio, agenda: agenda, servicio: servicio, lado: lado, plazos: plazos, plazo: plazoAviso };
 
   raiz.Vivo = {
+    plazo: plazo, plazosAbiertos: plazosAbiertos, esNuevo: esNuevo,
     ahoraEn: ahoraEn, estado: estado, fechaLarga: fechaLarga, fechaCorta: fechaCorta, siguienteFiesta: siguienteFiesta,
     urgentes: urgentes, destacados: destacados, gravedad: gravedad, proximos: proximos, ultimos: ultimos,
     farmaciaDeGuardia: farmaciaDeGuardia, proximaRecogida: proximaRecogida, proximoPleno: proximoPleno, ics: ics, archivoIcs: archivoIcs,

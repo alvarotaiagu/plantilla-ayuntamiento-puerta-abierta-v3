@@ -795,6 +795,9 @@ async function contenidoEjemplo() {
   if (M.farmacias && M.farmacias.ejemplo && (M.farmacias.rotacion || (M.farmacias.guardias || []).length)) esperados.add('farmacia');
   (M.recogida || []).filter(x => x.ejemplo).forEach(x => esperados.add('recogida:' + x.id));
   (M.plenos || []).filter(p => p.ejemplo).forEach(p => esperados.add('evento:pleno-' + p.fecha + (p.id ? '-' + p.id : '')));
+  /* v3b: los plazos que no constan en la fuente (avisos y anuncios del tablón con plazo_ejemplo) */
+  contenido('avisos').avisos.filter(a => !a.oculto && a.plazo_ejemplo && (a.plazo_fin || a.plazo_inicio)).forEach(a => esperados.add('plazo:' + a.id));
+  (contenido('tablon').entradas || []).filter(t => !t.oculto).forEach((t, i) => { if (t.plazo_ejemplo && (t.plazo_fin || t.plazo_inicio)) esperados.add('plazo:tablon-' + (t.expediente || i)); });
   const { ctx, page } = await nueva({ densidad: 'sobria' });
   const vistos = new Set(), malos = [];
   for (const p of PAGINAS) {
@@ -899,9 +902,11 @@ async function interaccion() {
     await page.fill('#buscador [data-buscador-campo]', q);
     await page.waitForFunction(() => document.querySelector('#buscador [data-buscador-cuenta]').textContent.length > 0, null, { timeout: 3000 }).catch(() => {});
     await espera(250);
-    const r = await page.evaluate(() => [...document.querySelectorAll('#buscador [data-buscador-resultados] a')].map(a => ({ t: a.textContent, h: a.getAttribute('href') })));
-    if (!r.length || !re.test(sinTilde(r[0].t))) malos.push(`«${q}» → ${r.length} resultados, el primero «${r[0] ? r[0].t.slice(0, 40) : '-'}»`);
-    if (r.some(x => !patronSede.test(x.h) && !/\.(pdf|docx?)$/.test(x.h) && !/^https:\/\//.test(x.h))) malos.push(`«${q}»: enlace raro`);
+    /* v3b: el buscador es global (grupos por tipo); los trámites van primero y son los que tienen
+       que llevar a la sede o a un impreso. Los demás grupos enlazan a páginas de la web */
+    const r = await page.evaluate(() => [...document.querySelectorAll('#buscador [data-buscador-resultados] a')].map(a => ({ t: a.textContent, h: a.getAttribute('href'), g: (a.closest('ul') || { getAttribute: () => '' }).getAttribute('aria-labelledby') || '' })));
+    if (!r.length || !re.test(sinTilde(r[0].t)) || !/-tramites$/.test(r[0].g)) malos.push(`«${q}» → ${r.length} resultados, el primero «${r[0] ? r[0].t.slice(0, 40) : '-'}»`);
+    if (r.filter(x => /-tramites$/.test(x.g)).some(x => !patronSede.test(x.h) && !/\.(pdf|docx?)$/.test(x.h) && !/^https:\/\//.test(x.h))) malos.push(`«${q}»: enlace raro`);
   }
   await page.keyboard.press('Escape');
   const cerrado = await page.evaluate(() => !document.getElementById('buscador').open);
@@ -1344,7 +1349,7 @@ async function primeraPantalla() {
   const b = await page.evaluate(() => {
     const f = document.querySelector('.hero__buscador');
     return { estado: f.querySelector('[data-buscador-cuenta]').getAttribute('role'), cuenta: f.querySelector('[data-buscador-cuenta]').textContent,
-      n: f.querySelectorAll('[data-buscador-resultados] a').length, accion: f.getAttribute('action'), metodo: f.getAttribute('method'), nombre: f.querySelector('[data-buscador-campo]').name,
+      n: f.querySelectorAll('[data-buscador-resultados] .resultados__lista a').length, accion: f.getAttribute('action'), metodo: f.getAttribute('method'), nombre: f.querySelector('[data-buscador-campo]').name,
       etiqueta: (f.querySelector('label[for="' + f.querySelector('[data-buscador-campo]').id + '"]') || {}).textContent || '' };
   });
   await page.click('.hero__buscador [type="submit"]');
@@ -2319,7 +2324,8 @@ async function v3Interiores() {
           const ul = document.querySelector('#buscador .resultados');
           const mo = new MutationObserver(() => {
             if (!ul.children.length) return;   /* al vaciar el campo se vacía la lista: esa no cuenta */
-            const anims = [...ul.children].flatMap(li => li.getAnimations());
+            /* v3b: los resultados van en grupos (título y lista por tipo): cuentan los <li> */
+            const anims = [...ul.querySelectorAll('li')].flatMap(li => li.getAnimations());
             window.__entrada = { fin: Math.max(0, ...anims.map(a => { const t = a.effect.getComputedTiming(); return (t.delay || 0) + t.duration; })),
               props: [...new Set(anims.flatMap(a => a.effect.getKeyframes().flatMap(k => Object.keys(k).filter(x => !['offset', 'easing', 'composite', 'computedOffset'].includes(x)))))] };
             mo.disconnect();
@@ -2331,7 +2337,7 @@ async function v3Interiores() {
         await page.waitForFunction(() => window.__entrada !== null, null, { timeout: 3000 }).catch(() => {});
         const r = await page.evaluate(() => {
           window.__entrada = window.__entrada || { fin: 0, props: [] };
-          const lis = [...document.querySelectorAll('#buscador .resultados > li')];
+          const lis = [...document.querySelectorAll('#buscador .resultados li')];
           return { n: lis.length, marcas: [...document.querySelectorAll('#buscador .resultados mark')].map(m => m.textContent), primero: lis[0] ? lis[0].querySelectorAll('mark').length : 0,
             cuenta: document.querySelector('#buscador [data-buscador-cuenta]').textContent, rol: document.querySelector('#buscador [data-buscador-cuenta]').getAttribute('role'),
             fin: window.__entrada.fin, props: window.__entrada.props };
@@ -2610,6 +2616,273 @@ async function v3Identidad() {
   }
 }
 
+/* ═════════════ v3b · tablón: plazos, «Nuevo», portada y buscador global ═════════════
+   F4. Chip de plazo con cuenta atrás en vivo.js (Node con fechas fijas, la frontera de medianoche
+       de Madrid incluida, y el navegador con el reloj de Playwright); «Plazos abiertos» sale o no
+       según los datos, sin dejar hueco.
+   V18. Punto «Nuevo» (48 h) con su texto para el lector de pantalla; franja de gravedad con su chip;
+       lo de plazo cerrado baja al final.
+   V14. «… en cifras»: cada cifra con su fuente; sin el campo, la banda no sale (copia).
+   V17. El hero cabe con el lema grande; el pie de la foto casa con la foto elegida.
+   F8. El buscador global: grupos con su título y los trámites primero, cuenta correcta, axe.
+   M8. El campo del hero y el de Trámites comparten view-transition-name solo con movimiento. */
+async function v3bTablon() {
+  const V = cargarVivo();
+  const enV = iso => V.ahoraEn('Europe/Madrid', new Date(iso));
+  const rgbHexDe = s => '#' + (s.match(/\d+(\.\d+)?/g) || []).slice(0, 3).map(v => Math.round(Number(v)).toString(16).padStart(2, '0')).join('');
+  const rutas = { tramites: 't.html', avisos: 'avisos.html', agenda: 'a.html', noticia: 'n-{id}.html', media: 'media/' };
+  const base = { nombre_corto: 'P', horario: { texto: 'x', tramos: [] }, agenda: [], noticias: [], avisos: [], tablon: { entradas: [] }, rutas, tramites_sede: 1 };
+  const aviso = o => ({ id: 'a', fecha: '2026-10-01', tema: 'Ayudas', titulo: 'Aviso', ...o });
+
+  /* 1. F4 en Node: los casos límite con fechas fijas (hoy = miércoles 14 de octubre de 2026) */
+  {
+    const malos = [];
+    const hoy = enV('2026-10-14T10:00:00+02:00');
+    const casos = [
+      [{ plazo_inicio: '2026-10-15', plazo_fin: '2026-10-30' }, 'abre', /^Abre mañana$/],
+      [{ plazo_inicio: '2026-10-20' }, 'abre', /^Abre el martes 20 de octubre$/],
+      [{ plazo_inicio: '2026-10-14', plazo_fin: '2026-10-14' }, 'ultimo', /^Último día$/],
+      [{ plazo_fin: '2026-10-15' }, 'abierto', /^Queda 1 día$/],
+      [{ plazo_fin: '2026-10-24' }, 'abierto', /^Quedan 10 días$/],
+      [{ plazo_fin: '2026-10-13' }, 'cerrado', /^Plazo cerrado$/],
+      [{ plazo_inicio: '2026-10-01' }, 'abierto', /^Plazo abierto$/],
+      [{}, null, null]
+    ];
+    for (const [o, estado, texto] of casos) {
+      const p = V.plazo(o, hoy);
+      if ((p && p.estado) !== estado || (texto && !texto.test(p.texto))) malos.push(JSON.stringify(o) + ' → ' + JSON.stringify(p));
+    }
+    /* la frontera es la medianoche de Madrid, no la del ordenador ni la UTC */
+    const fin = { plazo_fin: '2026-10-31' };
+    if (V.plazo(fin, enV('2026-10-31T23:59:00+01:00')).estado !== 'ultimo') malos.push('a las 23:59 del último día (Madrid) ya no es «Último día»');
+    if (V.plazo(fin, enV('2026-10-31T23:30:00Z')).estado !== 'cerrado') malos.push('a las 00:30 de Madrid del día siguiente (23:30 UTC) no está cerrado');
+    /* el chip: la palabra, el reloj, la fecha para el lector de pantalla y su «Ejemplo» si lo es */
+    const tab = V.pintar('tablon', { ...base, avisos: [aviso({ id: 'u', plazo_fin: '2026-10-14', plazo_ejemplo: true }), aviso({ id: 'c', fecha: '2026-10-10', plazo_fin: '2026-10-12' }), aviso({ id: 'n', fecha: '2026-10-02' })] }, hoy);
+    if (!/class="plazo plazo--ultimo" data-plazo="ultimo" data-dato-ejemplo="plazo:u"><svg[^>]*><use href="#i-reloj"\/><\/svg><span class="plazo__texto">Último día<span class="sr">, hasta el miércoles 14 de octubre incluido<\/span><\/span><span class="ejemplo">Ejemplo<\/span>/.test(tab)) malos.push('el chip del último día');
+    if (!/plazo--cerrado[\s\S]*Plazo cerrado<span class="sr">: terminó el lunes 12 de octubre/.test(tab)) malos.push('el chip de plazo cerrado');
+    /* lo cerrado, al final (aunque sea más nuevo que «n») */
+    const orden = [...tab.matchAll(/#aviso-(\w)"/g)].map(m => m[1]).join('');
+    if (orden !== 'nuc') malos.push('orden del tablón ' + orden + ' (lo cerrado tiene que ir al final)');
+    /* «Plazos abiertos»: solo lo abierto, lo que cierra antes primero; sin nada abierto, '' */
+    const pz = V.pintar('plazos', { ...base, avisos: [aviso({ id: 'x', plazo_fin: '2026-10-30' }), aviso({ id: 'y', plazo_fin: '2026-10-16' }), aviso({ id: 'z', plazo_fin: '2026-10-01' }), aviso({ id: 'w', plazo_inicio: '2026-11-01' })] }, hoy);
+    const enPz = [...pz.matchAll(/aviso-(\w)/g)].map(m => m[1]).join('');
+    if (!/<h2 class="plazos__titulo" id="t-plazos">Plazos abiertos<\/h2>/.test(pz) || enPz !== 'yx') malos.push('«Plazos abiertos» da ' + enPz + ' (esperaba yx)');
+    if (V.pintar('plazos', { ...base, avisos: [aviso({ plazo_fin: '2026-10-01' }), aviso({ id: 'b' })] }, hoy) !== '') malos.push('sin plazos abiertos, «Plazos abiertos» no está vacío');
+    /* los del tablón oficial también, con su clave por expediente */
+    const ofi = V.pintar('plazos', { ...base, tablon: { entradas: [{ fecha: '2026-10-01', tema: 'Ayudas', titulo: 'T', titulo_claro: 'Convocatoria', url: 'https://x/', expediente: '7/2026', plazo_fin: '2026-10-20', plazo_ejemplo: true }] } }, hoy);
+    if (!/data-dato-ejemplo="plazo:tablon-7\/2026"[\s\S]*Quedan 6 días[\s\S]*Tablón oficial/.test(ofi)) malos.push('plazo de un anuncio del tablón');
+    comprobar(!malos.length, 'v3b F4 · plazos en vivo.js (Node, fechas fijas): «Abre mañana», «Abre el …», «Último día», «Queda 1 día», «Quedan N días», «Plazo cerrado» y «Plazo abierto»; la frontera es la medianoche de Madrid; el chip lleva reloj, palabra, fecha para el lector y su «Ejemplo»; lo cerrado baja al final del tablón; «Plazos abiertos» solo con lo abierto, lo que cierra antes primero, y vacío si no hay' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* 2. V18 en Node: «Nuevo» (hoy y ayer sí; hace 2 días no) y la franja de gravedad con su chip */
+  {
+    const malos = [];
+    const hoy = enV('2026-10-14T10:00:00+02:00');
+    const fila = (o, a = hoy) => V.pintar('tablon', { ...base, avisos: [aviso(o)] }, a);
+    if (!/<span class="nuevo"><span class="nuevo__punto" aria-hidden="true"><\/span>Nuevo<span class="sr">, publicado en las últimas 48 horas<\/span><\/span>/.test(fila({ fecha: '2026-10-14' }))) malos.push('lo de hoy sin «Nuevo»');
+    if (!/class="nuevo"/.test(fila({ fecha: '2026-10-13' }))) malos.push('lo de ayer sin «Nuevo»');
+    if (/class="nuevo"/.test(fila({ fecha: '2026-10-12' }))) malos.push('lo de hace dos días con «Nuevo»');
+    if (!/class="tablon__fila es-urgente"[\s\S]*chip chip--urgente">Urgente/.test(fila({ gravedad: 'urgente' }))) malos.push('urgente sin franja o sin su palabra');
+    if (!/class="tablon__fila es-programado"[\s\S]*chip chip--programado">Programado/.test(fila({ gravedad: 'programado' }))) malos.push('programado sin franja o sin su palabra');
+    if (/es-informativo|chip--informativo/.test(fila({}))) malos.push('el informativo lleva franja');
+    comprobar(!malos.length, 'v3b V18 · tablón (Node): punto «Nuevo» con su texto para el lector de pantalla en lo de hoy y ayer (48 h) y no en lo de antes; urgente y programado con su franja y su palabra; el informativo, sin franja' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* reescribe los datos vivos de una página antes de que main.js los pinte */
+  const datosDe = html => JSON.parse(html.match(/<script type="application\/json" id="datos-vivos">([\s\S]*?)<\/script>/)[1]);
+  const conDatos = async (page, pag, cambiar) => {
+    await page.route('**/' + pag, async r => {
+      const resp = await r.fetch(); const cuerpo = await resp.text();
+      const D = datosDe(cuerpo); cambiar(D);
+      r.fulfill({ response: resp, body: cuerpo.replace(/(<script type="application\/json" id="datos-vivos">)[\s\S]*?(<\/script>)/, (m, a, b) => a + JSON.stringify(D).replace(/</g, '\\u003c') + b) });
+    });
+  };
+
+  /* 3. F4 y V18 en el navegador con el reloj fijo: chips, «Plazos abiertos» que sale o no sin hueco,
+     «Nuevo», la franja roja (≥ 3:1 con la hoja) y axe */
+  {
+    const malos = [];
+    const propios = [
+      { id: 'p-manana', fecha: '2026-10-10', tema: 'Ayudas', titulo: 'Abre mañana', plazo_inicio: '2026-10-15', plazo_fin: '2026-10-30', ejemplo: false, oculto: false },
+      { id: 'p-ultimo', fecha: '2026-10-09', tema: 'Ayudas', titulo: 'Último día hoy', plazo_fin: '2026-10-14', ejemplo: false, oculto: false },
+      { id: 'p-cerrado', fecha: '2026-10-13', tema: 'Ayudas', titulo: 'Plazo vencido', plazo_fin: '2026-10-13', ejemplo: false, oculto: false },
+      { id: 'p-urgente', fecha: '2026-10-14', tema: 'Agua', titulo: 'Avería urgente', gravedad: 'urgente', ejemplo: false, oculto: false }
+    ];
+    for (const caso of ['con', 'sin']) {
+      const { ctx, page } = await nueva({ viewport: { width: 1366, height: 900 } });
+      await page.clock.setFixedTime(new Date('2026-10-14T10:00:00+02:00'));
+      await conDatos(page, 'index.html', D => {
+        D.avisos = caso === 'con' ? propios : propios.filter(a => a.id === 'p-cerrado' || a.id === 'p-manana');
+        D.tablon = { actualizado: '2999-01-01', entradas: D.tablon.entradas.map(e => ({ ...e, plazo_inicio: null, plazo_fin: null, plazo_ejemplo: false })) };
+      });
+      await page.route('**/contenido/tablon.json*', r => r.abort());
+      await ir(page, 'index.html');
+      const r = await page.evaluate(() => {
+        const sec = document.querySelector('.plazos-tira'), sig = sec && sec.nextElementSibling;
+        const chip = id => { const f = document.querySelector('[data-vivo="tablon"] a[href$="#aviso-' + id + '"]'); const c = f && f.querySelector('.plazo'); return c ? c.getAttribute('data-plazo') + ':' + c.querySelector('.plazo__texto').firstChild.textContent : null; };
+        const urg = document.querySelector('[data-vivo="tablon"] .tablon__fila.es-urgente');
+        const filas = [...document.querySelectorAll('[data-vivo="tablon"] .tablon__fila')].map(f => (f.querySelector('a').getAttribute('href').match(/aviso-(.+)$/) || [, 'tablon'])[1]);
+        return { visible: sec && !sec.hidden && sec.getBoundingClientRect().height > 0, alto: sec ? sec.getBoundingClientRect().height : -1,
+          hueco: sec && sig ? Math.round(sig.getBoundingClientRect().top - sec.previousElementSibling.getBoundingClientRect().bottom) : null,
+          items: [...document.querySelectorAll('.plazos__item')].map(i => i.querySelector('.plazo').getAttribute('data-plazo')),
+          manana: chip('p-manana'), ultimo: chip('p-ultimo'), cerrado: chip('p-cerrado'), filas,
+          nuevo: [...document.querySelectorAll('[data-vivo="tablon"] .nuevo')].map(n => n.closest('a').getAttribute('href')),
+          nuevoSr: (document.querySelector('[data-vivo="tablon"] .nuevo .sr') || {}).textContent || '',
+          franja: urg ? getComputedStyle(urg).boxShadow : null, urgPalabra: urg ? urg.querySelector('.chip--urgente') && urg.querySelector('.chip--urgente').textContent : null };
+      });
+      if (caso === 'con') {
+        if (!r.visible || r.items.join() !== 'ultimo') malos.push('con plazos: «Plazos abiertos» ' + (r.visible ? 'da ' + r.items.join() : 'no sale'));
+        if (r.manana !== 'abre:Abre mañana' || r.ultimo !== 'ultimo:Último día' || r.cerrado !== 'cerrado:Plazo cerrado') malos.push('chips: ' + [r.manana, r.ultimo, r.cerrado].join(' | '));
+        if (r.filas[r.filas.length - 1] !== 'p-cerrado' && r.filas.indexOf('p-cerrado') >= 0) malos.push('lo cerrado no va al final: ' + r.filas.join(','));
+        if (r.nuevo.sort().join() !== ['avisos.html#aviso-p-cerrado', 'avisos.html#aviso-p-urgente'].join() || !/48 horas/.test(r.nuevoSr)) malos.push('«Nuevo» en ' + r.nuevo.join(','));
+        const rojo = r.franja && (r.franja.match(/rgb\([^)]+\)/) || [''])[0];
+        if (!rojo || r.urgPalabra !== 'Urgente' || contraste(rgbHexDe(rojo), (await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--superficie').trim()))) < 3) malos.push('franja urgente: ' + r.franja + ' / ' + r.urgPalabra);
+        const viol = (await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => v.id + ' ' + v.nodes[0].target.join(' '));
+        if (viol.length) malos.push('axe con plazos y «Nuevo»: ' + viol.join(', '));
+      } else if (r.visible || r.alto !== 0) malos.push('sin plazos abiertos, «Plazos abiertos» sale o deja ' + r.alto + ' px');
+      await ctx.close();
+    }
+    /* en «Avisos», el chip del aviso propio se repinta con la fecha real */
+    const { ctx, page } = await nueva();
+    await page.clock.setFixedTime(new Date('2026-10-14T10:00:00+02:00'));
+    await conDatos(page, 'avisos.html', D => { D.avisos = D.avisos.map((a, i) => i ? a : { ...a, plazo_fin: '2026-10-14', plazo_ejemplo: false }); });
+    await ir(page, 'avisos.html');
+    const enAvisos = await page.evaluate(() => [...document.querySelectorAll('[data-vivo="tablon"] .plazo, .avisos [data-vivo="plazo"] .plazo')].map(c => c.getAttribute('data-plazo')));
+    await ctx.close();
+    /* en el tablón completo siempre; en la lista de avisos propios, si el aviso traía plazo al generar */
+    if (!enAvisos.includes('ultimo')) malos.push('«Avisos» sin el chip «Último día» (' + enAvisos.join(',') + ')');
+    comprobar(!malos.length, 'v3b F4/V18 · en el navegador (reloj en el 14/10/2026): chips «Abre mañana», «Último día» y «Plazo cerrado»; «Plazos abiertos» sale con lo abierto y, sin nada abierto, no sale ni deja hueco; «Nuevo» en lo de hoy y ayer con su texto para el lector; la fila urgente con su franja roja (≥ 3:1) y su palabra; lo cerrado al final; axe 0' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* 4. V14: cada cifra con su fuente visible; sin el campo, la banda no sale; sin fuente, aplicar.mjs se niega */
+  {
+    const malos = [];
+    const esperadas = (M.cifras || []).length;
+    const { ctx, page } = await nueva({ viewport: { width: 1366, height: 900 } });
+    await ir(page, 'index.html');
+    const r = await page.evaluate(() => [...document.querySelectorAll('.cifras .cifra')].map(c => ({ valor: c.querySelector('.cifra__valor').textContent, fuente: c.querySelector('.cifra__fuente') && c.querySelector('.cifra__fuente').checkVisibility() ? c.querySelector('.cifra__fuente').textContent : '',
+      letra: getComputedStyle(c.querySelector('.cifra__valor')).fontFamily, titulo: (document.getElementById('t-cifras') || {}).textContent })));
+    await ctx.close();
+    if (r.length !== esperadas) malos.push(r.length + ' cifras de ' + esperadas);
+    r.forEach(c => { if (!/^Fuente: \S/.test(c.fuente)) malos.push('«' + c.valor + '» sin fuente visible'); if (!c.letra.includes(marca.letra.titulares)) malos.push('«' + c.valor + '» no va en ' + marca.letra.titulares); });
+    if (esperadas && r[0] && r[0].titulo !== M.nombre_corto + ' en cifras') malos.push('título «' + r[0].titulo + '»');
+    const dest = copiar();
+    try {
+      const mj = path.join(dest, 'municipio.json'), m = JSON.parse(fs.readFileSync(mj, 'utf8'));
+      delete m.cifras;
+      fs.writeFileSync(mj, JSON.stringify(m, null, 2));
+      let ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
+      if (ap.status !== 0) malos.push('sin cifras, aplicar.mjs falla → ' + (ap.stderr || ap.stdout).slice(-200));
+      else if (/t-cifras|class="cifra/.test(fs.readFileSync(path.join(dest, 'index.html'), 'utf8'))) malos.push('sin el campo, la banda sale');
+      m.cifras = [{ valor: 12, etiqueta: 'sin fuente' }];
+      fs.writeFileSync(mj, JSON.stringify(m, null, 2));
+      ap = spawnSync('node', [path.join(dest, 'scripts/aplicar.mjs'), '--sin-og', '--silencio'], { encoding: 'utf8', cwd: dest });
+      if (ap.status === 0 || !/cifras\[0\]/.test(ap.stderr)) malos.push('una cifra sin fuente no para aplicar.mjs');
+    } finally { fs.rmSync(dest, { recursive: true, force: true }); }
+    comprobar(!malos.length, `v3b V14 · «${M.nombre_corto} en cifras»: ${r.length} cifras en ${marca.letra.titulares}, cada una con su fuente a la vista (${r.map(c => c.valor).join(', ') || 'ninguna'}); sin municipio.json → cifras la banda no sale y una cifra sin fuente para aplicar.mjs` + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* 5. V17: el hero cabe con el lema grande y el pie de la foto casa con la foto elegida (cada semilla) */
+  {
+    const malos = [];
+    const lista = ((M.fotos && M.fotos.hero_fotos) || []).length ? M.fotos.hero_fotos : (M.fotos && M.fotos.hero ? [M.fotos.hero] : []);
+    const slug = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const lugarDe = h => h.lugar === null ? null : ((M.pueblo && M.pueblo.lugares) || []).find(l => (h.lugar ? l.nombre === h.lugar : l.foto === h.archivo)) || null;
+    for (const [w, h] of [[1280, 720], [1366, 768]]) for (let i = 0; i < lista.length; i++) {
+      const { ctx, page } = await nueva({ viewport: { width: w, height: h } });
+      await ctx.addInitScript(s => { Math.random = () => s; }, (i + 0.5) / lista.length);
+      await ir(page, 'index.html');
+      const r = await page.evaluate(() => {
+        const hero = document.querySelector('.hero').getBoundingClientRect(), pie = document.getElementById('pie-hero'), a = pie && pie.querySelector('a');
+        const lema = document.querySelector('.hero__lema'), arco = document.getElementById('arco-hero').getBoundingClientRect();
+        return { src: (document.querySelector('#arco-hero img') || {}).getAttribute ? document.querySelector('#arco-hero img').getAttribute('src') : null, abajo: hero.bottom, pie: pie && pie.checkVisibility() ? pie.textContent : '', href: a ? a.getAttribute('href') : null,
+          dentro: pie && pie.checkVisibility() ? (() => { const p = pie.getBoundingClientRect(); return p.left >= arco.left - 1 && p.right <= arco.right + 1 && p.bottom <= arco.bottom + 1; })() : true,
+          lema: lema ? parseFloat(getComputedStyle(lema).fontSize) / parseFloat(getComputedStyle(document.body).fontSize) : null };
+      });
+      await ctx.close();
+      const f = lista[i], l = lugarDe(f), esperado = l ? l.nombre : (f.pie || '');
+      if (r.src !== 'media/' + f.archivo + '.jpg') malos.push(`${w}×${h} foto ${i}: sale ${r.src}`);
+      if (r.abajo > h + 0.5) malos.push(`${w}×${h} foto ${i}: el hero acaba a ${Math.round(r.abajo)} px`);
+      if (r.pie.replace(/^Foto: /, '') !== esperado) malos.push(`${w}×${h} foto ${f.archivo}: pie «${r.pie}» (esperaba «${esperado}»)`);
+      if (l && r.href !== 'pueblo.html#lugar-' + slug(l.nombre)) malos.push(`foto ${f.archivo}: el pie enlaza a ${r.href}`);
+      if (!r.dentro) malos.push(`foto ${f.archivo}: el pie se sale del arco`);
+      if (M.lema && !(r.lema >= 1.3)) malos.push('el lema sigue pequeño (×' + r.lema + ' del texto)');
+    }
+    comprobar(lista.length > 0 && !malos.length, `v3b V17 · hero: con el lema grande (letra de titulares) cabe en 1280×720 y 1366×768 con cada una de las ${lista.length} fotos, y el pie del arco dice el lugar de la foto elegida, enlazado a su sitio en «El pueblo» (o nada si la foto no es un lugar)` + (malos.length ? ' → ' + malos.slice(0, 5).join(' | ') : ''));
+  }
+
+  /* 6. F8: el buscador global agrupa por tipo con su título, trámites primero, cuenta para el lector
+     de pantalla que casa con lo que se ve, la portada con 5 como mucho y «Ver los N», y axe */
+  {
+    const malos = [];
+    const sinT = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const larga = s => sinT(s).split(/[^a-z0-9ñ]+/).filter(p => p.length > 4).sort((a, b) => b.length - a.length)[0];
+    const lugar = ((M.pueblo && M.pueblo.lugares) || [])[0];
+    const tel = [...(M.urgencias || []), ...(M.servicios || [])].find(s => s.telefono && larga(s.nombre));
+    const noticia = contenido('noticias').noticias.find(n => !n.oculto && larga(n.titulo));
+    const casos = [lugar && [larga(lugar.nombre), 'El pueblo'], tel && [larga(tel.nombre), 'Teléfonos'], noticia && [larga(noticia.titulo), 'Noticias'], ['padron', 'Trámites']].filter(Boolean);
+    const ORDEN = ['Trámites', 'Avisos y anuncios', 'Noticias', 'Teléfonos', 'El pueblo'];
+    const { ctx, page } = await nueva();
+    await ir(page, 'index.html');
+    for (const [q, grupo] of casos) {
+      await page.click('[data-abrir-buscador]');
+      await page.fill('#buscador [data-buscador-campo]', q);
+      await page.waitForFunction(() => document.querySelector('#buscador [data-buscador-cuenta]').textContent.length > 0, null, { timeout: 3000 }).catch(() => {});
+      await espera(250);
+      const r = await page.evaluate(() => {
+        const caja = document.querySelector('#buscador [data-buscador-resultados]');
+        return { titulos: [...caja.querySelectorAll('.resultados__titulo')].map(t => ({ t: t.textContent, tag: t.tagName, id: t.id, lista: t.nextElementSibling && t.nextElementSibling.getAttribute('aria-labelledby') })),
+          n: caja.querySelectorAll('a').length, cuenta: document.querySelector('#buscador [data-buscador-cuenta]').textContent, rol: document.querySelector('#buscador [data-buscador-cuenta]').getAttribute('role') };
+      });
+      const ts = r.titulos.map(t => t.t);
+      if (!ts.includes(grupo)) malos.push(`«${q}»: sin el grupo «${grupo}» (${ts.join(', ')})`);
+      if (ts.join() !== ORDEN.filter(o => ts.includes(o)).join()) malos.push(`«${q}»: grupos en otro orden (${ts.join(', ')})`);
+      if (r.titulos.some(t => t.tag !== 'H3' || t.lista !== t.id)) malos.push(`«${q}»: títulos de grupo sin h3 o sin nombrar su lista`);
+      if (r.rol !== 'status' || !r.cuenta.startsWith(r.n + (r.n === 1 ? ' resultado' : ' resultados'))) malos.push(`«${q}»: cuenta «${r.cuenta}» con ${r.n} enlaces`);
+      if (q === casos[0][0]) {
+        const viol = (await new AxeBuilder({ page }).include('#buscador').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()).violations.map(v => v.id);
+        if (viol.length) malos.push('axe en el buscador con grupos: ' + viol.join(', '));
+      }
+      await page.keyboard.press('Escape');
+    }
+    /* la portada: 5 como mucho entre todos los grupos y «Ver los N resultados» a Trámites con lo escrito */
+    await page.fill('.hero__buscador [data-buscador-campo]', 'solicitud');
+    await page.waitForFunction(() => document.querySelector('.hero__buscador [data-buscador-cuenta]').textContent.length > 0, null, { timeout: 3000 }).catch(() => {});
+    await espera(250);
+    const h = await page.evaluate(() => { const c = document.querySelector('.hero__buscador [data-buscador-resultados]'); const t = c.querySelector('.resultados__todos a');
+      return { n: c.querySelectorAll('.resultados__lista a').length, titulo: (c.querySelector('.resultados__titulo') || {}).tagName, todos: t ? t.getAttribute('href') : null }; });
+    if (h.n > 5 || h.titulo !== 'H2' || !/^tramites\.html\?q=solicitud#buscar$/.test(h.todos || '')) malos.push('portada: ' + JSON.stringify(h));
+    await ctx.close();
+    comprobar(casos.length >= 3 && !malos.length, `v3b F8 · buscador global: ${casos.map(c => '«' + c[0] + '» → ' + c[1]).join(', ')}; grupos con su título (h3 en el diálogo, h2 en la portada) que nombra su lista, los trámites primero, la cuenta en role=status casa con los enlaces que se ven, la portada enseña 5 como mucho con «Ver los N resultados» y axe pasa` + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+
+  /* 7. M8: el campo viaja entre la portada y Trámites (mismo view-transition-name) solo con movimiento;
+     con movimiento reducido, nada. Y llega relleno y filtrado */
+  {
+    const malos = [];
+    for (const reducido of [true, false]) {
+      const { ctx, page } = await nueva({ reducido: reducido ? undefined : false });
+      const nombres = {};
+      await ir(page, 'index.html');
+      nombres.hero = await page.evaluate(() => getComputedStyle(document.querySelector('.hero__buscador [data-buscador-campo]')).viewTransitionName);
+      nombres.dialogo = await page.evaluate(() => getComputedStyle(document.querySelector('#buscador [data-buscador-campo]')).viewTransitionName);
+      await page.fill('.hero__buscador [data-buscador-campo]', 'padron');
+      await page.click('.hero__buscador [type="submit"]');
+      await page.waitForLoadState('networkidle');
+      await page.waitForFunction(() => document.querySelectorAll('[data-buscador-pagina] [data-buscador-resultados] a').length > 0, null, { timeout: 3000 }).catch(() => {});
+      const t = await page.evaluate(() => ({ nombre: getComputedStyle(document.querySelector('.buscador-pagina [data-buscador-campo]')).viewTransitionName, valor: document.querySelector('.buscador-pagina [data-buscador-campo]').value,
+        n: document.querySelectorAll('.buscador-pagina [data-buscador-resultados] a').length, anims: document.getAnimations().length }));
+      await ctx.close();
+      const esperado = reducido ? 'none' : 'campo-buscar';
+      if (nombres.hero !== esperado || t.nombre !== esperado) malos.push((reducido ? 'reducido' : 'con movimiento') + `: hero «${nombres.hero}», trámites «${t.nombre}»`);
+      if (nombres.dialogo !== 'none') malos.push('el campo del diálogo también tiene nombre (se repetiría)');
+      if (t.valor !== 'padron' || !t.n) malos.push(`Trámites llega con «${t.valor}» y ${t.n} resultados`);
+      if (reducido && t.anims) malos.push('reducido: ' + t.anims + ' animaciones al llegar');
+    }
+    comprobar(!malos.length, 'v3b M8 · del hero a Trámites: el campo de la portada y el de Trámites comparten view-transition-name «campo-buscar» solo con movimiento (con movimiento reducido, ninguno y nada animado); Trámites llega con lo escrito y filtrado' + (malos.length ? ' → ' + malos.join(' | ') : ''));
+  }
+}
+
 /* ═════════════ orden ═════════════ */
 const t0 = Date.now();
 const SOLO = args.includes('--solo') ? args[args.indexOf('--solo') + 1].split(',') : null;
@@ -2620,6 +2893,7 @@ for (const [nombre, fn] of [['tablon', tablon], ['abierto', abierto], ['hoy', pa
   ['v3cuerpo', v3Cuerpo],
   ['v3interiores', v3Interiores],
   ['v3identidad', v3Identidad],
+  ['v3btablon', v3bTablon],
   ...(RAPIDO ? [] : [['reskin', reskin]]), ...(CAPTURAS ? [['capturas', capturas]] : [])]) {
   if (SOLO && !SOLO.includes(nombre)) continue;
   const t = Date.now();

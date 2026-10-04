@@ -11,6 +11,13 @@
     "fuente": "INE 2025"
   },
   "altitud_m": 399,
+  "_cifras_leeme": "v3b · «… en cifras» en la portada: 4 o 5 números con su fuente visible. valor (número o texto, p. ej. un año), unidad, etiqueta, fuente, fuente_url y anio (del dato). Solo datos con fuente: la distancia a Badajoz no se pone porque las fuentes no coinciden (82, 83 o 107,6 km; ver DATOS.md). Sin el campo, la banda no sale.",
+  "cifras": [
+    {"valor": 3130, "unidad": "habitantes", "etiqueta": "en el padrón municipal", "fuente": "INE, padrón (observatorio de la Diputación de Badajoz)", "fuente_url": "https://portalestadistico.com/municipioencifras/?pn=dip-badajoz&pc=WRC03&id_territorio=06113", "anio": 2025},
+    {"valor": 185.6, "unidad": "km²", "etiqueta": "de término municipal", "fuente": "Diputación de Badajoz, ficha del municipio", "fuente_url": "https://www.dip-badajoz.es/municipios/municipio_dinamico/inicio/index_inicio.php?codigo=128", "anio": null},
+    {"valor": 399, "unidad": "m", "etiqueta": "de altitud sobre el nivel del mar", "fuente": "Diputación de Badajoz, ficha del municipio", "fuente_url": "https://www.dip-badajoz.es/municipios/municipio_dinamico/inicio/index_inicio.php?codigo=128", "anio": null},
+    {"valor": "1257", "unidad": null, "etiqueta": "primera referencia escrita de la villa, repoblada por la Orden de Santiago", "fuente": "Diputación de Badajoz, historia del municipio", "fuente_url": "https://www.dip-badajoz.es/municipios/municipio_dinamico/inicio/index_inicio.php?codigo=128", "anio": null}
+  ],
   "lema": "Vive la Historia",
   "propuesta": true,
   "indexar": false,

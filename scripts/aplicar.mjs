@@ -386,7 +386,8 @@ const quienAyto = [
 
 /* ───────────────────────── contenido ───────────────────────── */
 const avisosOrden = C.avisos.filter(a => !a.oculto).slice().sort((a, b) => b.fecha.localeCompare(a.fecha))
-  .map(a => ({ ...a, fecha_texto: fechaTexto(a.fecha), urgente: Vivo.gravedad(a) === 'urgente', ejemplo: !!a.ejemplo, enlace: a.enlace || null }));
+  .map(a => ({ ...a, fecha_texto: fechaTexto(a.fecha), urgente: Vivo.gravedad(a) === 'urgente', gravedad: Vivo.gravedad(a), programado: Vivo.gravedad(a) === 'programado', ejemplo: !!a.ejemplo, enlace: a.enlace || null,
+    plazo_inicio: a.plazo_inicio || null, plazo_fin: a.plazo_fin || null, plazo_html: null }));
 /* gravedad de los avisos: «urgente» (rojo), «programado» o «informativo» (ámbar; el de por defecto).
    En la franja de arriba, en móvil, el título tiene que caber en dos líneas: si es largo, `titulo_corto` */
 for (const a of C.avisos) {
@@ -470,19 +471,29 @@ const recogida = (M.recogida || []).map(x => {
 const canalAvisos = M.canal_avisos && M.canal_avisos.url ? { nombre: M.canal_avisos.nombre, url: M.canal_avisos.url, texto: M.canal_avisos.texto || null,
   pasos: (M.canal_avisos.pasos || []).length ? M.canal_avisos.pasos : null, otros: M.canal_avisos.otros || [] } : null;
 if (canalAvisos && !canalAvisos.nombre) errores.push('canal_avisos: con «url» va «nombre»');
+/* v3b · plazos (avisos y anuncios del tablón): `plazo_inicio` y `plazo_fin` opcionales, AAAA-MM-DD.
+   Solo se ponen si la fuente da la fecha; si no consta, con `plazo_ejemplo: true` (sale «Ejemplo»).
+   Van a null explícito si faltan: el Mustache y vivo.js no los buscan fuera */
+const conPlazo = x => {
+  const ini = x.plazo_inicio || null, fin = x.plazo_fin || null, quien = x.id || x.expediente || x.titulo;
+  if ((ini && !ISO.test(ini)) || (fin && !ISO.test(fin))) errores.push('plazo de «' + quien + '»: «plazo_inicio» y «plazo_fin» como AAAA-MM-DD');
+  if (ini && fin && ini > fin) errores.push('plazo de «' + quien + '»: «plazo_inicio» va antes que «plazo_fin»');
+  if (x.plazo_ejemplo && !ini && !fin) errores.push('plazo de «' + quien + '»: «plazo_ejemplo» sin plazo');
+  return { plazo_inicio: ini, plazo_fin: fin, plazo_ejemplo: !!(x.plazo_ejemplo && (ini || fin)) };
+};
 /* cada evento con su .ics (lo escribe más abajo; los de la hoja los genera el navegador) */
 const conIcs = e => ({ ...e, ics: 'ics/' + Vivo.archivoIcs(e) });
 
 const D = {
   slug: marcaConf.slug, nombre: M.nombre, nombre_corto: M.nombre_corto, zona: 'Europe/Madrid',
   horario: { texto: M.horario.texto, tramos: M.horario.tramos || [], ejemplo: !!M.horario.ejemplo },
-  avisos: C.avisos.map(a => ({ id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, titulo_corto: a.titulo_corto || null, urgente: !!a.urgente, gravedad: a.gravedad ? String(a.gravedad).toLowerCase().trim() : null, caduca: a.caduca || null, ejemplo: !!a.ejemplo, oculto: !!a.oculto })),
+  avisos: C.avisos.map(a => ({ id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, titulo_corto: a.titulo_corto || null, urgente: !!a.urgente, gravedad: a.gravedad ? String(a.gravedad).toLowerCase().trim() : null, caduca: a.caduca || null, ejemplo: !!a.ejemplo, oculto: !!a.oculto, ...conPlazo(a) })),
   agenda: [...C.agenda.map(e => ({ id: e.id, fecha: e.fecha, hora: e.hora || null, hora_fin: e.hora_fin || null, titulo: e.titulo, lugar: e.lugar || null, nota: e.nota || null, ejemplo: !!e.ejemplo, oculto: !!e.oculto,
     tipo: e.tipo ? String(e.tipo).toLowerCase() : null, convocatoria: e.convocatoria || null, convocatoria_sr: e.convocatoria ? srDe(e.convocatoria) : null,
     grabacion: e.grabacion || null, grabacion_sr: e.grabacion ? srDe(e.grabacion) : null })), ...agendaFiestas, ...plenosAgenda].map(conIcs),
   farmacias, tiempo, recogida, canal: canalAvisos ? { nombre: canalAvisos.nombre, url: canalAvisos.url, pasos: canalAvisos.pasos } : null, web: M.url ? M.url.replace(/\/?$/, '/') : null,
   noticias: noticias.map(n => ({ id: n.id, fecha: n.fecha, titulo: n.titulo, resumen: n.resumen, imagen: n.imagen, imagen_alt: n.imagen_alt, ejemplo: n.ejemplo })),
-  tablon: { actualizado: C.tablon.actualizado || null, entradas: (C.tablon.entradas || []).map(e => ({ fecha: e.fecha, tema: e.tema, titulo: e.titulo, titulo_claro: e.titulo_claro || '', url: e.url, oculto: !!e.oculto })) },
+  tablon: { actualizado: C.tablon.actualizado || null, entradas: (C.tablon.entradas || []).map(e => ({ fecha: e.fecha, tema: e.tema, titulo: e.titulo, titulo_claro: e.titulo_claro || '', url: e.url, oculto: !!e.oculto, expediente: e.expediente || null, ...conPlazo(e) })) },
   fiestas, servicios: serviciosVivos, tramites_sede: tramitesSede,
   rutas: { tramites: 'tramites.html', avisos: 'avisos.html', agenda: 'agenda.html', noticia: 'noticia-{id}.html', media: 'media/' },
   hoja: M.hoja && M.hoja.id ? M.hoja : null,
@@ -494,26 +505,36 @@ for (const e of D.tablon.entradas) if (!enSede(e.url)) errores.push('tablon.json
 const pintar = (b, op) => Vivo.pintar(b, D, ahora, op);
 const vivo = {
   franja: pintar('franja'), hoy: pintar('hoy'), tablon_portada: pintar('tablon', { limite: 6 }), tablon_todo: pintar('tablon'),
-  linea: pintar('linea'), anio: pintar('anio'), lado: pintar('lado'), agenda: pintar('agenda'), estado_ayto: pintar('servicio', { clave: 'ayuntamiento' })
+  linea: pintar('linea'), anio: pintar('anio'), lado: pintar('lado'), agenda: pintar('agenda'), estado_ayto: pintar('servicio', { clave: 'ayuntamiento' }),
+  plazos: pintar('plazos')
 };
+/* v3b · el chip del plazo de cada aviso en «Avisos» (lo repinta vivo.js con la fecha real) */
+for (const a of avisosOrden) a.plazo_html = a.plazo_inicio || a.plazo_fin ? pintar('plazo', { clave: a.id }) : null;
 gruposListin.forEach(g => g.items.forEach(i => { if (i.clave) i.estado = pintar('servicio', { clave: i.clave }); }));
 
 /* ───────────────────────── el pueblo y las fotos ───────────────────────── */
 const P = M.pueblo || {};
 /* la foto del arco: una (fotos.hero) o varias (fotos.hero_fotos) que se turnan al azar en cada
    visita. La primera de la lista es la que sale sin JavaScript y la de la imagen para compartir */
+const P0 = M.pueblo || {};
 const listaHero = ((M.fotos && Array.isArray(M.fotos.hero_fotos) && M.fotos.hero_fotos.length) ? M.fotos.hero_fotos : (M.fotos && M.fotos.hero ? [M.fotos.hero] : []))
   .map((h, i) => {
     if (!h || !h.archivo) { errores.push('fotos.hero_fotos: cada foto lleva «archivo», «alt» y «posicion»'); return null; }
     if (!h.alt) avisos.push('fotos.hero' + (M.fotos.hero_fotos ? '_fotos[' + i + ']' : '') + ' «' + h.archivo + '»: falta «alt» (la foto de la portada no es decorativa)');
     const f = foto(h.archivo, h.alt, 'portada');
-    return f ? { ...f, posicion: h.posicion || '50% 50%' } : null;
+    /* v3b · el pie de la foto: el lugar de «El pueblo» que sale en ella (el que tiene la misma foto,
+       o el que diga `lugar`), enlazado a su sitio en pueblo.html; si no es un lugar, `pie` en texto;
+       `lugar: null` lo quita. Sin nada, no hay pie */
+    const lugar = h.lugar === null ? null : ((P0.lugares || []).find(l => (h.lugar ? l.nombre === h.lugar : l.foto === h.archivo)) || null);
+    if (h.lugar && !lugar) errores.push('fotos.hero_fotos «' + h.archivo + '»: «lugar» «' + h.lugar + '» no está en pueblo.lugares');
+    const pie = lugar ? lugar.nombre : (h.pie || null), pie_href = lugar ? 'pueblo.html#lugar-' + slugDe(lugar.nombre) : null;
+    return f ? { ...f, posicion: h.posicion || '50% 50%', pie, pie_href } : null;
   }).filter(Boolean);
 const heroFoto = listaHero[0] || null;
 const HERO_SIZES = '(min-width: 56em) 30vw, 92vw';
 /* para el <head> (se elige y se precarga antes del primer pintado) y el <figure> (la pinta) */
 const heroVarias = listaHero.length > 1 ? jsonEnScript(listaHero.map(f => ({ src: 'media/' + f.archivo + '.jpg', srcset: 'media/' + f.archivo + '-800.jpg 800w, media/' + f.archivo + '.jpg ' + f.ancho + 'w',
-  ancho: f.ancho, alto: f.alto, alt: f.alt, pos: f.posicion }))) : null;
+  ancho: f.ancho, alto: f.alto, alt: f.alt, pos: f.posicion, pie: f.pie, pie_href: f.pie_href }))) : null;
 if (heroFoto) { heroFoto.sizes = HERO_SIZES; heroFoto.varias = !!heroVarias; }
 const pueblo = {
   ...P,
@@ -581,6 +602,20 @@ const conocerSel = (P.portada_lugares ? P.portada_lugares.map(n => conPortada.fi
 const conocer = conocerSel.length >= 3 ? conocerSel.map(l => ({ nombre: l.nombre, foto: l.foto, ancho: l.ancho, alto: l.alto, ancla: l.ancla, credito: l.credito || null })) : [];
 if (cabeceras.pueblo && pueblo.lugares.length > 1 && pueblo.lugares[0].foto === cabeceras.pueblo.archivo) pueblo.lugares.push(pueblo.lugares.shift());
 const creditos = [...usadas.values()];
+
+/* ───────────────────────── v3b · «… en cifras» (portada) ─────────────────────────
+   municipio.json → cifras: [{valor, unidad, etiqueta, fuente, fuente_url, anio}]. Cada cifra lleva
+   su fuente (sale en pequeño debajo). Un número se escribe a la española (3.130; 185,6); un texto
+   (un año, «s. XIII») tal cual. Sin el campo, la banda no sale. Los opcionales, a null explícito */
+const numeroEs = n => { const [e, d] = String(Math.abs(n)).split('.'); return (n < 0 ? '−' : '') + e.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + (d ? ',' + d : ''); };
+const cifras = (M.cifras || []).map((c, i) => {
+  if (c == null || c.valor == null || c.valor === '' || !c.etiqueta || !c.fuente) { errores.push('cifras[' + i + ']: cada cifra lleva «valor», «etiqueta» y «fuente» (sin fuente no se enseña)'); return null; }
+  if (typeof c.valor === 'number' && !Number.isFinite(c.valor)) errores.push('cifras[' + i + ']: «valor» no es un número');
+  if (c.fuente_url && !/^https:\/\//.test(c.fuente_url)) errores.push('cifras[' + i + ']: «fuente_url» empieza por https://');
+  return { valor: typeof c.valor === 'number' ? numeroEs(c.valor) : String(c.valor), unidad: c.unidad || null, etiqueta: c.etiqueta,
+    fuente: c.fuente, fuente_url: c.fuente_url || null, fuente_sr: c.fuente_url ? srDe(c.fuente_url) : null, anio: c.anio || null };
+}).filter(Boolean);
+if (cifras.length > 5) errores.push('cifras: 5 como mucho (hay ' + cifras.length + ')');
 
 /* ───────────────────────── identidad (v3): el perfil del pueblo y el plano del pie ─────────────────────────
    marca/perfil.svg (scripts/perfil.mjs) es el perfil del pueblo a línea; sin él, el genérico de
@@ -712,7 +747,13 @@ escribir('css/marca.css', cssMarca());
 }
 escribir('js/tramites-datos.js', '/* GENERADO por scripts/aplicar.mjs desde municipio.json → tramites. Lo carga el buscador. */\n' +
   'window.TRAMITES = ' + jsonEnScript(lista.map(t => ({ n: t.nombre, h: t.href, s: t.sr, c: [...(claros.get(t.href) || [])] }))) + ';\n' +
-  'window.SINONIMOS = ' + jsonEnScript(M.tramites.sinonimos || {}) + ';\n');
+  'window.SINONIMOS = ' + jsonEnScript(M.tramites.sinonimos || {}) + ';\n' +
+  /* v3b · F8: lo demás que encuentra el buscador global y no va en los datos vivos de cada página:
+     el listín (nombre, número, grupo y detalle) y los lugares de «El pueblo» con su ancla */
+  'window.BUSCAR = ' + jsonEnScript({
+    telefonos: gruposListin.flatMap(g => g.items.filter(i => i.telefono).map(i => ({ n: i.nombre, t: i.telefono, g: g.grupo, d: i.detalle || '', h: 'telefonos.html' }))),
+    lugares: pueblo.lugares.map(l => ({ n: l.nombre, x: l.texto || '', h: 'pueblo.html#' + l.ancla }))
+  }) + ';\n');
 
 const huella = rel => existe(rel) ? crypto.createHash('md5').update(fs.readFileSync(r(rel))).digest('hex').slice(0, 8) : '0';
 const v = { fuentes: huella('css/fuentes.css'), marca: huella('css/marca.css'), base: huella('css/base.css'), main: huella('js/main.js'), vivo: huella('js/vivo.js'), cortina: huella('js/cortina.js'), datos: huella('js/tramites-datos.js') };
@@ -747,7 +788,7 @@ const comun = {
   pleno, quien_ayto: quienAyto, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },
-  pueblo, conocer, creditos, hay_creditos_fotos: creditos.length > 0, hero_foto: heroFoto, hero_varias: heroVarias,
+  pueblo, conocer, cifras, creditos, hay_creditos_fotos: creditos.length > 0, hero_foto: heroFoto, hero_varias: heroVarias,
   /* el nombre del pueblo, palabra a palabra (cada una en inline-block y sin partir: la entrada del hero) */
   nombre_palabras: M.nombre.trim().split(/\s+/).map((p, i) => ({ palabra: p, n: i })),
   mapa_embed_url: 'https://www.google.com/maps?q=' + encodeURIComponent(M.contacto.mapa_consulta || `Ayuntamiento de ${N}, ${M.contacto.direccion}, ${M.contacto.cp} ${N}`) + '&output=embed',

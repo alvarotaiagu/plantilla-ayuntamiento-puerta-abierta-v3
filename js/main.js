@@ -29,6 +29,8 @@
       if ((el.__pintado != null ? el.__pintado : el.innerHTML) !== nuevo) el.innerHTML = nuevo;
       el.__pintado = nuevo;
       if (bloque === 'franja') el.hidden = !nuevo;
+      /* v3b · «Plazos abiertos»: sin ninguno abierto, la sección entera fuera (sin hueco) */
+      if (bloque === 'plazos' && el.closest('section')) el.closest('section').hidden = !nuevo;
       if (bloque === 'tablon') montarTablon(el);
       if (bloque === 'agenda') montarCalendario(el);
     });
@@ -297,11 +299,60 @@
     unidos.forEach(function (r) { out += escHtml(texto.slice(pos, r[0])) + '<mark>' + escHtml(texto.slice(r[0], r[1])) + '</mark>'; pos = r[1]; });
     return out + escHtml(texto.slice(pos));
   }
-  function montarBuscador(caja) {
+  /* ═══ v3b · F8. Buscador global: además de los trámites, los avisos y anuncios del tablón, las
+     noticias, los teléfonos y los lugares de «El pueblo». Avisos, tablón y noticias salen de los
+     datos vivos de la página (los mismos que pinta vivo.js, con lo que llegue de la hoja o del
+     tablón); teléfonos y lugares, de js/tramites-datos.js (window.BUSCAR, generado por aplicar.mjs).
+     Con los otros tipos se piden TODAS las palabras (con sus variantes): menos ruido que en los
+     trámites, donde gana el que más toca. Resultados agrupados por tipo, los trámites primero ═══ */
+  var GRUPOS = [['tramites', 'Trámites'], ['avisos', 'Avisos y anuncios'], ['noticias', 'Noticias'], ['telefonos', 'Teléfonos'], ['lugares', 'El pueblo']];
+  var NOMBRES = { tramites: ['trámite', 'trámites'], avisos: ['aviso', 'avisos'], noticias: ['noticia', 'noticias'], telefonos: ['teléfono', 'teléfonos'], lugares: ['lugar', 'lugares'] };
+  function palabrasDe(q) { return normal(q).split(/[^a-z0-9ñ@]+/).filter(function (p) { return p.length > 1 && VACIAS.indexOf(' ' + p + ' ') < 0; }); }
+  function puntuar(palabras, titulo, resto) {
+    var t = normal(titulo), r = normal(resto || ''), puntos = 0;
+    for (var i = 0; i < palabras.length; i++) {
+      var vs = variantes(palabras[i]);
+      var enT = vs.some(function (x) { return t.indexOf(x) >= 0; }), enR = vs.some(function (x) { return r.indexOf(x) >= 0; });
+      if (!enT && !enR) return 0;
+      puntos += enT ? 3 : 1;
+    }
+    return puntos;
+  }
+  function fechaCortaDe(iso) { return window.Vivo && iso ? window.Vivo.fechaCorta(iso) : (iso || ''); }
+  function candidatos() {
+    var B = window.BUSCAR || {}, c = { avisos: [], noticias: [], telefonos: [], lugares: [] };
+    if (window.Vivo && D.horario) {
+      window.Vivo.ultimos(D, ahora()).forEach(function (f) {
+        c.avisos.push({ titulo: f.titulo, resto: f.tema, sub: fechaCortaDe(f.fecha) + ' · ' + (f.oficial ? 'Tablón oficial' : 'Ayuntamiento'), href: f.href,
+          sr: f.oficial ? ', se abre la sede electrónica' : '', icono: f.oficial ? 'i-salida' : 'i-flecha' });
+      });
+    }
+    (D.noticias || []).filter(function (n) { return !n.oculto; }).forEach(function (n) {
+      c.noticias.push({ titulo: n.titulo, resto: n.resumen, sub: fechaCortaDe(n.fecha) + (n.resumen ? ' · ' + n.resumen : ''), href: (D.rutas && D.rutas.noticia || 'noticia-{id}.html').replace('{id}', n.id), sr: '', icono: 'i-flecha' });
+    });
+    (B.telefonos || []).forEach(function (t) { c.telefonos.push({ titulo: t.n, resto: [t.g, t.d].join(' '), sub: [t.t, t.g].filter(Boolean).join(' · '), href: t.h, sr: '', icono: 'i-telefono' }); });
+    (B.lugares || []).forEach(function (l) { c.lugares.push({ titulo: l.n, resto: l.x, sub: l.x, href: l.h, sr: '', icono: 'i-flecha' }); });
+    return c;
+  }
+  function buscarTodo(q) {
+    var palabras = palabrasDe(q), r = { tramites: buscar(q) };
+    var c = candidatos();
+    Object.keys(c).forEach(function (k) {
+      r[k] = palabras.length ? c[k].map(function (x) { return { x: x, p: puntuar(palabras, x.titulo, x.resto) }; }).filter(function (y) { return y.p; })
+        .sort(function (a, b) { return b.p - a.p; }).map(function (y) { return y.x; }) : [];
+    });
+    return r;
+  }
+  function cuantos(n, k) { return n + ' ' + NOMBRES[k][n === 1 ? 0 : 1]; }
+  function enumerar(xs) { return xs.length > 1 ? xs.slice(0, -1).join(', ') + ' y ' + xs[xs.length - 1] : xs[0] || ''; }
+  function montarBuscador(caja, n) {
     var campo = $('[data-buscador-campo]', caja), lista = $('[data-buscador-resultados]', caja), cuenta = $('[data-buscador-cuenta]', caja);
     if (!campo) return;
-    /* el de la portada enseña pocos (data-buscador-max) y manda el resto a la página de trámites */
+    /* el de la portada enseña pocos (data-buscador-max, contando todos los grupos) y manda el resto
+       a la página de trámites; el nivel de los títulos de grupo depende de dónde está el buscador */
     var max = Number(caja.getAttribute('data-buscador-max')) || 0;
+    var nivel = Math.min(6, Math.max(2, Number(lista.getAttribute('data-buscador-nivel')) || 3));
+    var pref = 'bg' + n;
     var espera;
     campo.addEventListener('input', function () {
       clearTimeout(espera);
@@ -309,21 +360,53 @@
         var q = campo.value.trim();
         if (!q) { lista.innerHTML = ''; cuenta.textContent = ''; return; }
         cargarDatosTramites(function () {
-          var todos = buscar(q), r = max ? todos.slice(0, max) : todos, ts = terminos(q);
-          lista.innerHTML = r.map(function (t) {
-            var claro = (t.c && t.c[0]) ? t.c[0].split(' · ')[0] : '';
-            return '<li><a href="' + escHtml(t.h) + '"><span class="resultado__nombre">' + conMarcas(claro || t.n, ts) + '</span>' +
-              (claro && normal(claro) !== normal(t.n) ? '<span class="resultado__oficial">' + conMarcas(t.n, ts) + '</span>' : '') +
-              '<span class="sr">' + escHtml(t.s) + '</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>';
-          }).join('');
-          cuenta.textContent = todos.length > r.length ? todos.length + ' trámites encontrados; aquí, los ' + r.length + ' primeros. «Buscar» los enseña todos.'
-            : r.length ? (r.length === 1 ? '1 trámite encontrado.' : r.length + ' trámites encontrados.')
-            : 'No hay ningún trámite con esas palabras. Pruebe con otras o mire la lista completa.';
+          var todo = buscarTodo(q), ts = terminos(q);
+          var otros = GRUPOS.slice(1).filter(function (g) { return todo[g[0]].length; });
+          /* tope por grupo: con max (portada), los trámites ceden un sitio a cada uno de los dos
+             primeros grupos con algo; sin max, 10 trámites y 5 de cada lo demás */
+          var tope = {};
+          if (max) {
+            var reserva = Math.min(2, otros.length);
+            tope.tramites = Math.min(todo.tramites.length, max - reserva);
+            var libres = max - tope.tramites;
+            otros.forEach(function (g) { tope[g[0]] = libres > 0 ? 1 : 0; libres -= tope[g[0]]; });
+            otros.forEach(function (g) { var mas = Math.min(todo[g[0]].length - tope[g[0]], libres); tope[g[0]] += mas; libres -= mas; });
+          } else {
+            tope.tramites = 10;
+            otros.forEach(function (g) { tope[g[0]] = 5; });
+          }
+          var vistos = 0, hallados = 0, partes = [], html_ = '';
+          GRUPOS.forEach(function (g) {
+            var k = g[0], todos = todo[k] || [], r = todos.slice(0, tope[k] || 0);
+            hallados += todos.length;
+            if (!r.length) return;
+            vistos += r.length;
+            partes.push(cuantos(r.length, k));
+            var id = pref + '-' + k;
+            html_ += '<h' + nivel + ' class="resultados__titulo" id="' + id + '">' + g[1] + '</h' + nivel + '><ul class="resultados__lista" aria-labelledby="' + id + '">' + r.map(function (x) {
+              if (k === 'tramites') {
+                var claro = (x.c && x.c[0]) ? x.c[0].split(' · ')[0] : '';
+                return '<li><a href="' + escHtml(x.h) + '"><span class="resultado__nombre">' + conMarcas(claro || x.n, ts) + '</span>' +
+                  (claro && normal(claro) !== normal(x.n) ? '<span class="resultado__oficial">' + conMarcas(x.n, ts) + '</span>' : '') +
+                  '<span class="sr">' + escHtml(x.s) + '</span><svg class="icono" aria-hidden="true"><use href="#i-salida"/></svg></a></li>';
+              }
+              return '<li><a href="' + escHtml(x.href) + '"><span class="resultado__nombre">' + conMarcas(x.titulo, ts) + '</span>' +
+                (x.sub ? '<span class="resultado__oficial">' + conMarcas(String(x.sub), ts) + '</span>' : '') +
+                (x.sr ? '<span class="sr">' + escHtml(x.sr) + '</span>' : '') + '<svg class="icono" aria-hidden="true"><use href="#' + x.icono + '"/></svg></a></li>';
+            }).join('') + '</ul>';
+          });
+          /* M8 · «Ver todos»: a la página de trámites con lo escrito (allí se busca solo) */
+          var accion = caja.getAttribute('action');
+          if (max && hallados > vistos && accion) html_ += '<p class="resultados__todos"><a href="' + escHtml(accion.replace(/#.*$/, '') + '?q=' + encodeURIComponent(q) + (accion.indexOf('#') >= 0 ? accion.slice(accion.indexOf('#')) : '')) + '">Ver los ' + hallados + ' resultados</a></p>';
+          lista.innerHTML = html_;
+          cuenta.textContent = !vistos ? 'No hay ningún resultado con esas palabras. Pruebe con otras o mire la lista completa de trámites.'
+            : hallados > vistos ? hallados + ' resultados encontrados; aquí, los ' + vistos + ' primeros (' + enumerar(partes) + '). «Buscar» los enseña todos.'
+            : (vistos === 1 ? '1 resultado encontrado: ' : vistos + ' resultados encontrados: ') + enumerar(partes) + '.';
         });
       }, 160);
     });
   }
-  $$('[data-buscador-pagina], #buscador').forEach(montarBuscador);
+  $$('[data-buscador-pagina], #buscador').forEach(function (caja, i) { montarBuscador(caja, i); });
   /* llega del buscador de la portada (?q=…): se escribe en el de la página y se busca */
   (function () {
     var q = null;
