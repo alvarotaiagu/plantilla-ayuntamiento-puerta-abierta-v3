@@ -1736,6 +1736,12 @@ html.con-cortina { overflow: hidden; background: var(--cortina); }   /* también
   background: var(--superficie); color: var(--tinta); font-size: 1rem; line-height: 1.45;
 }
 .pendiente__marca { font-size: .8125rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+/* F23 · empleo: el chip lleva el maletín y borde (no solo otro color); la ficha de «Hoy», como las demás */
+.chip--empleo { display: inline-flex; align-items: center; gap: .3rem; background: var(--superficie); color: var(--marca); box-shadow: inset 0 0 0 1.5px var(--marca); }
+.chip--empleo .icono { width: 1em; height: 1em; }
+.hoy__fila--empleo .hoy__nota a { font-weight: 600; }
+/* en una ficha estrecha (móvil, cinco fichas en fila) el chip del plazo y su «Ejemplo» bajan de línea */
+.hoy__fila--empleo .plazo { flex-wrap: wrap; max-width: 100%; white-space: normal; border-radius: .9rem; }
 /* ═══════════════ fin v3c · transparencia ═══════════════ */
 
 /* [MANDO DE MAQUETA] inicio */

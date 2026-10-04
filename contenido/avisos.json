@@ -12,6 +12,16 @@
       "ejemplo": true
     },
     {
+      "id": "empleo-ejemplo",
+      "fecha": "2026-10-01",
+      "tema": "Empleo",
+      "titulo": "Bolsa de trabajo de auxiliar de ayuda a domicilio: plazo de solicitudes",
+      "texto": "Así se vería una oferta de empleo del Ayuntamiento: qué puesto es, cuántas plazas, los requisitos básicos y hasta cuándo se puede pedir, con el enlace a las bases en el tablón de la sede. Sale con el tema «Empleo», su cuenta atrás y, mientras el plazo esté abierto, en la ficha «Empleo» de la portada.",
+      "plazo_fin": "2026-11-13",
+      "plazo_ejemplo": true,
+      "ejemplo": true
+    },
+    {
       "id": "reunion-feria-comercio",
       "fecha": "2026-10-02",
       "tema": "Comercio",

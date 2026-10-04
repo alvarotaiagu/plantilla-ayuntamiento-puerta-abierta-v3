@@ -329,6 +329,8 @@
         '<p class="hoy__valor hoy__valor--enlace"><a href="' + esc(ult.href) + '">' + esc(ult.titulo) + (ult.oficial ? SEDE : '') + '</a>' + (ult.ejemplo ? ' ' + EJEMPLO : '') + '</p>' +
         '<p class="hoy__cuando">' + esc(cuando(ult.fecha, ahora)) + (ult.oficial ? ' · Tablón oficial' : '') + '</p></li>';
     }
+    /* v3c · transparencia (F23): «Empleo», al final y solo si hay una oferta con el plazo abierto */
+    h += filaEmpleo(D, ahora);
     return h + '</ul>' + pieHoy(D, ahora);
   }
 
@@ -361,15 +363,37 @@
   function esNuevo(fecha, ahora) { var n = diasEntre(fecha, ahora.iso); return n >= 0 && n <= 1; }
   var NUEVO = '<span class="nuevo"><span class="nuevo__punto" aria-hidden="true"></span>Nuevo<span class="sr">, publicado en las últimas 48 horas</span></span>';
 
+  /* ── v3c · transparencia (F23): empleo público ──
+     El tema «Empleo» (también «Empleo público», «empleo»…: se juntan en uno para el filtro) lo pone el
+     tablón (scripts/lib/tablon.mjs → motivoEmpleo, o una persona con `tema`) o el aviso propio. Su chip
+     lleva el maletín además del color. La ficha «Empleo» de «Hoy» sale solo con alguna oferta con el
+     plazo abierto: la que cierra antes, con su chip de plazo, y el enlace a todas (avisos.html?tema=Empleo) */
+  function esEmpleo(tema) { return /^empleo\b/.test(normalTexto(tema)); }
+  function temaDe(tema) { return esEmpleo(tema) ? 'Empleo' : tema; }
+  function chipTema(tema) {
+    return esEmpleo(tema) ? '<span class="chip chip--empleo">' + icono('i-empleo') + 'Empleo</span>' : '<span class="chip">' + esc(tema) + '</span>';
+  }
+  function empleosAbiertos(D, ahora) { return plazosAbiertos(D, ahora).filter(function (x) { return esEmpleo(x.f.tema); }); }
+  function filaEmpleo(D, ahora) {
+    var lista = empleosAbiertos(D, ahora);
+    if (!lista.length) return '';
+    var x = lista[0], f = x.f;
+    return '<li class="hoy__fila hoy__fila--empleo"' + marcaEjemplo(f, 'aviso:' + f.id) + '>' + etiquetaHoy('i-empleo', 'Empleo') +
+      '<p class="hoy__gravedad">' + chipPlazo(f, ahora, f.clave) + '</p>' +
+      '<p class="hoy__valor hoy__valor--enlace"><a href="' + esc(f.href) + '">' + esc(f.titulo) + (f.oficial ? SEDE : '') + '</a>' + (f.ejemplo ? ' ' + EJEMPLO : '') + '</p>' +
+      '<p class="hoy__cuando">' + (x.p.fecha ? 'Hasta el ' + esc(fechaLarga(x.p.fecha, ahora)) : 'Plazo abierto') + ' · ' + (f.oficial ? 'Tablón oficial' : 'Ayuntamiento') + '</p>' +
+      '<p class="hoy__nota"><a href="' + esc(D.rutas.avisos) + '?tema=Empleo#t-tablon-todo">' + (lista.length > 1 ? 'Las ' + lista.length + ' ofertas con plazo abierto' : 'Todo el empleo') + '</a></p></li>';
+  }
+
   /* avisos propios + anuncios del tablón oficial, lo más nuevo primero. v3b: lo que tiene el plazo
      cerrado baja de prioridad (va detrás de todo lo demás, también en el límite de la portada) */
   function ultimos(D, ahora) {
     var propios = avisosVigentes(D, ahora).map(function (a) {
-      return { id: a.id, fecha: a.fecha, tema: a.tema, titulo: a.titulo, href: enlaceAviso(a, D), ejemplo: a.ejemplo, oficial: false, gravedad: gravedad(a),
+      return { id: a.id, fecha: a.fecha, tema: temaDe(a.tema), titulo: a.titulo, href: enlaceAviso(a, D), ejemplo: a.ejemplo, oficial: false, gravedad: gravedad(a),
         plazo_inicio: a.plazo_inicio || null, plazo_fin: a.plazo_fin || null, plazo_ejemplo: !!a.plazo_ejemplo, clave: a.id };
     });
     var oficiales = ((D.tablon && D.tablon.entradas) || []).filter(function (t) { return !t.oculto; }).map(function (t, i) {
-      return { id: 'tablon-' + i, fecha: t.fecha, tema: t.tema, titulo: t.titulo_claro || t.titulo, href: t.url, oficial: true,
+      return { id: 'tablon-' + i, fecha: t.fecha, tema: temaDe(t.tema), titulo: t.titulo_claro || t.titulo, href: t.url, oficial: true,
         plazo_inicio: t.plazo_inicio || null, plazo_fin: t.plazo_fin || null, plazo_ejemplo: !!t.plazo_ejemplo, clave: 'tablon-' + (t.expediente || i) };
     });
     var cerrado = function (f) { var p = plazo(f, ahora); return p && p.estado === 'cerrado' ? 1 : 0; };
@@ -421,7 +445,7 @@
       var g = f.oficial ? null : f.gravedad, pz = plazo(f, ahora);
       return '<li class="tablon__fila' + (g && g !== 'informativo' ? ' es-' + g : '') + (pz && pz.estado === 'cerrado' ? ' es-cerrado' : '') + '" data-tema="' + esc(f.tema) + '"' + (i >= limite ? ' hidden' : '') + marcaEjemplo(f, 'aviso:' + f.id) + '>' +
         '<a class="tablon__enlace" href="' + esc(f.href) + '">' + bloque +
-        '<span class="tablon__meta">' + (esNuevo(f.fecha, ahora) ? NUEVO : '') + '<span class="chip">' + esc(f.tema) + '</span><time class="sr" datetime="' + f.fecha + '">' + fechaCorta(f.fecha) + '</time>' +
+        '<span class="tablon__meta">' + (esNuevo(f.fecha, ahora) ? NUEVO : '') + chipTema(f.tema) + '<time class="sr" datetime="' + f.fecha + '">' + fechaCorta(f.fecha) + '</time>' +
         (g && g !== 'informativo' ? '<span class="chip chip--' + g + '">' + GRAVEDAD[g] + '</span>' : '') + chipPlazo(f, ahora, f.clave) +
         (f.oficial ? '<span class="tablon__origen">Tablón oficial</span>' : '<span class="tablon__origen">Ayuntamiento</span>') + '</span>' +
         '<span class="tablon__titulo">' + esc(f.titulo) + '</span>' + (f.oficial ? SEDE : '') +
@@ -611,6 +635,7 @@
 
   raiz.Vivo = {
     plazo: plazo, plazosAbiertos: plazosAbiertos, esNuevo: esNuevo,
+    esEmpleo: esEmpleo, empleosAbiertos: empleosAbiertos,   /* v3c · transparencia */
     ahoraEn: ahoraEn, estado: estado, fechaLarga: fechaLarga, fechaCorta: fechaCorta, siguienteFiesta: siguienteFiesta,
     urgentes: urgentes, destacados: destacados, gravedad: gravedad, proximos: proximos, ultimos: ultimos,
     farmaciaDeGuardia: farmaciaDeGuardia, proximaRecogida: proximaRecogida, proximoPleno: proximoPleno, ics: ics, archivoIcs: archivoIcs,

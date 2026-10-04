@@ -455,7 +455,8 @@ const quienAyto = [
 /* ───────────────────────── contenido ───────────────────────── */
 const avisosOrden = C.avisos.filter(a => !a.oculto).slice().sort((a, b) => b.fecha.localeCompare(a.fecha))
   .map(a => ({ ...a, fecha_texto: fechaTexto(a.fecha), urgente: Vivo.gravedad(a) === 'urgente', gravedad: Vivo.gravedad(a), programado: Vivo.gravedad(a) === 'programado', ejemplo: !!a.ejemplo, enlace: a.enlace || null,
-    plazo_inicio: a.plazo_inicio || null, plazo_fin: a.plazo_fin || null, plazo_html: null }));
+    plazo_inicio: a.plazo_inicio || null, plazo_fin: a.plazo_fin || null, plazo_html: null,
+    es_empleo: Vivo.esEmpleo(a.tema), ...(Vivo.esEmpleo(a.tema) ? { tema: 'Empleo' } : {}) }));   /* v3c · transparencia: el chip con el maletín */
 /* gravedad de los avisos: «urgente» (rojo), «programado» o «informativo» (ámbar; el de por defecto).
    En la franja de arriba, en móvil, el título tiene que caber en dos líneas: si es largo, `titulo_corto` */
 for (const a of C.avisos) {
