@@ -3536,7 +3536,8 @@ async function v3bPueblo() {
         ninguna petición de red, con teclado y axe 0. Impresa: una A4 y sin lo interactivo.
    F18. crear-hoja.gs: compila y, ejecutado contra una imitación de la API de Apps Script, crea los tres
         formularios con los títulos de pregunta que lee la web (los de plantillas-hoja/*.csv y
-        comprobar-hoja.mjs), las pestañas publicables con QUERY sin la marca temporal y el bloque «hoja». */
+        comprobar-hoja.mjs), las pestañas publicables con QUERY sin la marca temporal y el bloque «hoja».
+   F21. La propuesta enlaza al simulador. */
 async function v3cGuia() {
   const AXE = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
   const AVISO_SIN = 'Se activa al montar la hoja (lo hace quien mantiene la web)';
@@ -3719,6 +3720,13 @@ async function v3cGuia() {
   }
   comprobar(!mG.length, 'v3c F18: plantillas-hoja/crear-hoja.gs compila y, contra una imitación de la API de Apps Script, crea los 3 formularios (sin correos, enviando a la hoja) con las preguntas que lee la web (= plantillas-hoja/*.csv y comprobar-hoja.mjs; obligatorias fecha y título), las pestañas «Avisos», «Agenda» y «Noticias» con una QUERY que copia esas columnas y «Estado» sin la marca temporal, el «Léame» y el bloque «hoja» (id, pestañas y formularios) en el registro' + (mG.length ? ' → ' + mG.slice(0, 4).join(' | ') : ''));
 
+  /* ── 6. la propuesta enlaza al simulador ── */
+  if (M.propuesta !== false) {
+    const pr = leer(RAIZ, 'propuesta.html');
+    const sec = (pr.match(/<section[^>]*aria-labelledby="t-publicar"[\s\S]*?<\/section>/) || [''])[0];
+    const pasos = (sec.match(/<ol class="propuesta-pasos">([\s\S]*?)<\/ol>/) || ['', ''])[1].match(/<li>/g) || [];
+    comprobar(/href="publicar\.html#t-pruebelo"/.test(sec) && pasos.length === 3, 'v3c F21: «Publicar es rellenar un formulario» de la propuesta, en 3 pasos y con el enlace al simulador de publicar.html' + (pasos.length === 3 ? '' : ` → ${pasos.length} pasos`));
+  }
 }
 async function axeEn(page, nombre, viol, tags) {
   (await new AxeBuilder({ page }).withTags(tags).analyze()).violations.forEach(v => viol.push(nombre + ': ' + v.id + ' ' + v.nodes[0].target.join(' ')));
