@@ -46,6 +46,8 @@
     grupo.hidden = false;
     var limite = Number(caja.getAttribute('data-limite')) || Infinity;
     var activo = caja.getAttribute('data-tema-actual') || '';
+    /* v3c · transparencia: «?tema=Empleo» (la ficha «Empleo» de «Hoy») llega con ese filtro puesto */
+    if (!caja.hasAttribute('data-tema-actual')) { var q = /[?&]tema=([^&#]*)/.exec(location.search); if (q) activo = decodeURIComponent(q[1].replace(/\+/g, ' ')); }
     function aplicar(tema) {
       caja.setAttribute('data-tema-actual', tema);
       $$('.filtro', grupo).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-tema') === tema)); });
