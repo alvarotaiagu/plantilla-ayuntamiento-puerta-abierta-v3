@@ -855,7 +855,8 @@ for (const f of fs.readdirSync(RAIZ)) if (/^pueblo-[a-z]{2}\.html$/.test(f) && !
 const IDIOMAS_PUEBLO = traducciones.length ? [{ lang: 'es', nombre: NOMBRE_IDIOMA.es, archivo: 'pueblo.html' }, ...traducciones.map(x => ({ lang: x.lang, nombre: x.nombre, archivo: x.archivo }))] : [];
 
 /* enlaces útiles del pie: los de la sede solo si existen (como la franja de la sede) */
-const pieEnlaces = [['Sede electrónica', sede.inicio], ['Tablón de anuncios', sede.tablon], ['Transparencia', sede.transparencia], ['Perfil del contratante', sede.perfil],
+/* v3c · transparencia: «Transparencia» lleva a transparencia.html (siempre existe), que explica y lleva al portal */
+const pieEnlaces = [['Sede electrónica', sede.inicio], ['Tablón de anuncios', sede.tablon], ['Transparencia', 'transparencia.html'], ['Perfil del contratante', sede.perfil],
   ['Trámites', 'tramites.html'], ['Teléfonos', 'telefonos.html'], ['Agenda', 'agenda.html'], ['Accesibilidad', 'accesibilidad.html']]
   .filter(([, href]) => href).map(([texto, href]) => ({ texto, href, interno: !/^https?:/.test(href), sr: /^https?:/.test(href) ? srDe(href) : null }));
 
@@ -878,6 +879,85 @@ const privacidad = {
     .map(buscarTramite).filter(Boolean).map(t => ({ href: t.href, nombre: t.nombre }))
 };
 if (!privacidad.tramites.length) privacidad.tramites.push(instancia);
+
+/* ───────────────────────── v3c · transparencia (F22) ─────────────────────────
+   transparencia.html ordena lo que la ley obliga a publicar y lleva a DÓNDE está en este municipio.
+   Los apartados, su frase y sus artículos son de la plantilla (leídos en el BOE el 04/10/2026: Ley
+   19/2013, arts. 5–8, 12, 17, 20 y 24; Ley 4/2013 de Gobierno Abierto de Extremadura, arts. 2, 5, 14
+   y 15). Los enlaces, de los datos: municipio.json → transparencia {portal, revisada, apartados:
+   {<id>: {enlaces: [{texto, url, nota}], pendiente}}}. Sin datos solo se enlaza lo que es real en
+   cualquier municipio: el portal de la sede, el perfil del contratante, «El Ayuntamiento» y la
+   solicitud de acceso del catálogo (o la instancia general). Sin el campo, la página explica lo
+   general y no inventa nada; con él, lo que no consta sale como hueco «Pendiente: …» */
+const BOE_LEY19 = 'https://www.boe.es/buscar/act.php?id=BOE-A-2013-12887', BOE_LEY4 = 'https://www.boe.es/buscar/act.php?id=BOE-A-2013-6050';
+const ley19 = (art, ancla) => ({ texto: 'art. ' + art + ' de la Ley 19/2013', url: BOE_LEY19 + '#' + ancla });
+const ley4 = (art, ancla) => ({ texto: 'art. ' + art + ' de la Ley 4/2013 de Extremadura', url: BOE_LEY4 + '#' + ancla });
+const GRUPOS_TRANSPARENCIA = [
+  { id: 'institucional', titulo: 'Información institucional y organizativa', entradilla: 'Quién gobierna el Ayuntamiento, cómo se organiza y quién responde de cada cosa.' },
+  { id: 'juridica', titulo: 'Información de relevancia jurídica', entradilla: 'Las normas del municipio y las que se están preparando, para que se puedan conocer antes de aprobarse.' },
+  { id: 'economica', titulo: 'Información económica y presupuestaria', entradilla: 'De dónde sale y en qué se gasta el dinero del Ayuntamiento.' }
+];
+const APARTADOS_TRANSPARENCIA = [
+  { id: 'organizacion', grupo: 'institucional', titulo: 'Quién es quién y qué hace', normas: [ley19('6', 'a6'), ley4('5', 'a5')],
+    que_es: 'Las funciones del Ayuntamiento, cómo se organiza y quién es responsable de cada área, con un organigrama al día.' },
+  { id: 'normativa', grupo: 'juridica', titulo: 'Ordenanzas y normas', normas: [ley19('7', 'a7')],
+    que_es: 'Las ordenanzas y reglamentos del municipio, los que se están preparando y los documentos que se someten a información pública.' },
+  { id: 'presupuestos', grupo: 'economica', titulo: 'Presupuestos', normas: [ley19('8.1.d', 'a8'), ley4('14', 'a1-6')],
+    que_es: 'En qué piensa gastar el dinero el Ayuntamiento cada año, partida a partida, y cómo va su ejecución.' },
+  { id: 'cuentas', grupo: 'economica', titulo: 'Cuentas del año', normas: [ley19('8.1.e', 'a8')],
+    que_es: 'Las cuentas del año cerrado, para comparar lo previsto con lo gastado, y los informes de los órganos de control.' },
+  { id: 'contratos', grupo: 'economica', titulo: 'Contratos', normas: [ley19('8.1.a', 'a8')],
+    que_es: 'Los contratos del Ayuntamiento: qué se contrata, por cuánto, cómo se adjudica y con qué empresa.' },
+  { id: 'convenios', grupo: 'economica', titulo: 'Convenios', normas: [ley19('8.1.b', 'a8')],
+    que_es: 'Los acuerdos con otras administraciones o entidades: quién los firma, para qué, cuánto duran y qué se paga.' },
+  { id: 'subvenciones', grupo: 'economica', titulo: 'Subvenciones y ayudas', normas: [ley19('8.1.c', 'a8')],
+    que_es: 'Las subvenciones y ayudas que da el Ayuntamiento, con su importe, su finalidad y quién las recibe.' },
+  { id: 'retribuciones', grupo: 'economica', titulo: 'Sueldos de los cargos y bienes de los concejales', normas: [ley19('8.1.f y h', 'a8')],
+    que_es: 'Lo que cobran al año los cargos y máximos responsables del Ayuntamiento, y las declaraciones de bienes y actividades de los concejales.' },
+  { id: 'acceso', grupo: 'acceso', titulo: 'Pedir información', normas: [ley19('12', 'a12'), ley19('17', 'a17'), ley19('20', 'a20'), ley19('24', 'a24'), ley4('15', 'a1-7')],
+    que_es: 'Cualquier persona puede pedir la información que tenga el Ayuntamiento, sin explicar para qué.' }
+];
+const conSeparadores = xs => xs.map((x, i) => ({ ...x, sep: i === 0 ? '' : i === xs.length - 1 ? ' y ' : ', ' }));
+const TR = M.transparencia || null;
+const enlaceTransparencia = (e, donde) => {
+  if (!e || !e.texto || !e.url) { errores.push('transparencia «' + donde + '»: cada enlace lleva «texto» y «url»'); return null; }
+  const interno = /^[a-z0-9-]+\.html(#[\w-]+)?$/.test(e.url);
+  if (!interno && !/^https:\/\//.test(e.url)) errores.push('transparencia «' + donde + '»: «' + e.url + '» tiene que empezar por https:// (o ser una página de esta web)');
+  return { texto: e.texto, href: e.url, sr: interno ? null : srDe(e.url), nota: e.nota || null };
+};
+let transparencia;
+{
+  const ids = new Set(APARTADOS_TRANSPARENCIA.map(a => a.id));
+  for (const id of Object.keys((TR && TR.apartados) || {})) if (!ids.has(id)) errores.push('transparencia.apartados: «' + id + '» no es un apartado (' + [...ids].join(', ') + ')');
+  if (TR && TR.revisada && !/^\d{4}-\d{2}-\d{2}$/.test(TR.revisada)) errores.push('transparencia.revisada: la fecha de la revisión como AAAA-MM-DD');
+  if (TR && TR.portal && TR.portal.url && !TR.portal.nombre) errores.push('transparencia.portal: con «url» va «nombre» (de quién es el portal)');
+  /* el portal: el de los datos (el de la Diputación, por ejemplo) o el de la sede, si la sede lo tiene */
+  const portal = TR && TR.portal && TR.portal.url ? { url: TR.portal.url, nombre: TR.portal.nombre, sr: srDe(TR.portal.url) }
+    : sede.transparencia ? { url: sede.transparencia, nombre: 'Portal de transparencia de la sede electrónica', sr: srDe(sede.transparencia) } : null;
+  const accesoTramite = buscarTramite(/acceso a la informaci[oó]n p[uú]blica/i);
+  const automaticos = {
+    organizacion: [{ texto: 'El Ayuntamiento: la corporación y quién se ocupa de cada asunto', url: 'ayuntamiento.html' }],
+    normativa: documentos.length ? [{ texto: 'Normativa y documentos, en «El Ayuntamiento»', url: 'ayuntamiento.html#documentos' }] : [],
+    contratos: sede.perfil ? [{ texto: 'Perfil del contratante', url: sede.perfil }] : [],
+    acceso: [accesoTramite ? { texto: accesoTramite.nombre, url: accesoTramite.href } : { texto: 'Instancia general', url: sede.instancia }]
+  };
+  const apartados = APARTADOS_TRANSPARENCIA.map(a => {
+    const d = (TR && TR.apartados && TR.apartados[a.id]) || {};
+    const vistos = new Set();
+    const enlaces = [...(d.enlaces || []), ...(automaticos[a.id] || [])].map(e => enlaceTransparencia(e, a.id)).filter(e => e && !vistos.has(e.href) && vistos.add(e.href));
+    /* sin enlace propio: el portal, si lo hay; si no, pedirlo (el derecho de acceso) */
+    const sin_enlace = enlaces.length || a.id === 'acceso' ? null : portal ? 'portal' : 'pedir';
+    return { ...a, ancla: 'transparencia-' + a.id, enlaces, pendiente: TR && d.pendiente ? d.pendiente : null, normas: conSeparadores(a.normas),
+      sin_portal: sin_enlace === 'portal', sin_pedir: sin_enlace === 'pedir' };
+  });
+  transparencia = {
+    portal, art5: BOE_LEY19 + '#a5', con_datos: !!TR, revisada_texto: TR && TR.revisada ? fechaTexto(TR.revisada) : null,
+    grupos: GRUPOS_TRANSPARENCIA.map(g => ({ ...g, apartados: apartados.filter(a => a.grupo === g.id) })),
+    acceso: apartados.find(a => a.id === 'acceso'),
+    leyes: [{ texto: 'Ley 19/2013, de 9 de diciembre, de transparencia, acceso a la información pública y buen gobierno', url: BOE_LEY19 },
+      { texto: 'Ley 4/2013, de 21 de mayo, de Gobierno Abierto de Extremadura', url: BOE_LEY4 }]
+  };
+}
 
 /* ───────────────────────── páginas ───────────────────────── */
 const NAV = [['ayuntamiento', 'El Ayuntamiento'], ['tramites', 'Trámites'], ['avisos', 'Avisos'], ['noticias', 'Noticias'],
@@ -920,6 +1000,10 @@ const PAGINAS = [
   ...(facil ? [{ archivo: 'facil.html', id: 'facil', titulo: 'Trámites explicados fácil', migas: [{ href: 'tramites.html', texto: 'Trámites' }],
     entradilla: 'Los trámites que más se piden, explicados con palabras fáciles y paso a paso.',
     descripcion: `Trámites del Ayuntamiento de ${N} explicados en lectura fácil.` }] : []),
+  /* v3c · transparencia (F22): siempre (sin portal propio, explica lo general y cómo pedirlo); desde el pie y la franja de la sede */
+  { archivo: 'transparencia.html', id: 'transparencia', titulo: 'Transparencia',
+    entradilla: 'Lo que el Ayuntamiento tiene que publicar por ley, dónde encontrarlo y cómo pedir lo que no esté.',
+    descripcion: `Presupuestos, cuentas, contratos, subvenciones y normas del Ayuntamiento de ${N}, y cómo pedir información pública.` },
   ...noticias.map(n => ({ archivo: `noticia-${n.id}.html`, fuente: '_noticia.html', id: 'noticia', nav: 'noticias', titulo: n.titulo,
     migas: [{ href: 'noticias.html', texto: 'Noticias' }], descripcion: n.resumen || n.titulo, noticia: n }))
 ];
@@ -933,7 +1017,8 @@ const PICTO_DE = { 'tramites.html': 'tramites', 'ayuntamiento.html': 'ayuntamien
   'agenda.html': 'calendario', 'telefonos.html': 'telefono', 'pueblo.html': 'pueblo', 'contacto.html': 'sobre',
   'aviso-legal.html': 'balanza', 'privacidad.html': 'candado', 'cookies.html': 'galleta', 'accesibilidad.html': 'accesibilidad',
   'propuesta.html': 'ayuntamiento', 'suscribirse.html': 'megafono',   /* v3b · servicio */
-  'incidencia.html': 'farola', 'facil.html': 'facil' };
+  'incidencia.html': 'farola', 'facil.html': 'facil',
+  'transparencia.html': 'transparencia' };   /* v3c · transparencia */
 const pictoDe = p => PICTO_DE[p.archivo] || (p.id === 'noticia' ? 'periodico' : null) || (p.traduccion ? PICTO_DE[p.fuente] : null);
 for (const p of PAGINAS) {
   if (p.id === 'inicio' || p.id === 'error') continue;
@@ -1046,6 +1131,7 @@ const comun = {
   tramites, listin_corto: listinCorto, listin_grupos: gruposListin,
   quien, quien_portada: quien.filter(q => q.portada), fiestas,
   incidencias, facil,
+  transparencia,   /* v3c · transparencia */
   pleno, quien_ayto: quienAyto, alcalde, alcaldia: M.alcaldia || {}, documentos, instalaciones,
   corporacion: M.corporacion || {},
   avisos: avisosOrden, noticias, tablon: { excluidas: C.tablon.excluidas || 0 },

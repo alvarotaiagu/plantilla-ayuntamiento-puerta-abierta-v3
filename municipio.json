@@ -445,6 +445,54 @@
       { "nombre": "Otro", "ayuda": "Cualquier otra cosa de la calle" }
     ]
   },
+  "_transparencia_leeme": "v3c · transparencia.html. Por apartado (organizacion, normativa, presupuestos, cuentas, contratos, convenios, subvenciones, retribuciones, acceso): «enlaces» [{texto, url, nota}] a donde está DE VERDAD en este municipio y, lo que no conste, «pendiente» (sale como hueco «Pendiente: …»). El portal de la sede, el perfil del contratante, «El Ayuntamiento» y la solicitud de acceso del catálogo se enlazan solos. Fuentes: DATOS.md §4 y su web (riberadelfresno.es/bop.php y la página de ordenanzas), leídas el 04/10/2026.",
+  "transparencia": {
+    "revisada": "2026-10-04",
+    "apartados": {
+      "organizacion": {
+        "pendiente": "un organigrama con el perfil y la trayectoria de cada responsable."
+      },
+      "normativa": {
+        "enlaces": [
+          { "texto": "Ordenanzas, en la web actual del Ayuntamiento", "url": "https://riberadelfresno.es/plantilla.php?enlace=ordenanzas", "nota": "Es la lista de su web; las aprobadas en 2026 están en los anuncios del BOP." },
+          { "texto": "Anuncios del Ayuntamiento en el Boletín Oficial de la Provincia", "url": "https://riberadelfresno.es/bop.php", "nota": "Aprobaciones iniciales y definitivas de ordenanzas y reglamentos." }
+        ]
+      },
+      "presupuestos": {
+        "enlaces": [
+          { "texto": "Presupuesto general de 2026: aprobación definitiva", "url": "https://www.dip-badajoz.es/bop/ventana_anuncio.php?id_anuncio=161058&FechaSolicitada=202602050000", "nota": "BOP del 5 de febrero de 2026, anuncio 344/2026." }
+        ],
+        "pendiente": "dónde se publica cómo va la ejecución del presupuesto."
+      },
+      "cuentas": {
+        "enlaces": [
+          { "texto": "Cuenta general de 2025: exposición pública", "url": "https://www.dip-badajoz.es/bop/ventana_anuncio.php?id_anuncio=164077&FechaSolicitada=202608240000", "nota": "BOP del 24 de agosto de 2026, anuncio 3352/2026." }
+        ],
+        "pendiente": "dónde se publican las cuentas ya aprobadas y los informes de control."
+      },
+      "contratos": {
+        "enlaces": [
+          { "texto": "Perfil del contratante en la sede electrónica", "url": "https://riberadelfresno.sedelectronica.es/contractor-profile-list", "nota": "Tiene dos expedientes, de 2023 y 2024." }
+        ],
+        "pendiente": "dónde se publican los contratos menores."
+      },
+      "convenios": {
+        "pendiente": "dónde se publican los convenios que firma el Ayuntamiento."
+      },
+      "subvenciones": {
+        "enlaces": [
+          { "texto": "Subvenciones a asociaciones y entidades de 2026: bases", "url": "https://www.dip-badajoz.es/bop/ventana_anuncio.php?id_anuncio=163548&FechaSolicitada=202607160000", "nota": "BOP del 16 de julio de 2026, anuncio 2828/2026." }
+        ],
+        "pendiente": "dónde se publican las subvenciones concedidas, con su importe y quién las recibe."
+      },
+      "retribuciones": {
+        "enlaces": [
+          { "texto": "Dedicación parcial del segundo teniente de alcalde", "url": "https://www.dip-badajoz.es/bop/ventana_anuncio.php?id_anuncio=159296&FechaSolicitada=202510070000", "nota": "BOP del 7 de octubre de 2025." }
+        ],
+        "pendiente": "lo que cobra al año cada cargo y las declaraciones de bienes y actividades de los concejales."
+      }
+    }
+  },
   "horizonte_agenda_dias": 60,
   "listin_corto": [
     "Emergencias",

@@ -1714,6 +1714,30 @@ html.con-cortina { overflow: hidden; background: var(--cortina); }   /* también
 .resultados .resultados__todos a { display: inline; padding: 0; border: 0; color: var(--marca); text-decoration: underline; }
 /* ═══════════════ fin v3b ═══════════════ */
 
+/* ═══════════════ v3c · transparencia: transparencia.html, empleo y «Escríbanos» ═══════════════ */
+/* F22 · cada apartado en una ficha: qué es, dónde está (enlaces de 44 px), el hueco «Pendiente» si no
+   consta y, al pie y en pequeño, el artículo que lo pide */
+.transparencia { margin-top: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); }
+.transparencia__apartado { display: flex; flex-direction: column; gap: .65rem; padding-bottom: 1.1rem; }
+.transparencia__apartado > * { margin: 0; }
+.transparencia__enlaces { list-style: none; margin: 0; padding: 0; display: grid; gap: .15rem; }
+.transparencia__enlaces a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; }
+.transparencia__nota { display: block; margin-top: -.3rem; color: var(--apagado); font-size: .9375rem; line-height: 1.4; }
+.transparencia__sin a { font-weight: 600; }
+.transparencia__ley { margin-top: auto !important; padding-top: .65rem; border-top: 1px solid var(--linea); color: var(--apagado); font-size: .9375rem; line-height: 1.45; }
+.transparencia__acceso > p, .transparencia__pasos { margin-block: 0 1rem; }
+.transparencia__pasos { padding-left: 1.4rem; }
+.transparencia__pasos li + li { margin-top: .45rem; }
+.transparencia__boton { display: flex; flex-wrap: wrap; gap: .75rem; }
+.transparencia__acceso .transparencia__ley { border-top: 0; padding-top: 0; }
+/* lo que no consta: un hueco a la vista, con borde discontinuo como «Ejemplo» pero con su palabra */
+.pendiente {
+  padding: .55rem .75rem; border: 1.5px dashed var(--tinta); border-radius: var(--radio);
+  background: var(--superficie); color: var(--tinta); font-size: 1rem; line-height: 1.45;
+}
+.pendiente__marca { font-size: .8125rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+/* ═══════════════ fin v3c · transparencia ═══════════════ */
+
 /* [MANDO DE MAQUETA] inicio */
 /* Mando de la reunión (?revision). Lo borra scripts/quitar_mandos.py. */
 html:not(.en-revision) .cookies__revision { display: none; }
